@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :ezstanza, Ezstanza.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "ezstanza_dev",
+  password: "ezstanza_dev",
   hostname: "localhost",
   database: "ezstanza_dev",
   stacktrace: true,
