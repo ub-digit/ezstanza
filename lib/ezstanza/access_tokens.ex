@@ -3,10 +3,13 @@ defmodule Ezstanza.AccessTokens do
   The AccessTokens context.
   """
 
+  @default_expire_seconds 3600*24
+
   import Ecto.Query, warn: false
   alias Ezstanza.Repo
 
   alias Ezstanza.AccessTokens.AccessToken
+  alias Ezstanza.Accounts.User
 
   @doc """
   Gets a single access_token.
@@ -49,17 +52,25 @@ defmodule Ezstanza.AccessTokens do
 
   ## Examples
 
-      iex> create_access_token(%{field: value})
-      {:ok, %AccessToken{}}
+  iex> create_access_token(%{field: value})
+  {:ok, %AccessToken{}}
 
-      iex> create_access_token(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+  iex> create_access_token(%{field: bad_value})
+  {:error, %Ecto.Changeset{}}
 
   """
-  def create_access_token(attrs \\ %{}) do
-    %AccessToken{}
-    |> AccessToken.changeset(attrs)
+
+  def create_access_token(%User{id: user_id}), do: create_access_token(%{user_id: user_id})
+  def create_access_token(attrs) do
+    AccessToken.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def generate_token(), do: UUID.uuid4(:hex)
+
+  def token_expiration_date() do
+    DateTime.utc_now()
+    |> Datetime.add(@default_expire_seconds, :second)
   end
 
   @doc """
@@ -85,15 +96,15 @@ defmodule Ezstanza.AccessTokens do
 
   ## Examples
 
-      iex> delete_access_token(access_token)
-      {:ok, %AccessToken{}}
-
-      iex> delete_access_token(access_token)
-      {:error, %Ecto.Changeset{}}
+      iex> delete_access_token("f3f9211f-0819-4147-973d-dacc06524553")
+      :ok
 
   """
-  def delete_access_token(%AccessToken{} = access_token) do
-    Repo.delete(access_token)
+
+  def delete_access_token(token) do
+    with {_deleted, _selected} <- Repo.delete_all from a in AccessToken, where: a.token == ^token do
+      :ok
+    end
   end
 
   @doc """

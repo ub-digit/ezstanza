@@ -6,6 +6,7 @@ defmodule Ezstanza.Repo.Migrations.CreateUser do
       add :name, :string
       add :username, :string
       add :email, :string
+      add :password_hash, :string
       add :source, :string
       add :source_id, :string
 

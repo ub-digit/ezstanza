@@ -38,6 +38,24 @@ defmodule Ezstanza.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
+  Registers a user.
+
+  ## Examples
+
+      iex> register_user(%{field: value})
+      {:ok, %User{}}
+
+      iex> register_user(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_user(attrs \\ %{}) do
+    %User{}
+    |> User.registration_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Creates a user.
 
   ## Examples
@@ -101,4 +119,32 @@ defmodule Ezstanza.Accounts do
   def change_user(%User{} = user, attrs \\ %{}) do
     User.changeset(user, attrs)
   end
+
+  @doc false
+  def get_user_by_email_or_username(email_or_username) do
+    Repo.one from u in User,
+      where: u.email == ^email_or_username or u.username == ^email_or_username
+  end
+
+  @doc false
+  def authenticate_user(email_or_username, password) do
+    case get_user_by_email_or_username(email_or_username) do
+      nil ->
+        Argon2.dummy_checkpw()
+        {:error, :incorrect_email_or_username}
+      user ->
+        if Argon2.checkpw(password, user.password_hash) do
+          {:ok, user}
+        else
+          {:error, :incorrect_password}
+        end
+    end
+  end
+
+
+
+
+
+
+
 end

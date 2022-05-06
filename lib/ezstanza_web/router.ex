@@ -3,10 +3,23 @@ defmodule EzstanzaWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug EzstanzaWeb.Plug.Auth
   end
+
+  pipeline :api_require_authenticated do
+    plug EzstanzaWeb.Plug.RequireAuthenticated
+  end
+
+  #pipeline :api_require_unauthenticated do
+  #  plug EzstanzaWeb.Plug.RequireNotauthenticated
+  #  plug EzstanzaWeb.Plug.RequireUnauthenticated?
+  #end
 
   scope "/api", EzstanzaWeb do
     pipe_through :api
+    post "/registration", UserRegistrationController, :create
+    resources "/session", SessionController, singleton: true, only: [:create, :delete]
+    post "/session/renew", SessionController, :renew
   end
 
   # Enables LiveDashboard only for development
