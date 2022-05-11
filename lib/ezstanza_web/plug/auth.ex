@@ -3,7 +3,7 @@ defmodule EzstanzaWeb.Plug.Auth do
 
   alias Plug.Conn
   alias Ezstanza.AccessTokens
-  alias Ezstanza.AccessTokens.AccessToken
+  # alias Ezstanza.AccessTokens.AccessToken
   # alias Ezstanza.User
 
   @doc false
@@ -32,7 +32,7 @@ defmodule EzstanzaWeb.Plug.Auth do
     conn
     |> Conn.put_private(:api_access_token, token)
     |> Conn.register_before_send(fn conn ->
-      AccessTokens.create_access_token(%AccessToken{}, %{
+      AccessTokens.create_access_token(%{
         token: token,
         valid_to: AccessTokens.token_expiration_date(),
         user_id: user.id

@@ -15,7 +15,7 @@ defmodule Ezstanza.AccessTokens.AccessToken do
   @doc false
   def changeset(access_token, attrs) do
     access_token
-    |> cast(attrs, [:token, :valid_to])
+    |> cast(attrs, [:token, :valid_to, :user_id])
     |> validate_required([:token, :valid_to, :user_id])
     |> unique_constraint(:token)
   end

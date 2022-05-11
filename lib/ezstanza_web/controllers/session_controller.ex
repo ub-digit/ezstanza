@@ -3,19 +3,20 @@ defmodule EzstanzaWeb.SessionController do
 
   alias EzstanzaWeb.Plug.Auth
   alias Ezstanza.Accounts.User
+  alias Ezstanza.Accounts
 
   action_fallback EzstanzaWeb.FallbackController
 
   # TODO: refactor
   def create(conn, %{"provider" => "password", "username" => username_or_email, "password" => password}) do
-    conn
-    |> Auth.authenticate_user(username_or_email, password)
+    Accounts.authenticate_user(username_or_email, password)
     |> case do
       {:ok, %User{} = user} ->
-        conn
-        |> Auth.create(user)
-        |> put_status(:created)
-        |> json(%{data: %{access_token: conn.private.api_acces_token}})
+        conn =
+          conn
+          |> Auth.create(user)
+          |> put_status(:created)
+        json(conn, %{data: %{access_token: conn.private.api_access_token}})
       {:error, _reason} ->
         conn
         |> put_status(:unauthorized)
@@ -33,7 +34,7 @@ defmodule EzstanzaWeb.SessionController do
         |> put_status(:unauthorized)
         |> json(%{error: %{status: 401, message: "Invalid token"}})
       {conn, _user} ->
-        json(conn, %{data: %{access_token: conn.private.api_acces_token}})
+        json(conn, %{data: %{access_token: conn.private.api_access_token}})
     end
   end
 

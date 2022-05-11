@@ -60,17 +60,17 @@ defmodule Ezstanza.AccessTokens do
 
   """
 
-  def create_access_token(%User{id: user_id}), do: create_access_token(%{user_id: user_id})
   def create_access_token(attrs) do
-    AccessToken.changeset(attrs)
+    %AccessToken{}
+    |> AccessToken.changeset(attrs)
     |> Repo.insert()
   end
 
-  def generate_token(), do: UUID.uuid4(:hex)
+  def generate_token(), do: Ecto.UUID.generate()
 
   def token_expiration_date() do
     DateTime.utc_now()
-    |> Datetime.add(@default_expire_seconds, :second)
+    |> DateTime.add(@default_expire_seconds, :second)
   end
 
   @doc """

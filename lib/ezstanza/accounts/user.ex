@@ -1,6 +1,7 @@
 defmodule Ezstanza.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ezstanza.AccessTokens.AccessToken
 
   schema "user" do
     field :email, :string
@@ -11,6 +12,7 @@ defmodule Ezstanza.Accounts.User do
     field :password_confirmation, :string, virtual: true
     field :password, :string, virtual: true
     field :password_hash, :string
+    has_many :access_tokens, AccessToken
 
     timestamps()
   end

@@ -22,6 +22,12 @@ defmodule EzstanzaWeb.Router do
     post "/session/renew", SessionController, :renew
   end
 
+  scope "/api", EzstanzaWeb do
+    pipe_through [:api, :api_require_authenticated]
+    # Just for testing
+    get "/users", UserController, :index
+  end
+
   # Enables LiveDashboard only for development
   #
   # If you want to use the LiveDashboard in production, you should put

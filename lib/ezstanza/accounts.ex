@@ -130,10 +130,10 @@ defmodule Ezstanza.Accounts do
   def authenticate_user(email_or_username, password) do
     case get_user_by_email_or_username(email_or_username) do
       nil ->
-        Argon2.dummy_checkpw()
+        Argon2.no_user_verify()
         {:error, :incorrect_email_or_username}
       user ->
-        if Argon2.checkpw(password, user.password_hash) do
+        if Argon2.check_pass(user, password) do
           {:ok, user}
         else
           {:error, :incorrect_password}
