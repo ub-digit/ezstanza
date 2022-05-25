@@ -53,9 +53,6 @@ defmodule EzstanzaWeb.SessionController do
   #  #missing provider
   #end
 
-
-
-
   @spec renew(Conn.t(), map()) :: Conn.t()
   def renew(conn, _params) do
     conn

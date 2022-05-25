@@ -37,7 +37,8 @@ defmodule EzstanzaWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Corsica,
-    origins: "http://localhost:3000", log: [rejected: :warn, invalid: :debug, accepted: :debug],
+    origins: ["http://localhost:3000"],
+    log: [rejected: :warn, invalid: :debug, accepted: :debug],
     allow_headers: ["content-type", "accept", "authorization"]
 
   plug Plug.Parsers,

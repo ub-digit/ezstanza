@@ -18,12 +18,6 @@ export default {
       })
     })
 
-    /*
-    function errors(res) {
-      console.dir(res)
-      state.form.errors = Object.fromEntries(res.data.errors.map(item => [item.field, item.msg]));
-    }*/
-
     const { handleSubmit, isSubmitting, values, errors } = useForm({
       validationSchema: schema,
       initialValues: {
@@ -41,7 +35,7 @@ export default {
       auth.login({
         data: values.auth,
         staySignedIn: values.staySignedIn,
-        redirect: '/'
+        redirect: '/' // can remove?
       })
       .catch((res) => {
         if (typeof res.response.data === 'object' && 'errors' in res.response.data) {

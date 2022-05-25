@@ -19,13 +19,13 @@ defmodule EzstanzaWeb.Router do
     pipe_through :api
     post "/registration", UserRegistrationController, :create
     resources "/session", SessionController, singleton: true, only: [:create, :delete]
-    post "/session/delete", SessionControlle, :delete # Since vue auth doesn't support DELETE
+    post "/session/delete", SessionController, :delete # Since vue auth doesn't support DELETE
     post "/session/renew", SessionController, :renew
   end
 
   scope "/api", EzstanzaWeb do
     pipe_through [:api, :api_require_authenticated]
-    get "/session/user", SessionController, singleton: true
+    get "/session/user", SessionController, :user
     # Just for testing
     get "/users", UserController, :index
   end

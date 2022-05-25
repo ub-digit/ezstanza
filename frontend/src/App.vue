@@ -9,7 +9,6 @@ import SidebarMenu from '@/components/SidebarMenu.vue'
     <img src="@/assets/logo.svg" alt="Logo" height="50">
     <nav>
       <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/about">About</RouterLink>
     </nav>
   </header>
   <div class="grid">

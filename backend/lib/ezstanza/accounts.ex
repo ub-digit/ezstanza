@@ -133,11 +133,7 @@ defmodule Ezstanza.Accounts do
         Argon2.no_user_verify()
         {:error, :incorrect_email_or_username}
       user ->
-        if Argon2.check_pass(user, password) do
-          {:ok, user}
-        else
-          {:error, :incorrect_password}
-        end
+        Argon2.check_pass(user, password)
     end
   end
 
