@@ -28,7 +28,7 @@ export default (app) => {
         url: '/session/delete',
         method: 'POST',
         redirect: '/login',
-        makeRequest: false //????
+        makeRequest: true
       },
       fetchData: {
         url: '/session/user',
