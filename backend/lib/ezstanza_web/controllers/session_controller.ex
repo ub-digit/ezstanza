@@ -3,7 +3,7 @@ defmodule EzstanzaWeb.SessionController do
 
   alias EzstanzaWeb.Plug.Auth
   alias Ezstanza.Accounts.User
-  alias Ezstanza.Accounts
+  alias Ezstanza.Authenticate
 
   import Ecto.Changeset
 
@@ -21,7 +21,6 @@ defmodule EzstanzaWeb.SessionController do
     })
   end
 
-  # TODO: refactor
   def create(conn, %{"provider" => "password"} = params) do
     data = %{}
     types = %{username: :string, password: :string}
@@ -33,18 +32,22 @@ defmodule EzstanzaWeb.SessionController do
       %{valid?: false} = changeset ->
         {:error, changeset}
       %{changes: %{username: username, password: password}} = changeset ->
-        Accounts.authenticate_user(username, password)
+        Authenticate.password(username, password)
         |> case do
           {:ok, %User{} = user} ->
-            conn =
-              conn
-              |> Auth.create(user)
-              |> put_status(:created)
-            json(conn, %{data: %{access_token: conn.private.api_access_token}})
+            conn
+            |> Auth.create(user)
+            |> authenticated_response()
           {:error, _reason} ->
             {:error, :unauthorized, add_error(changeset, :password, "is incorrect")}
         end
     end
+  end
+
+  defp authenticated_response(conn) do
+    conn
+    |> put_status(:created)
+    |> json(%{data: %{access_token: conn.private.api_access_token}})
   end
   #def create(conn, %{"provider" => _}) do
   #  #unkonwn provider
@@ -63,7 +66,7 @@ defmodule EzstanzaWeb.SessionController do
         |> put_status(:unauthorized)
         |> json(%{error: %{status: 401, message: "Invalid token"}})
       {conn, _user} ->
-        json(conn, %{data: %{access_token: conn.private.api_access_token}})
+        authenticated_response(conn)
     end
   end
 
