@@ -3,7 +3,7 @@ defmodule EzstanzaWeb.SessionController do
 
   alias EzstanzaWeb.Plug.Auth
   alias Ezstanza.Accounts.User
-  alias Ezstanza.Authenticate
+  alias Ezstanza.Authentication
 
   import Ecto.Changeset
 
@@ -32,7 +32,7 @@ defmodule EzstanzaWeb.SessionController do
       %{valid?: false} = changeset ->
         {:error, changeset}
       %{changes: %{username: username, password: password}} = changeset ->
-        Authenticate.password(username, password)
+        Authentication.password(username, password)
         |> case do
           {:ok, %User{} = user} ->
             conn
