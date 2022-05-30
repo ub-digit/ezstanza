@@ -80,11 +80,11 @@ defmodule EzstanzaWeb.Plug.Auth do
   @spec delete(Conn.t()) :: Conn.t()
   def delete(conn) do
     with {:ok, token} <- extract_access_token(conn) do
-      Conn.register_before_send(conn, fn conn ->
+      conn
+      |> Conn.register_before_send(fn conn ->
         AccessTokens.delete_access_token(token)
         conn
       end)
-      conn
     end
   end
 
