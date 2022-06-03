@@ -28,6 +28,8 @@ defmodule EzstanzaWeb.Router do
     get "/session/user", SessionController, :user
     # Just for testing
     get "/users", UserController, :index
+    resources "/stanza", StanzaController
+    resources "/tag", TagController
   end
 
   # Enables LiveDashboard only for development

@@ -2,6 +2,7 @@ defmodule EzstanzaWeb.SessionController do
   use EzstanzaWeb, :controller
 
   alias EzstanzaWeb.Plug.Auth
+
   alias Ezstanza.Accounts.User
   alias Ezstanza.Authentication
 
