@@ -108,12 +108,34 @@ defmodule Ezstanza.StanzaParser do
 
   def parse_file(filename) do
     File.stream!(filename)
-    |> Stream.map(&parse_line(&1)) # &parse_line/1
+    |> parse_stanza_lines()
+    |> Enum.reject(fn %{status: status} -> status == :error end) #TODO: Do not include status?
+    |> chunk_by_stanza()
+    |> Enum.map(fn stanza ->
+      case validate_stanza(stanza) do
+        [] ->
+          {:ok, stanza}
+        errors ->
+          {:error, {stanza, errors}} #TODO: This format sucks?
+      end
+    end)
+  end
+
+  def parse_string(stanza_string) do
+    stanza = stanza_string
+             |> String.split("\n")
+             |> parse_stanza_lines()
+    case validate_stanza(stanza) ++ validate_stanza_lines(stanza) do
+      [] -> {:ok, stanza}
+      errors -> {:error, errors}
+    end
+  end
+
+  def parse_stanza_lines(stanza_lines) do
+    stanza_lines
+    |> Enum.map(&parse_line/1)
     |> Enum.with_index()
     |> Enum.map(fn {{status, cmd, value}, idx} -> %{status: status, cmd: cmd, value: value, line: idx + 1} end)
-    |> Enum.reject(fn %{status: status} -> status == :error end) #TODO: Do not include status
-    |> chunk_by_stanza()
-    |> validate_stanzas()
   end
 
   def chunk_by_stanza(lines) do
@@ -161,25 +183,40 @@ defmodule Ezstanza.StanzaParser do
     end
   end
 
-  def validate_stanzas(stanzas) do
-    # (Returns keyword list)
-    Enum.map(stanzas, fn stanza ->
-      case validate_stanza(stanza) do
-        :ok ->
-          {:ok, stanza}
-        {:error, reason} ->
-          {:error, {stanza, reason}} #TODO: This format sucks?
+  def validate_stanza(stanza) do
+    Enum.reduce([
+      &validate_title/1
+    ], [], fn validator, errors ->
+      case validator.(stanza) do
+        :ok -> errors
+        {:error, error} -> [error | errors]
       end
     end)
-
   end
 
-  def validate_stanza(stanza) do
+  def validate_stanza_lines(stanza) do
+    Enum.reduce(stanza, [], fn stanza_line, errors ->
+      case stanza_line do
+        %{status: :error, cmd: cmd, value: value, line: line} ->
+          [{cmd, line} | errors]
+      end
+    end)
+  end
+
+  def validate_title(stanza) do
     case Enum.count(stanza, fn %{cmd: cmd} -> cmd == "Title" end) do
       1 -> :ok
       0 -> {:error, :missing_title}
       _ -> {:error, :multiple_titles}
     end
+  end
+
+  def error_message(error) do
+    messages = %{
+      :missing_title => "Stanza requires a title",
+      :multiple_title => "Stanza has multiple titles"
+    }
+    Map.get(messages, error, "Unknown error")
   end
 
   def lines_contain_directive(lines) do

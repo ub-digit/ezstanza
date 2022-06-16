@@ -11,8 +11,9 @@ defmodule Ezstanza.Stanzas.Stanza do
     many_to_many :tags, Tag,
       join_through: "stanza_tag",
       on_replace: :delete
-    has_many :stanza_revisions, StanzaRevision
-    belongs_to :current_stanza_revision, StanzaRevision
+    has_many :revisions, StanzaRevision
+    belongs_to :current_revision, StanzaRevision,
+      foreign_key: :current_stanza_revision_id
     belongs_to :user, User
     timestamps()
   end

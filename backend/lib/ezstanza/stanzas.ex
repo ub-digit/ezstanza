@@ -13,6 +13,14 @@ defmodule Ezstanza.Stanzas do
   alias Ezstanza.Stanzas.StanzaRevision
   alias Ezstanza.Tags.Tag
 
+  def stanzas_base_query() do
+    from s in Stanza,
+      join: u in assoc(s, :user),
+      join: c_r in assoc(s, :current_revision),
+      join: c_r_u in assoc(c_r, :user),
+      preload: [user: u, current_revision: {c_r, user: c_r_u}]
+  end
+
   @doc """
   Returns the list of stanza.
 
@@ -22,25 +30,28 @@ defmodule Ezstanza.Stanzas do
       [%Stanza{}, ...]
 
   """
-  def list_stanza do
-    Repo.all(Stanza)
+  # TODO: forgotten to add deleted flag on schema
+  def list_stanzas do
+    Repo.all stanzas_base_query()
   end
 
   @doc """
   Gets a single stanza.
 
-  Raises `Ecto.NoResultsError` if the Stanza does not exist.
+  Returns nil if the Stanza does not exist.
 
   ## Examples
 
-      iex> get_stanza!(123)
+      iex> get_stanza(123)
       %Stanza{}
 
-      iex> get_stanza!(456)
-      ** (Ecto.NoResultsError)
+      iex> get_stanza(456)
+      ** nil
 
   """
-  def get_stanza!(id), do: Repo.get!(Stanza, id)
+  def get_stanza(id) do
+    Repo.one(from s in stanzas_base_query(), where: s.id == ^id)
+  end
 
 
   @doc """
@@ -63,12 +74,27 @@ defmodule Ezstanza.Stanzas do
     |> Multi.insert(:persisted_stanza, Stanza.changeset(%Stanza{}, attrs))
     |> Multi.append(update_persisted_stanza_multi(attrs, :insert))
     |> Repo.transaction()
-    |> case do
-      {:ok, %{stanza: stanza}} -> {:ok, stanza}
-      {:error, failed_operation, failed_value, changes_so_far} ->
-        IO.puts("Multi error")
-        IO.inspect([failed_operation, failed_value, changes_so_far])
-        {:error, :create_stanza_failed}
+    |> handle_stanza_multi_transaction_result(:create_stanza_failed)
+  end
+
+  # TODO: do:
+  defp handle_stanza_multi_transaction_result(
+    {:ok, %{stanza: stanza}},
+    _fallback_error
+  ) do
+    {:ok, stanza}
+  end
+
+  defp handle_stanza_multi_transaction_result(
+    {:error, failed_operation, failed_value, changes_so_far},
+    fallback_error
+  ) do
+    IO.puts("Multi error")
+    IO.inspect([failed_operation, failed_value, changes_so_far])
+        # TODO: this can probably be improved, or might not be such a good idea?
+    case failed_value do
+      %Changeset{valid?: false} -> {:error, failed_value}
+      _ -> {:error, :create_stanza_failed}
     end
   end
 
@@ -150,13 +176,7 @@ defmodule Ezstanza.Stanzas do
     |> Multi.put(:persisted_stanza, stanza) # TODO: Stanza not from Multi "repo", problem?
     |> Multi.append(update_persisted_stanza_multi(attrs, :update))
     |> Repo.transaction()
-    |> case do
-      {:ok, %{stanza: stanza}} -> {:ok, stanza}
-      {:error, failed_operation, failed_value, changes_so_far} ->
-        IO.puts("Multi error")
-        IO.inspect([failed_operation, failed_value, changes_so_far])
-        {:error, :update_stanza_failed}
-    end
+    |> handle_stanza_multi_transaction_result(:update_stanza_failed)
   end
 
   @doc """
@@ -199,7 +219,7 @@ defmodule Ezstanza.Stanzas do
       [%StanzaRevision{}, ...]
 
   """
-  def list_stanza_revision do
+  def list_stanza_revisions do
     Repo.all(StanzaRevision)
   end
 
