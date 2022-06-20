@@ -1,2 +1,5 @@
 # Ignore todo-files
 todo
+# Ignore temporary files
+tmp
+tmp.*
