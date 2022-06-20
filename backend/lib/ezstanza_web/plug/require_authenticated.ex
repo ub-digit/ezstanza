@@ -11,7 +11,7 @@ defmodule EzstanzaWeb.Plug.RequireAuthenticated do
   def init(_), do: nil
 
   @doc false
-  @spec call(Conn.t(), atom()) :: Conn.t()
+  @spec call(Conn.t(), Plug.opts()) :: Conn.t()
   def call(conn, _) do
     conn
     |> Auth.current_user()
