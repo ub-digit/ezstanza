@@ -18,17 +18,23 @@ defmodule Ezstanza.Repo.Migrations.Stanza do
       timestamps()
     end
 
-    create index(:stanza_revision, [:user_id]) #??
+    create index(:stanza_revision, [:user_id])
 
     alter table(:stanza) do
       add :current_stanza_revision_id, references(:stanza_revision, on_delete: :restrict)
     end
 
+    create unique_index(:stanza, [:current_stanza_revision_id])
+
     # TODO: Define composite primary key and indices
     create table(:stanza_tag, primary_key: false) do
-      add :stanza_id, references(:stanza, on_delete: :delete_all)
-      add :tag_id, references(:tag)
+      add :stanza_id, references(:stanza, on_delete: :delete_all), primary_key: true
+      add :tag_id, references(:tag), primary_key: true
     end
+
+    #create unique_index(:stanza_tag, [:stanza_id, :tag_id]) # Don't think needed, duplicate as primary keys index exists
+    create index(:stanza_tag, [:stanza_id])
+    create index(:stanza_tag, [:tag_id])
   end
 
 end
