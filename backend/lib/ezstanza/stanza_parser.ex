@@ -111,8 +111,9 @@ defmodule Ezstanza.StanzaParser do
     |> parse_stanza_lines()
     |> Enum.reject(fn %{status: status} -> status == :error end) #TODO: Do not include status?
     |> chunk_by_stanza()
+    # TODO: Break out validation? Now inconsistent behavior between parse_string and parse_file
     |> Enum.map(fn stanza ->
-      case validate_stanza(stanza) do
+      case stanza_errors(stanza) do
         [] ->
           {:ok, stanza}
         errors ->
@@ -122,13 +123,13 @@ defmodule Ezstanza.StanzaParser do
   end
 
   def parse_string(stanza_string) do
-    stanza = stanza_string
-             |> String.split("\n")
-             |> parse_stanza_lines()
-    case validate_stanza(stanza) ++ validate_stanza_lines(stanza) do
-      [] -> {:ok, stanza}
-      errors -> {:error, errors}
-    end
+    stanza_string
+    |> String.split("\n")
+    |> parse_stanza_lines()
+  end
+
+  def stanza_errors(stanza) do
+    structure_errors(stanza) ++ line_errors(stanza)
   end
 
   def parse_stanza_lines(stanza_lines) do
@@ -183,7 +184,7 @@ defmodule Ezstanza.StanzaParser do
     end
   end
 
-  def validate_stanza(stanza) do
+  def structure_errors(stanza) do
     Enum.reduce([
       &validate_title/1
     ], [], fn validator, errors ->
@@ -194,12 +195,12 @@ defmodule Ezstanza.StanzaParser do
     end)
   end
 
-  def validate_stanza_lines(stanza) do
-    Enum.reduce(stanza, [], fn stanza_line, errors ->
-      case stanza_line do
-        %{status: :error, cmd: cmd, value: value, line: line} ->
-          [{cmd, line} | errors]
-      end
+  def line_errors(stanza) do
+    Enum.reduce(stanza, [], fn
+      %{status: :error, cmd: cmd, value: value, line: line}, errors ->
+        [{cmd, line} | errors]
+      _, errors ->
+        errors
     end)
   end
 

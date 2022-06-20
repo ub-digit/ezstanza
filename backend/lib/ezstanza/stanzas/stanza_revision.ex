@@ -17,9 +17,12 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
   @spec validate_stanza(Changeset.t(), atom) :: Changeset.t()
   def validate_stanza(changeset, field) do
     validate_change changeset, field, fn _, value ->
-      case StanzaParser.parse_string(value) do
-        {:ok, _stanza} -> []
-        {:error, errors} ->
+      value
+      |> StanzaParser.parse_string()
+      |> StanzaParser.stanza_errors()
+      |> case do
+        [] -> []
+        errors ->
           Enum.map(errors, fn
             {cmd, line} ->
               {field, {"Invalid stanza directive \"%{cmd}\", line %{line}", [cmd: cmd, line: line]}}
