@@ -6,6 +6,8 @@ defmodule EzstanzaWeb.StanzaController do
   alias Ezstanza.Stanzas
   alias Ezstanza.Stanzas.Stanza
 
+  alias Ezstanza.StanzaParser
+
   action_fallback EzstanzaWeb.FallbackController
 
   plug EzstanzaWeb.Plug.GetEntity, %{
@@ -46,6 +48,18 @@ defmodule EzstanzaWeb.StanzaController do
       stanza = Stanzas.get_stanza(stanza_id)
       render(conn, "show.json", stanza: stanza)
     end
+  end
+
+  def validate_lines(conn, %{"stanza" => %{"body" => body}}) do
+    errors = body
+             |> StanzaParser.parse_string()
+             |> StanzaParser.line_errors()
+             |> Enum.map(fn {cmd, line} ->
+               %{line: line, cmd: cmd}
+             end)
+    conn
+    |> put_status(:ok)
+    |> json(%{validation_errors: errors})
   end
 
   def delete(conn, %{"id" => _id}) do

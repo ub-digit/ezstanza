@@ -29,6 +29,7 @@ defmodule EzstanzaWeb.Router do
     # Just for testing
     get "/users", UserController, :index
     resources "/stanza", StanzaController
+    post "/stanza/validate_lines", StanzaController, :validate_lines
     resources "/tag", TagController
   end
 
