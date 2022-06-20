@@ -20,4 +20,14 @@ defmodule EzstanzaWeb.UserView do
       source_id: user.source_id
     }
   end
+
+  def render("user_snippet.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+    }
+  end
+
 end
