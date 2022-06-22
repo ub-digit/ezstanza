@@ -1,5 +1,4 @@
 export default {
-
   request: function (req, token) {
     this.drivers.http.setHeaders.call(this, req, {
       Authorization: 'Bearer ' + token
@@ -11,4 +10,4 @@ export default {
       return res.data.data.access_token
     }
   }
-};
+}

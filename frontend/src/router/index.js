@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
+import EditStanza from '../views/EditStanza.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,6 +16,11 @@ const router = createRouter({
       name: 'Login',
       component: Login,
       meta: { auth: false }
+    }, {
+      path: '/stanzas/:id',
+      name: 'EditStanza',
+      component: EditStanza,
+      meta: { auth: true }
     }
   ]
 })

@@ -28,9 +28,9 @@ defmodule EzstanzaWeb.Router do
     get "/session/user", SessionController, :user
     # Just for testing
     get "/users", UserController, :index
-    resources "/stanza", StanzaController
+    resources "/stanzas", StanzaController
     post "/stanza/validate_lines", StanzaController, :validate_lines
-    resources "/tag", TagController
+    resources "/tags", TagController
   end
 
   # Enables LiveDashboard only for development

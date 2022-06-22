@@ -31,17 +31,16 @@ export default {
     })
 
     const onSubmit = handleSubmit((values, {setErrors}) => {
-      console.dir(values)
       auth.login({
         data: values.auth,
         staySignedIn: values.staySignedIn,
         redirect: '/' // can remove?
       })
-      .catch((res) => {
-        if (typeof res.response.data === 'object' && 'errors' in res.response.data) {
+      .catch((error) => {
+        if (typeof error.response.data === 'object' && 'errors' in error.response.data) {
           // TODO: ugly
           let errors = {};
-          for (const [field, value] of Object.entries(res.response.data.errors)) {
+          for (const [field, value] of Object.entries(error.response.data.errors)) {
             errors[`auth.${field}`] = value;
           }
           setErrors(errors)

@@ -1,7 +1,23 @@
-<script setup>
+<script>
 import { RouterLink, RouterView } from 'vue-router'
 import SidebarMenu from '@/components/SidebarMenu.vue'
+import { useLoaderStore } from '@/stores/loader'
+import { storeToRefs } from 'pinia'
 
+export default {
+  setup() {
+    const loaderStore = useLoaderStore()
+    const { loading } = storeToRefs(loaderStore)
+    return {
+      loading
+    }
+  },
+  components: {
+    RouterLink,
+    RouterView,
+    SidebarMenu
+  }
+}
 </script>
 
 <template>
@@ -16,6 +32,9 @@ import SidebarMenu from '@/components/SidebarMenu.vue'
       <SidebarMenu />
     </nav>
     <div class="col">
+      <div v-if="loading">
+        Loading....
+      </div>
       <RouterView />
     </div>
   </div>
