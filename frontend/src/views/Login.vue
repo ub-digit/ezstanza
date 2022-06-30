@@ -1,6 +1,5 @@
 <script>
 // import InputText from 'primevue/inputtext'
-import VInputText from '@/components/VInputText.vue'
 import VTextField from '@/components/VTextField.vue'
 import Checkbox from 'primevue/checkbox'
 import Button from 'primevue/button'
@@ -57,7 +56,6 @@ export default {
   },
   components: {
     Field,
-    VInputText,
     Checkbox,
     Button,
     VTextField

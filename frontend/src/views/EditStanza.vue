@@ -8,17 +8,36 @@ export default {
     const route = useRoute()
     const stanza = ref()
     const api = inject('api')
+
     // Replace with watchEffect?
     watch(
       () => route.params.id,
       async newId => {
         //TODO: error handling
-        stanza.value = await api.stanzas.fetch(newId)
+        const result = await api.stanzas.fetch(newId)
+        stanza.value = result.data
       },
       { immediate: true }
     )
+
+    function onSubmit(stanza, { setErrors }) {
+      api.stanzas.update(stanza.id, { stanza: stanza })
+        .catch((errors) => {
+          console.log('errors')
+          console.dir(errors)
+          if (typeof errors === 'object') {
+            console.log('setting errors')
+            setErrors(errors)
+          }
+          else if(typeof errors == 'string') {
+            //TODO: toast error
+            alert(errors)
+          }
+        })
+    }
     return {
-      stanza
+      stanza,
+      onSubmit
     }
   },
   components: {
@@ -28,6 +47,6 @@ export default {
 </script>
 <template>
   <div v-if="stanza">
-    <StanzaForm v-model="stanza"/>
+    <StanzaForm :stanza="stanza" @submit="onSubmit"/>
   </div>
 </template>

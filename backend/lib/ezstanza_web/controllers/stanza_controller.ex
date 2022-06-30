@@ -15,9 +15,13 @@ defmodule EzstanzaWeb.StanzaController do
     assigns_key: :stanza
   } when action in [:show, :update, :delete]
 
+  def index(conn, %{"page" => page, "size" => size} = params) do
+    result = Stanzas.paginate_stanzas(params)
+    render(conn, "index.json", stanzas: result.stanzas, pages: result.pages, total: result.total)
+  end
 
-  def index(conn, _params) do
-    stanzas = Stanzas.list_stanzas()
+  def index(conn, params) do
+    stanzas = Stanzas.list_stanzas(params)
     render(conn, "index.json", stanzas: stanzas)
   end
 

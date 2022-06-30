@@ -37,6 +37,9 @@ export default {
   </div>
 </template>
 <style>
+.field {
+  position: relative;
+}
 .field-text {
   position: absolute;
   top: 100%;

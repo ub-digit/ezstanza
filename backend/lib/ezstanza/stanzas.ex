@@ -15,9 +15,9 @@ defmodule Ezstanza.Stanzas do
 
   def stanzas_base_query() do
     from s in Stanza,
-      join: u in assoc(s, :user),
-      join: c_r in assoc(s, :current_revision),
-      join: c_r_u in assoc(c_r, :user),
+      join: u in assoc(s, :user), as: :user,
+      join: c_r in assoc(s, :current_revision), as: :current_revision,
+      join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
       preload: [user: u, current_revision: {c_r, user: c_r_u}]
   end
 
@@ -31,8 +31,81 @@ defmodule Ezstanza.Stanzas do
 
   """
   # TODO: forgotten to add deleted flag on schema
-  def list_stanzas do
-    Repo.all stanzas_base_query()
+  def list_stanzas(params \\ %{}) do
+    Repo.all list_query(params)
+  end
+
+  defp list_query(%{} = params) do
+    stanzas_base_query()
+    |> order_by(^dynamic_order_by(params["order_by"]))
+    |> where(^dynamic_where(params))
+    #|> stanzas_order_by(Map.get(params, :order_by))
+  end
+
+  defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
+  defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
+  defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("user_desc"), do: [desc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("inserted_at"), do: [asc: dynamic([s], s.inserted_at)]
+  defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
+  defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
+  defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s], s.updated_at)]
+
+  defp dynamic_order_by(_), do: []
+
+  defp dynamic_where(params) do
+    filter_like = &(String.replace(&1, ~r"[%_]", ""))
+    Enum.reduce(params, dynamic(true), fn
+      {"name", value}, dynamic ->
+        dynamic([s], ^dynamic and s.name == ^value)
+      {"name_like", value}, dynamic ->
+        dynamic([s], ^dynamic and ilike(s.name, ^"%#{filter_like.(value)}%"))
+      {"user_name", value}, dynamic ->
+        dynamic([user: u], ^dynamic and u.name == ^value)
+      {"user_name_like", value}, dynamic ->
+        dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+      {_, _}, dynamic ->
+        dynamic
+    end)
+  end
+
+  # Default order by
+  defp stanzas_order_by(query, nil) do
+    stanzas_order_by(query, "name")
+  end
+
+  defp stanzas_order_by(query, order_by) do
+    case order_by do
+      "name" ->
+        order_by(query, [s], asc: s.name)
+      "user_name" ->
+        order_by(query, [user: u], asc: u.name)
+      _ ->
+        query
+    end
+  end
+
+  # TODO: Generalize, macro?
+  def paginate_stanzas(%{"page" => page, "size" => size} = params) do
+    {page, _} = Integer.parse(page)
+    {size, _} = Integer.parse(size)
+
+    offset = (page - 1) * size
+
+    query = list_query(params)
+            |> offset(^offset)
+            |> limit(^size)
+    count_query = query
+                  |> exclude(:preload)
+                  |> exclude(:order_by)
+
+    count = Repo.one(from t in count_query, select: count("*"))
+    stanzas = Repo.all query
+    %{
+      pages: div(count, size) + 1,
+      total: count,
+      stanzas: stanzas
+    }
   end
 
   @doc """

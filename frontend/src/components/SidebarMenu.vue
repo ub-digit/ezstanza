@@ -8,16 +8,25 @@ export default {
     const auth = useAuth()
     const items = ref([
       {
-        label: 'New',
+        label: 'Configuration',
         items: [
           {
-            label: 'Stanza',
+            label: 'Stanzas',
             icon: 'pi pi-fw pi-file',
-          }
+            to: '/stanzas'
+          }, {
+            label: 'Bundles',
+            icon: 'pi pi-fw pi-file',
+            to: '/bundles'
+          }, {
+            label: 'Tags',
+            icon: 'pi pi-fw pi-file',
+            to: '/tags'
+          },
         ]
       },
       {
-        label: 'Test',
+        label: 'Settings',
         items: [
           {
             label: 'Example',

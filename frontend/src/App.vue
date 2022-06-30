@@ -31,7 +31,7 @@ export default {
     <nav v-show="$auth.check()" class="col-fixed" style="width: 200px;">
       <SidebarMenu />
     </nav>
-    <div class="col">
+    <div class="col p-5">
       <div v-if="loading">
         Loading....
       </div>

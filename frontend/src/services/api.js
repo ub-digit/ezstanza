@@ -15,7 +15,7 @@ class BaseApiService {
   }
 
   handleErrors(error) {
-    if (error.response.data === 'object' && 'errors' in error.response.data) {
+    if (typeof error.response.data === 'object' && 'errors' in error.response.data) {
       throw error.response.data.errors
     }
     else {
@@ -38,21 +38,34 @@ class ResourceApiService extends BaseApiService {
   fetch(id) {
     return axios.get(`${this.endpointUrl()}/${id}`)
       .then(response => {
-        return response.data.data
+        return response.data
       })
       .catch(this.handleErrors)
   }
-  //index/find/get_all/all?
-  async index() {
 
+  list(params) {
+
+    const options = params ? {
+      params: params
+    } : {}
+
+    return axios.get(this.endpointUrl(), options)
+      .then(response => {
+        return response.data
+      })
+      .catch(this.handleErrors)
   }
 
   async create(data) {
 
   }
 
-  async update(id, data) {
-
+  update(id, data) {
+    return axios.put(`${this.endpointUrl()}/${id}`, data)
+      .then(response => {
+        return response.data
+      })
+      .catch(this.handleErrors)
   }
 
   async delete(id) {
