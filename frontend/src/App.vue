@@ -3,6 +3,8 @@ import { RouterLink, RouterView } from 'vue-router'
 import SidebarMenu from '@/components/SidebarMenu.vue'
 import { useLoaderStore } from '@/stores/loader'
 import { storeToRefs } from 'pinia'
+import Toast from 'primevue/toast'
+import DynamicDialog from 'primevue/dynamicdialog';
 
 export default {
   setup() {
@@ -15,12 +17,16 @@ export default {
   components: {
     RouterLink,
     RouterView,
-    SidebarMenu
+    SidebarMenu,
+    Toast,
+    DynamicDialog
   }
 }
 </script>
 
 <template>
+  <Toast />
+  <DynamicDialog />
   <header class="surface-overlay shadow-2 py-3 px-5 flex align-items-center justify-content-between">
     <img src="@/assets/logo.svg" alt="Logo" height="50">
     <nav>

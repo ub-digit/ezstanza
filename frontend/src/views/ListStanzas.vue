@@ -1,5 +1,5 @@
 <script>
-import { inject, ref, watch, onMounted } from 'vue'
+import { inject, ref, unref, toRaw, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import StanzaList from '@/components/StanzaList.vue'
 import DataTable from 'primevue/datatable'
@@ -7,12 +7,54 @@ import Column from 'primevue/column'
 import ColumnGroup from 'primevue/columngroup'
 import Row from 'primevue/row'
 import { FilterMatchMode } from 'primevue/api'
+import Button from 'primevue/button'
+import Toolbar from 'primevue/toolbar'
+import { useDialog } from 'primevue/usedialog'
+//import ConfirmDelete from '@/components/ConfirmDelete.vue'
+import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 
 export default {
   setup() {
 
+    // @todo: format date
+
     const route = useRoute()
+    const dialog = useDialog()
     const api = inject('api')
+
+    // @todo: ugly, how to use defined standard breakpoints?
+    const dialogBreakpoints = ref({
+      '960px': '75vw',
+      '640px': '90vw'
+    })
+
+    // Event handler with closure on stanza
+    const onDeleteStanza = (stanza, close) => {
+      // TODO: Delete from selected stanzas
+      api.stanzas.delete(stanza.id).then(() => {
+        stanzas.value = stanzas.value.filter((s) => s.id !== stanza.id)
+        selectedStanzas.value = selectedStanzas.value.filter((s) => s.id !== stanza.id)
+        totalStanzas.value = stanzas.value - 1
+      }).catch((error) => {
+        //TODO: toast with error
+      })
+      close()
+    }
+
+    // @todo: add backend patch operation for bulk deletion?
+    const onDeleteSelectedStanzas = (close) => {
+      const stanzaIds = selectedStanzas.value.map((s) => s.id)
+      stanzas.value = stanzas.value.filter((s) => !stanzaIds.includes(s.id))
+      selectedStanzas.value = selectedStanzas.value.filter((s) => !stanzaIds.includes(s.id))
+      totalStanzas.value = totalStanzas.value - stanzaIds.length
+      close()
+    }
+
+    const getOrderBy = (sortField, sortOrder) => {
+      return sortField + (sortOrder === -1 ? '_desc' : '')
+    }
+    const defaultSortField = ref('updated_at')
+    const defaultSortOrder = ref(-1)
 
     const loading = ref(false)
     const lazyParams = ref({})
@@ -20,7 +62,7 @@ export default {
     const selectAll  = ref(false)
     const selectedStanzas = ref()
     const stanzas = ref([])
-    const pageSize = ref(50)
+    const pageSize = ref(10)
     const totalStanzas = ref(0)
     const expandedRows = ref([])
 
@@ -28,6 +70,7 @@ export default {
       'name': {value: '', matchMode: FilterMatchMode.CONTAINS},
       'user_name': {value: '', matchMode: FilterMatchMode.CONTAINS},
     })
+
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
       { label: 'Equals', value: FilterMatchMode.EQUALS },
@@ -38,18 +81,15 @@ export default {
       [FilterMatchMode.EQUALS]: ''
     }
 
-    const sortSuffix = []
-    sortSuffix[1] = ''
-    sortSuffix[-1] = '_desc'
-
     const onPage = (event) => {
-      lazyParams.value = event
-      console.log('on page')
+      lazyParams.value.page = event.page + 1
     }
-    //TODO: Default sort?
+
+    //TODO: Default sort by new
     const onSort = (event) => {
-      lazyParams.value['order_by'] = event.sortField + (event.sortOrder === 1 ? '_desc' : '')
+      lazyParams.value['order_by'] = getOrderBy(event.sortField, event.sortOrder)
     }
+
     const onFilter = () => {
       let filterParams = {}
       for (const [filter, data] of Object.entries(filters.value)) {
@@ -68,14 +108,13 @@ export default {
       lazyParams.value = {
         page: 1,
         size: dt.value.rows,
-        sortField: null,
-        sortOrder: null,
+        order_by: getOrderBy(defaultSortField.value, defaultSortOrder.value)
       }
     })
 
-    const lazyLoadData = () => {
+    const loadStanzas = async (params) => {
       loading.value = true
-      api.stanzas.list(lazyParams.value).then(result => {
+      await api.stanzas.list(params).then(result => {
         stanzas.value = result.data
         totalStanzas.value = result.total
         loading.value = false
@@ -87,6 +126,7 @@ export default {
         // If not all stanzas fit into the first page
         // load all from backend
         if (stanzas.value.length < totalStanzas.value) {
+          // @todo: alternatively { ...lazyParams.value } ?
           let params = Object.assign({}, lazyParams.value)
           delete params.page
           delete params.size
@@ -101,31 +141,27 @@ export default {
         }
       }
       else {
-        selectAll.value = false;
-        selectedStanzas.value = [];
+        selectAll.value = false
+        selectedStanzas.value = []
       }
     }
     const onRowSelect = () => {
-      selectAll.value = selectedStanzas.value.length === totalStanzas.value;
+      selectAll.value = selectedStanzas.value.length === totalStanzas.value
     }
     const onRowUnselect = () => {
-      selectAll.value = false;
+      selectAll.value = false
     }
 
     watch(
       () => lazyParams,
       async newParams => {
-        loading.value = true
-        api.stanzas.list(newParams.value).then(result => {
-          stanzas.value = result.data
-          totalStanzas.value = result.total
-          loading.value = false
-        })
+        await loadStanzas(toRaw(newParams.value))
       },
-      { immediate: true, deep: true }
+      //{ immediate: true, deep: true }
+      { deep: true }
     )
-    /*
 
+    /*
     watch(
       () => route.query.page,
       async newPage => {
@@ -146,6 +182,8 @@ export default {
       loading,
       selectedStanzas,
       filters,
+      defaultSortField,
+      defaultSortOrder,
       onFilter,
       onSort,
       onPage,
@@ -154,17 +192,51 @@ export default {
       onRowUnselect,
       selectAll,
       filterMatchModeOptions,
+      onDeleteStanza,
+      onDeleteSelectedStanzas,
+      dialogBreakpoints,
       dt
     }
   },
   components: {
     StanzaList,
     DataTable,
-    Column
+    Column,
+    Button,
+    Toolbar,
+    ConfirmDialogButton
   }
 }
 </script>
 <template>
+
+  <Toolbar class="mb-4">
+    <template #start>
+      <router-link
+        custom
+        :to="{ name: 'CreateStanza', query: { destination: '/stanzas'} }"
+        v-slot="{ navigate }"
+      >
+        <Button label="New" icon="pi pi-plus" class="p-button-success mr-2" @click="navigate"/>
+      </router-link>
+      <ConfirmDialogButton
+        label="Delete"
+        icon="pi pi-trash"
+        class="p-button-danger"
+        :breakpoints="dialogBreakpoints"
+        @accept="onDeleteSelectedStanzas"
+        :disabled="!selectedStanzas || !selectedStanzas.length"
+      >
+        <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
+        <template #header>
+          Confirm delete selection
+        </template>
+        <span class="p-confirm-dialog-message">Are you sure you want to delete selected stanzas?</span>
+      </ConfirmDialogButton>
+
+    </template>
+  </Toolbar>
+
   <DataTable
     :value="stanzas"
     :lazy="true"
@@ -172,6 +244,8 @@ export default {
     :rows="pageSize"
     ref="dt"
     dataKey="id"
+    :sortField="defaultSortField"
+    :sortOrder="defaultSortOrder"
     @page="onPage($event)"
     @sort="onSort($event)"
     @filter="onFilter($event)"
@@ -201,11 +275,35 @@ export default {
     </Column>
     <Column field="inserted_at" header="Created" :sortable="true"/>
     <Column field="updated_at" header="Updated" :sortable="true"/>
+    <Column style="min-with: 8rem">
+      <template #body="{ data }">
+        <div class="flex">
+          <router-link
+            custom
+            :to="{ name: 'EditStanza', params: { id: data.id }, query: { destination: '/stanzas'} }"
+            v-slot="{ navigate }"
+          >
+            <Button icon="pi pi-pencil" class="p-button-text p-button-info" @click="navigate"/>
+          </router-link>
+          <ConfirmDialogButton
+            icon="pi pi-trash"
+            class="p-button-text p-button-warning"
+            :breakpoints="dialogBreakpoints"
+            @accept="onDeleteStanza(data, $event)"
+          >
+            <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
+            <template #header>
+              Confirm delete
+            </template>
+            <span class="p-confirm-dialog-message">Are you sure you want to delete stanza<b>"{{data.name}}"</b>?</span>
+          </ConfirmDialogButton>
+        </div>
+      </template>
+    </Column>
     <template #expansion="{ data }">
       <div class="grid">
         <div class="col-12">{{ data.body }}</div>
       </div>
     </template>
   </DataTable>
-
 </template>

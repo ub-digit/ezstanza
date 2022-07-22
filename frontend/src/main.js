@@ -7,6 +7,8 @@ import auth from './plugins/auth'
 import http from './plugins/http'
 import pinia from './plugins/pinia'
 import api_service from './plugins/api_service'
+import ToastService from 'primevue/toastservice'
+import DialogService from 'primevue/dialogservice'
 
 // import 'primevue/resources/themes/bootstrap4-dark-blue/theme.css';
 import "primevue/resources/themes/lara-light-indigo/theme.css"
@@ -20,6 +22,8 @@ import Button from 'primevue/button'
 
 const app = createApp(App)
   .use(PrimeVue)
+  .use(ToastService)
+  .use(DialogService)
   .use(pinia)
   .use(http)
   .use(api_service)

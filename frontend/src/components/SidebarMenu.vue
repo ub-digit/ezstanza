@@ -16,11 +16,11 @@ export default {
             to: '/stanzas'
           }, {
             label: 'Bundles',
-            icon: 'pi pi-fw pi-file',
+            icon: 'pi pi-fw pi-book',
             to: '/bundles'
           }, {
             label: 'Tags',
-            icon: 'pi pi-fw pi-file',
+            icon: 'pi pi-fw pi-tags',
             to: '/tags'
           },
         ]

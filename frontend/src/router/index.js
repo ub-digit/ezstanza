@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
 import EditStanza from '../views/EditStanza.vue'
+import CreateStanza from '../views/CreateStanza.vue'
 import ListStanzas from '../views/ListStanzas.vue'
 
 const router = createRouter({
@@ -23,7 +24,13 @@ const router = createRouter({
       component: ListStanzas,
       meta: { auth: true }
     }, {
-      path: '/stanzas/:id',
+      path: '/stanzas/new',
+      name: 'CreateStanza',
+      component: CreateStanza,
+      meta: { auth: true }
+    },
+    {
+      path: '/stanzas/:id(\\d+)',
       name: 'EditStanza',
       component: EditStanza,
       meta: { auth: true }

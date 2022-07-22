@@ -98,6 +98,8 @@ defmodule Ezstanza.Stanzas do
     count_query = query
                   |> exclude(:preload)
                   |> exclude(:order_by)
+                  |> exclude(:limit)
+                  |> exclude(:offset)
 
     count = Repo.one(from t in count_query, select: count("*"))
     stanzas = Repo.all query

@@ -56,8 +56,12 @@ class ResourceApiService extends BaseApiService {
       .catch(this.handleErrors)
   }
 
-  async create(data) {
-
+  create(data) {
+    return axios.post(`${this.endpointUrl()}`, data)
+      .then(response => {
+        return response.data
+      })
+      .catch(this.handleErrors)
   }
 
   update(id, data) {
@@ -69,9 +73,12 @@ class ResourceApiService extends BaseApiService {
   }
 
   async delete(id) {
-
+    return axios.delete(`${this.endpointUrl()}/${id}`)
+      .then(response => {
+        return response.data
+      })
+      .catch(this.handleErrors)
   }
-
 }
 
 class StanzasApiService extends ResourceApiService {
