@@ -257,7 +257,7 @@ export default {
   <DataTable
     :value="stanzas"
     :lazy="true"
-    :paginator="true"
+    :paginator="!loading"
     :rows="pageSize"
     ref="dt"
     dataKey="id"
