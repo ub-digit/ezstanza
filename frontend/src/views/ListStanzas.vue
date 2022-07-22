@@ -44,10 +44,14 @@ export default {
     // @todo: add backend patch operation for bulk deletion?
     const onDeleteSelectedStanzas = (close) => {
       const stanzaIds = selectedStanzas.value.map((s) => s.id)
-      stanzas.value = stanzas.value.filter((s) => !stanzaIds.includes(s.id))
-      selectedStanzas.value = selectedStanzas.value.filter((s) => !stanzaIds.includes(s.id))
-      totalStanzas.value = totalStanzas.value - stanzaIds.length
-      close()
+      Promise.all(stanzaIds.map((id) => api.stanzas.delete(id))).then(() => {
+        stanzas.value = stanzas.value.filter((s) => !stanzaIds.includes(s.id))
+        selectedStanzas.value = selectedStanzas.value.filter((s) => !stanzaIds.includes(s.id))
+        totalStanzas.value = totalStanzas.value - stanzaIds.length
+        close()
+      }).catch((error) => {
+        // @todo: toast with error
+      })
     }
 
     const getOrderBy = (sortField, sortOrder) => {
