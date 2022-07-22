@@ -34,7 +34,13 @@ export default {
       api.stanzas.delete(stanza.id).then(() => {
         stanzas.value = stanzas.value.filter((s) => s.id !== stanza.id)
         selectedStanzas.value = selectedStanzas.value.filter((s) => s.id !== stanza.id)
-        totalStanzas.value = stanzas.value - 1
+        totalStanzas.value = totalStanzas.value - 1
+        if (
+            (lazyParams.value.size * (lazyParams.value.page - 1) + stanzas.value.length) < totalStanzas.value &&
+            stanzas.value.length < lazyParams.value.size
+        ) {
+          loadStanzas(toRaw(lazyParams.value))
+        }
       }).catch((error) => {
         //TODO: toast with error
       })
@@ -48,6 +54,7 @@ export default {
         stanzas.value = stanzas.value.filter((s) => !stanzaIds.includes(s.id))
         selectedStanzas.value = selectedStanzas.value.filter((s) => !stanzaIds.includes(s.id))
         totalStanzas.value = totalStanzas.value - stanzaIds.length
+        loadStanzas(toRaw(lazyParams.value))
         close()
       }).catch((error) => {
         // @todo: toast with error
@@ -64,7 +71,7 @@ export default {
     const lazyParams = ref({})
     const dt = ref()
     const selectAll  = ref(false)
-    const selectedStanzas = ref()
+    const selectedStanzas = ref([])
     const stanzas = ref([])
     const pageSize = ref(10)
     const totalStanzas = ref(0)
@@ -86,6 +93,7 @@ export default {
     }
 
     const onPage = (event) => {
+      lazyParams.value.size = event.rows
       lazyParams.value.page = event.page + 1
     }
 
@@ -118,6 +126,11 @@ export default {
 
     const loadStanzas = async (params) => {
       loading.value = true
+      params = Object.assign({}, params)
+      // Load ahead some stanzas so don't have to refetch
+      // on every deletion
+      // @todo: better name. ahead, ahead_size?
+      params.extra = 5
       await api.stanzas.list(params).then(result => {
         stanzas.value = result.data
         totalStanzas.value = result.total
@@ -263,6 +276,8 @@ export default {
     @row-unselect="onRowUnselect"
     resonsiveLayout="scroll"
     :totalRecords="totalStanzas"
+    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown" :rowsPerPageOptions="[10,25,50]"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} stanzas"
     :loading="loading"
   >
     <Column selectionMode="multiple" headerStyle="width: 3em"/>

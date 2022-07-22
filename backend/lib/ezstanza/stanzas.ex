@@ -89,12 +89,15 @@ defmodule Ezstanza.Stanzas do
   def paginate_stanzas(%{"page" => page, "size" => size} = params) do
     {page, _} = Integer.parse(page)
     {size, _} = Integer.parse(size)
+    extra = Map.get(params, "extra", "0")
+    {extra, _} = Integer.parse(extra)
 
     offset = (page - 1) * size
+    limit = size + extra
 
     query = list_query(params)
             |> offset(^offset)
-            |> limit(^size)
+            |> limit(^limit)
     count_query = query
                   |> exclude(:preload)
                   |> exclude(:order_by)
