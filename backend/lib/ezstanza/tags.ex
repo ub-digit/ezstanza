@@ -8,8 +8,48 @@ defmodule Ezstanza.Tags do
 
   alias Ezstanza.Tags.Tag
 
+
+  def base_query() do
+    from s in Tag,
+      join: u in assoc(s, :user), as: :user,
+      preload: [user: u]
+  end
+
+  defp list_query(%{} = params) do
+    base_query()
+    |> order_by(^dynamic_order_by(params["order_by"]))
+    |> where(^dynamic_where(params))
+  end
+
+  defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
+  defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
+  defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("user_desc"), do: [desc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("inserted_at"), do: [asc: dynamic([s], s.inserted_at)]
+  defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
+  defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
+  defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s], s.updated_at)]
+
+  defp dynamic_order_by(_), do: []
+
+  defp dynamic_where(params) do
+    filter_like = &(String.replace(&1, ~r"[%_]", ""))
+    Enum.reduce(params, dynamic(true), fn
+      {"name", value}, dynamic ->
+        dynamic([s], ^dynamic and s.name == ^value)
+      {"name_like", value}, dynamic ->
+        dynamic([s], ^dynamic and ilike(s.name, ^"%#{filter_like.(value)}%"))
+      {"user_name", value}, dynamic ->
+        dynamic([user: u], ^dynamic and u.name == ^value)
+      {"user_name_like", value}, dynamic ->
+        dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+      {_, _}, dynamic ->
+        dynamic
+    end)
+  end
+
   @doc """
-  Returns the list of tag.
+  Returns the list of tags.
 
   ## Examples
 
@@ -17,25 +57,71 @@ defmodule Ezstanza.Tags do
       [%Tag{}, ...]
 
   """
-  def list_tag do
-    Repo.all(Tag)
+  def list_tags(params \\ %{}) do
+    Repo.all list_query(params)
+  end
+
+  # Default order by
+  defp tags_order_by(query, nil) do
+    tags_order_by(query, "name")
+  end
+
+  defp tags_order_by(query, order_by) do
+    case order_by do
+      "name" ->
+        order_by(query, [s], asc: s.name)
+      "user_name" ->
+        order_by(query, [user: u], asc: u.name)
+      _ ->
+        query
+    end
+  end
+
+  # TODO: Generalize, macro?
+  def paginate_tags(%{"page" => page, "size" => size} = params) do
+    {page, _} = Integer.parse(page)
+    {size, _} = Integer.parse(size)
+    extra = Map.get(params, "extra", "0")
+    {extra, _} = Integer.parse(extra)
+
+    offset = (page - 1) * size
+    limit = size + extra
+
+    query = list_query(params)
+            |> offset(^offset)
+            |> limit(^limit)
+    count_query = query
+                  |> exclude(:preload)
+                  |> exclude(:order_by)
+                  |> exclude(:limit)
+                  |> exclude(:offset)
+
+    count = Repo.one(from t in count_query, select: count("*"))
+    tags = Repo.all query
+    %{
+      pages: div(count, size) + 1,
+      total: count,
+      tags: tags
+    }
   end
 
   @doc """
   Gets a single tag.
 
-  Raises `Ecto.NoResultsError` if the Tag does not exist.
+  Returns nil if the tag does not exist.
 
   ## Examples
 
-      iex> get_tag!(123)
-      %Tag{}
+      iex> get_tag(123)
+      %Stanza{}
 
-      iex> get_tag!(456)
-      ** (Ecto.NoResultsError)
+      iex> get_tag(456)
+      ** nil
 
   """
-  def get_tag!(id), do: Repo.get!(Tag, id)
+  def get_tag(id) do
+    Repo.one(from s in base_query(), where: s.id == ^id)
+  end
 
   @doc """
   Creates a tag.

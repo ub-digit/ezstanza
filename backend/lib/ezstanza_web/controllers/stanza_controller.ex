@@ -54,6 +54,14 @@ defmodule EzstanzaWeb.StanzaController do
     end
   end
 
+  def delete(conn, %{"id" => _id}) do
+    stanza = conn.assigns[:stanza]
+
+    with {:ok, %Stanza{}} <- Stanzas.delete_stanza(stanza) do
+      send_resp(conn, :no_content, "")
+    end
+  end
+
   def validate_lines(conn, %{"stanza" => %{"body" => body}}) do
     errors = body
              |> StanzaParser.parse_string()
@@ -64,13 +72,5 @@ defmodule EzstanzaWeb.StanzaController do
     conn
     |> put_status(:ok)
     |> json(%{validation_errors: errors})
-  end
-
-  def delete(conn, %{"id" => _id}) do
-    stanza = conn.assigns[:stanza]
-
-    with {:ok, %Stanza{}} <- Stanzas.delete_stanza(stanza) do
-      send_resp(conn, :no_content, "")
-    end
   end
 end

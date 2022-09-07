@@ -3,6 +3,9 @@ defmodule Ezstanza.Accounts.User do
   import Ecto.Changeset
   alias Ezstanza.AccessTokens.AccessToken
 
+  alias Ezstanza.Stanzas.Stanza
+  alias Ezstanza.Tags.Tag
+
   schema "user" do
     field :email, :string
     field :name, :string
@@ -13,6 +16,8 @@ defmodule Ezstanza.Accounts.User do
     field :password, :string, virtual: true
     field :password_hash, :string
     has_many :access_tokens, AccessToken
+    has_many :stanzas, Stanza
+    has_many :tags, Tag
 
     timestamps()
   end

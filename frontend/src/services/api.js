@@ -86,8 +86,16 @@ class StanzasApiService extends ResourceApiService {
     super('stanzas')
   }
 }
+
+class TagsApiService extends ResourceApiService {
+  constructor() {
+    super('tags')
+  }
+}
+
 const api = {
-  stanzas: new StanzasApiService()
+  stanzas: new StanzasApiService(),
+  tags: new TagsApiService()
 }
 
 export default api

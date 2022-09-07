@@ -1,9 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
+
 import EditStanza from '../views/EditStanza.vue'
 import CreateStanza from '../views/CreateStanza.vue'
 import ListStanzas from '../views/ListStanzas.vue'
+
+import EditTag from '../views/EditTag.vue'
+import CreateTag from '../views/CreateTag.vue'
+import ListTags from '../views/ListTags.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,13 +33,28 @@ const router = createRouter({
       name: 'CreateStanza',
       component: CreateStanza,
       meta: { auth: true }
-    },
-    {
+    }, {
       path: '/stanzas/:id(\\d+)',
       name: 'EditStanza',
       component: EditStanza,
       meta: { auth: true }
+    }, {
+      path: '/tags',
+      name: 'ListTags',
+      component: ListTags,
+      meta: { auth: true }
+    }, {
+      path: '/tags/new',
+      name: 'CreateTag',
+      component: CreateTag,
+      meta: { auth: true }
+    }, {
+      path: '/tags/:id(\\d+)',
+      name: 'EditTag',
+      component: EditTag,
+      meta: { auth: true }
     }
+
   ]
 })
 

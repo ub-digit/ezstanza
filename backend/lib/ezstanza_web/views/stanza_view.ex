@@ -3,7 +3,6 @@ defmodule EzstanzaWeb.StanzaView do
   alias EzstanzaWeb.StanzaView
   alias EzstanzaWeb.UserView
 
-
   def render("index.json", %{stanzas: stanzas, pages: pages, total: total}) do
     %{
       data: render_many(stanzas, StanzaView, "stanza.json"),

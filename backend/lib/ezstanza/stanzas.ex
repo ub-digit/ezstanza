@@ -13,7 +13,7 @@ defmodule Ezstanza.Stanzas do
   alias Ezstanza.Stanzas.StanzaRevision
   alias Ezstanza.Tags.Tag
 
-  def stanzas_base_query() do
+  def base_query() do
     from s in Stanza,
       join: u in assoc(s, :user), as: :user,
       join: c_r in assoc(s, :current_revision), as: :current_revision,
@@ -21,27 +21,14 @@ defmodule Ezstanza.Stanzas do
       preload: [user: u, current_revision: {c_r, user: c_r_u}]
   end
 
-  @doc """
-  Returns the list of stanza.
-
-  ## Examples
-
-      iex> list_stanza()
-      [%Stanza{}, ...]
-
-  """
-  # TODO: forgotten to add deleted flag on schema
-  def list_stanzas(params \\ %{}) do
-    Repo.all list_query(params)
-  end
-
   defp list_query(%{} = params) do
-    stanzas_base_query()
+    base_query()
     |> order_by(^dynamic_order_by(params["order_by"]))
     |> where(^dynamic_where(params))
-    #|> stanzas_order_by(Map.get(params, :order_by))
   end
 
+
+  # TOOD: macro for this?
   defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
   defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
   defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
@@ -67,6 +54,20 @@ defmodule Ezstanza.Stanzas do
       {_, _}, dynamic ->
         dynamic
     end)
+  end
+
+  @doc """
+  Returns the list of stanzas.
+
+  ## Examples
+
+      iex> list_stanza()
+      [%Stanza{}, ...]
+
+  """
+  # TODO: forgotten to add deleted flag on schema
+  def list_stanzas(params \\ %{}) do
+    Repo.all list_query(params)
   end
 
   # Default order by
@@ -116,7 +117,7 @@ defmodule Ezstanza.Stanzas do
   @doc """
   Gets a single stanza.
 
-  Returns nil if the Stanza does not exist.
+  Returns nil if the stanza does not exist.
 
   ## Examples
 
@@ -128,9 +129,8 @@ defmodule Ezstanza.Stanzas do
 
   """
   def get_stanza(id) do
-    Repo.one(from s in stanzas_base_query(), where: s.id == ^id)
+    Repo.one(from s in base_query(), where: s.id == ^id)
   end
-
 
   @doc """
   Creates a stanza.

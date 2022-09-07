@@ -2,13 +2,13 @@
 import { watch, ref, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
-import StanzaForm from '@/components/StanzaForm.vue'
+import TagForm from '@/components/TagForm.vue'
 
 export default {
   setup() {
     const route = useRoute()
-    const stanza = ref()
-    const onSubmit = useOnSubmit('stanzas', 'stanza', 'update')
+    const tag = ref()
+    const onSubmit = useOnSubmit('tags', 'tag', 'update')
     const api = inject('api')
 
     // Replace with watchEffect?
@@ -18,23 +18,23 @@ export default {
         // Triggered when leaving route, WTF!?!?
         if (typeof newId !== 'undefined') {
           //TODO: error handling
-          const result = await api.stanzas.fetch(newId)
-          stanza.value = result.data
+          const result = await api.tags.fetch(newId)
+          tag.value = result.data
         }
       },
       { immediate: true }
     )
 
     return {
-      stanza,
+      tag,
       onSubmit
     }
   },
   components: {
-    StanzaForm
+    TagForm
   }
 }
 </script>
 <template>
-  <StanzaForm v-if="stanza" :stanza="stanza" @submit="onSubmit"/>
+  <TagForm v-if="tag" :tag="tag" @submit="onSubmit"/>
 </template>
