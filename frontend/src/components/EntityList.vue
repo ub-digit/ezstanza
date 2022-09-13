@@ -1,11 +1,11 @@
 <script>
 import { inject, toRef, ref, unref, toRaw, watch, onMounted } from 'vue'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import { FilterMatchMode } from 'primevue/api'
+import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Toolbar from 'primevue/toolbar'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
+import EntitySelect from '@/components/EntitySelect.vue'
 
 export default {
   props: {
@@ -46,47 +46,74 @@ export default {
 
     const loading = ref(false)
     const lazyParams = ref({})
-    const dt = ref()
-    const selectAll  = ref(false)
-    const selectedEntities = ref([])
     const entities = ref([])
+    const totalEntities = ref()
+    const selectedEntities = ref([])
     const pageSize = ref(10)
-    const totalEntities = ref(0)
-    const expandedRows = ref([])
-
-    const expandableRows = context.slots.expansion !== undefined
-
-    // How to handle if empty? //ref or not?
-
-    const filters = Object.fromEntries(
-      props.filterColumns.map(
-        filterColumn => [
-          filterColumn.filterFieldName,
-          { value: '', matchMode: FilterMatchMode.CONTAINS }
-        ]
-      )
-    )
-    /*
-    const filters = ref({
-      'name': {value: '', matchMode: FilterMatchMode.CONTAINS},
-      'user_name': {value: '', matchMode: FilterMatchMode.CONTAINS},
-    })
-    */
-
-    const filterMatchModeOptions = [
-      { label: 'Contains', value: FilterMatchMode.CONTAINS },
-      { label: 'Equals', value: FilterMatchMode.EQUALS },
-    ]
-
-    const filterSuffix = {
-      [FilterMatchMode.CONTAINS]: '_like',
-      [FilterMatchMode.EQUALS]: ''
-    }
 
     // @todo: ugly, how to use defined standard breakpoints?
     const dialogBreakpoints = ref({
       '960px': '75vw',
       '640px': '90vw'
+    })
+
+    const loadEntities = (params) => {
+      loading.value = true
+      params = Object.assign({}, params)
+      // Load ahead some entities so don't have to refetch
+      // on every deletion
+      // @todo: better name. ahead, ahead_size?
+      params.extra = 5
+      api[props.entityNamePluralized].list(params).then(result => {
+        entities.value = result.data
+        totalEntities.value = result.total
+        loading.value = false
+      })
+    }
+
+    const loadEntitiesUnpaginated = async () => {
+      // @todo: alternatively { ...lazyParams.value } ?
+      let params = Object.assign({}, lazyParams.value)
+      delete params.page
+      delete params.size
+      let result = await api[props.entityNamePluralized].list(params)
+      return result.data
+    }
+
+    // TODO: Kludge
+    const getOrderBy = (sortField, sortOrder) => {
+      return sortField + (sortOrder === -1 ? '_desc' : '')
+    }
+
+    //TODO: Default sort by new
+    const onSort = (event) => {
+      lazyParams.value['order_by'] = getOrderBy(event.sortField, event.sortOrder)
+    }
+
+    const onPage = (event) => {
+      lazyParams.value.size = event.rows
+      lazyParams.value.page = event.page + 1
+    }
+
+    const onFilter = (filters) => {
+      for (const [filter_name, value] of Object.entries(filters)) {
+        if (value.length) {
+          lazyParams.value[filter_name] = value
+        }
+        else {
+          delete lazyParams.value[filter_name]
+        }
+      }
+    }
+
+    onMounted(() => {
+      loading.value = true
+      lazyParams.value = {
+        page: 1,
+        //size: dt.value.rows,
+        size: pageSize.value,
+        order_by: getOrderBy(defaultSortField.value, defaultSortOrder.value)
+      }
     })
 
     // Event handler with closure on entity
@@ -122,87 +149,6 @@ export default {
       })
     }
 
-    const getOrderBy = (sortField, sortOrder) => {
-      return sortField + (sortOrder === -1 ? '_desc' : '')
-    }
-
-    const onPage = (event) => {
-      lazyParams.value.size = event.rows
-      lazyParams.value.page = event.page + 1
-    }
-
-    //TODO: Default sort by new
-    const onSort = (event) => {
-      lazyParams.value['order_by'] = getOrderBy(event.sortField, event.sortOrder)
-    }
-
-    const onFilter = () => {
-      let filterParams = {}
-      for (const [filter, data] of Object.entries(filters.value)) {
-        const filter_name = filter + filterSuffix[data.matchMode]
-        if (data.value.length) {
-          lazyParams.value[filter_name] = data.value
-        }
-        else {
-          delete lazyParams.value[filter_name]
-        }
-      }
-    }
-
-    onMounted(() => {
-      loading.value = true
-      lazyParams.value = {
-        page: 1,
-        size: dt.value.rows,
-        order_by: getOrderBy(defaultSortField.value, defaultSortOrder.value)
-      }
-    })
-
-    const loadEntities = async (params) => {
-      loading.value = true
-      params = Object.assign({}, params)
-      // Load ahead some entities so don't have to refetch
-      // on every deletion
-      // @todo: better name. ahead, ahead_size?
-      params.extra = 5
-      await api[props.entityNamePluralized].list(params).then(result => {
-        entities.value = result.data
-        totalEntities.value = result.total
-        loading.value = false
-      })
-    }
-
-    const onSelectAllChange = (event) => {
-      if (event.checked) {
-        // If not all entities fit into the first page
-        // load all from backend
-        if (entities.value.length < totalEntities.value) {
-          // @todo: alternatively { ...lazyParams.value } ?
-          let params = Object.assign({}, lazyParams.value)
-          delete params.page
-          delete params.size
-          api[props.entityNamePluralized].list(params).then(result => {
-            selectAll.value = true
-            selectedEntities.value = result.data
-          })
-        }
-        else {
-          selectAll.value = true
-          selectedEntities.value = entities.value
-        }
-      }
-      else {
-        selectAll.value = false
-        selectedEntities.value = []
-      }
-    }
-    const onRowSelect = () => {
-      selectAll.value = selectedEntities.value.length === totalEntities.value
-    }
-    const onRowUnselect = () => {
-      selectAll.value = false
-    }
-
     watch(
       () => lazyParams,
       async newParams => {
@@ -223,35 +169,27 @@ export default {
       },
       { immediate: true }
     )
-     */
+    */
 
     return {
       entities,
       totalEntities,
       pageSize,
-      expandedRows,
       loading,
       selectedEntities,
-      filters,
       defaultSortField,
       defaultSortOrder,
-      onFilter,
       onSort,
       onPage,
-      onSelectAllChange,
-      onRowSelect,
-      onRowUnselect,
-      selectAll,
-      filterMatchModeOptions,
+      onFilter,
       onDeleteEntity,
       onDeleteSelectedEntities,
       dialogBreakpoints,
-      dt,
-      expandableRows
+      loadEntitiesUnpaginated
     }
   },
   components: {
-    DataTable,
+    EntitySelect,
     Column,
     Button,
     Toolbar,
@@ -287,51 +225,23 @@ export default {
     </template>
   </Toolbar>
 
-  <DataTable
-    :value="entities"
-    :lazy="true"
-    :paginator="!loading"
-    :rows="pageSize"
-    ref="dt"
-    dataKey="id"
-    :sortField="defaultSortField"
-    :sortOrder="defaultSortOrder"
-    @page="onPage($event)"
-    @sort="onSort($event)"
-    @filter="onFilter($event)"
-    filterDisplay="row"
-    v-model:filters="filters"
-    v-model:selection="selectedEntities"
-    v-model:expandedRows="expandedRows"
-    :selectAll="selectAll"
-    @select-all-change="onSelectAllChange"
-    @row-select="onRowSelect"
-    @row-unselect="onRowUnselect"
-    resonsiveLayout="scroll"
-    :totalRecords="totalEntities"
-    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown" :rowsPerPageOptions="[10,25,50]"
-    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
+  <EntitySelect
+    v-model:entities="entities"
+    v-model:selectedEntities="selectedEntities"
+    :pageSize="pageSize"
+    :totalEntities="totalEntities"
     :loading="loading"
+    :defaultSortField="defaultSortField"
+    :defaultSortOrder="defaultSortOrder"
+    @sort="onSort($event)"
+    @page="onPage($event)"
+    @filter="onFilter($event)"
+    :filterColumns="filterColumns"
+    :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
   >
-    <Column selectionMode="multiple" headerStyle="width: 3em"/>
-    <Column v-if="expandableRows" :expander="true" headerStyle="width: 3em"/>
-    <template v-for="column in filterColumns">
-      <Column
-        :field="column.fieldName"
-        :filterField="column.filterFieldName"
-        :header="column.header"
-        filterMatchMode="startsWith"
-        :ref="column.fieldName"
-        :filterMatchModeOptions="filterMatchModeOptions"
-        :sortable="true"
-      >
-        <template #filter="{ filterModel, filterCallback }">
-          <InputText type="text" v-model="filterModel.value" @keydown.enter="filterCallback()" placeholder="Search"/>
-        </template>
-      </Column>
-    </template>
     <Column field="inserted_at" header="Created" :sortable="true"/>
     <Column field="updated_at" header="Updated" :sortable="true"/>
+
     <Column style="min-with: 8rem">
       <template #body="{ data }">
         <div class="flex">
@@ -357,8 +267,5 @@ export default {
         </div>
       </template>
     </Column>
-    <template v-if="expandableRows" #expansion="{ data }">
-      <slot name="expansion" :data="data"></slot>
-    </template>
-  </DataTable>
+  </EntitySelect>
 </template>
