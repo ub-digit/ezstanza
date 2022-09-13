@@ -32,9 +32,7 @@ defmodule Ezstanza.Repo.Migrations.Stanza do
       add :tag_id, references(:tag), primary_key: true
     end
 
-    #create unique_index(:stanza_tag, [:stanza_id, :tag_id]) # Don't think needed, duplicate as primary keys index exists
-    create index(:stanza_tag, [:stanza_id])
-    create index(:stanza_tag, [:tag_id])
+    create unique_index(:config_tag, [:config_id, :tag_id])
   end
 
 end
