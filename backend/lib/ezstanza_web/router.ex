@@ -31,6 +31,7 @@ defmodule EzstanzaWeb.Router do
     resources "/stanzas", StanzaController
     post "/stanza/validate_lines", StanzaController, :validate_lines
     resources "/tags", TagController
+    resources "/configs", ConfigController
   end
 
   # Enables LiveDashboard only for development
