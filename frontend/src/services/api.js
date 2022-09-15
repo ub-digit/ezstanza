@@ -35,8 +35,12 @@ class ResourceApiService extends BaseApiService {
     super(resource)
   }
   //get?
-  fetch(id) {
-    return axios.get(`${this.endpointUrl()}/${id}`)
+  fetch(id, params) {
+    const options = params ? {
+      params: params
+    } : {}
+
+    return axios.get(`${this.endpointUrl()}/${id}`, options)
       .then(response => {
         return response.data
       })
@@ -44,7 +48,6 @@ class ResourceApiService extends BaseApiService {
   }
 
   list(params) {
-
     const options = params ? {
       params: params
     } : {}
@@ -72,7 +75,7 @@ class ResourceApiService extends BaseApiService {
       .catch(this.handleErrors)
   }
 
-  async delete(id) {
+  delete(id) {
     return axios.delete(`${this.endpointUrl()}/${id}`)
       .then(response => {
         return response.data
@@ -87,15 +90,28 @@ class StanzasApiService extends ResourceApiService {
   }
 }
 
+class StanzaRevisoinsApiService extends ResourceApiService {
+  constructor() {
+    super('stanzas_revisions')
+  }
+}
+
 class TagsApiService extends ResourceApiService {
   constructor() {
     super('tags')
   }
 }
 
+class ConfigsApiService extends ResourceApiService {
+  constructor() {
+    super('configs')
+  }
+}
+
 const api = {
   stanzas: new StanzasApiService(),
-  tags: new TagsApiService()
+  tags: new TagsApiService(),
+  configs: new ConfigsApiService()
 }
 
 export default api

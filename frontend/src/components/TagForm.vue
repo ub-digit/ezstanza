@@ -1,7 +1,7 @@
 <script>
 import {useForm} from 'vee-validate'
 import VTextField from '@/components/VTextField.vue'
-import {isRef, unref, toRaw} from 'vue'
+import {toRaw} from 'vue'
 
 export default {
   emits: ['submit'],
@@ -28,7 +28,6 @@ export default {
     return {
       onSubmit,
       isSubmitting,
-      values,
       errors
     }
   },

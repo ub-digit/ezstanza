@@ -22,7 +22,8 @@ defmodule Ezstanza.Configs.Config do
   @doc false
   def changeset(config, attrs) do
     config
-    |> cast(attrs, [])
-    |> validate_required([])
+    |> cast(attrs, [:name, :user_id, :current_config_revision_id])
+    |> validate_required([:name, :user_id])
+    |> unique_constraint(:name)
   end
 end

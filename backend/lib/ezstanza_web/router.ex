@@ -30,6 +30,8 @@ defmodule EzstanzaWeb.Router do
     get "/users", UserController, :index
     resources "/stanzas", StanzaController
     post "/stanza/validate_lines", StanzaController, :validate_lines
+    post "/stanza/validate_lines", StanzaController, :validate_lines
+    resources "/stanza_revisions", StanzaRevisionController, only: [:show, :index]
     resources "/tags", TagController
     resources "/configs", ConfigController
   end

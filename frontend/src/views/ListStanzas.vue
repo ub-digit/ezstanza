@@ -18,7 +18,6 @@ export default {
       { immediate: true }
     )
     */
-
     const filterColumns = [
       {
         fieldName: 'name',

@@ -14,12 +14,20 @@ defmodule Ezstanza.Configs do
   alias Ezstanza.Configs.Config
   alias Ezstanza.Configs.ConfigRevision
 
+  alias Ezstanza.Stanzas
+
   def config_base_query() do
     from s in Config,
       join: u in assoc(s, :user), as: :user,
       join: c_r in assoc(s, :current_revision), as: :current_revision,
+      join: c_r_s_r in assoc(c_r, :stanza_revisions), as: :stanza_revisions,
+      join: c_r_s_r_u in assoc(c_r_s_r, :user), as: :stanza_revision_user,
+      join: c_r_s_r_s in assoc(c_r_s_r, :stanza), as: :stanza,
+      join: c_r_s_r_s_u in assoc(c_r_s_r_s, :user), as: :stanza_user,
       join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
-      preload: [user: u, current_revision: {c_r, user: c_r_u}]
+      preload: [
+        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: {c_r_s_r, user: c_r_s_r_u, stanza: { c_r_s_r_s, user: c_r_s_r_s_u }}}
+      ]
   end
 
   defp config_list_query(%{} = params) do
@@ -81,13 +89,16 @@ defmodule Ezstanza.Configs do
     query = config_list_query(params)
             |> offset(^offset)
             |> limit(^limit)
+
     count_query = query
+                  |> exclude(:join)
                   |> exclude(:preload)
                   |> exclude(:order_by)
                   |> exclude(:limit)
                   |> exclude(:offset)
 
     count = Repo.one(from t in count_query, select: count("*"))
+
     configs = Repo.all query
     %{
       pages: div(count, size) + 1,
@@ -131,7 +142,7 @@ defmodule Ezstanza.Configs do
   """
   def create_config(attrs \\ %{}) do
     Multi.new()
-    |> Multi.insert(:persisted_config, Config.changeset(%Config{}, attrs))
+    |> Multi.insert(:persisted_config, change_config(%Config{}, attrs))
     |> Multi.append(update_persisted_config_multi(attrs, :insert))
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:create_config_failed)
@@ -142,7 +153,9 @@ defmodule Ezstanza.Configs do
     |> Multi.run(:config_revision, fn repo, %{persisted_config: %Config{id: config_id}} ->
       attrs = Map.merge(attrs, %{"config_id" => config_id})
       # TODO: what happens on insertion of invalid changeset?
-      repo.insert(ConfigRevision.changeset(%ConfigRevision{}, attrs))
+      change_config_revision(%ConfigRevision{}, attrs)
+      |> Changeset.put_assoc(:stanza_revisions, Stanzas.get_stanza_revisions(attrs["stanza_revisions"])) #TODO stanza_revision_ids??
+      |> repo.insert()
     end)
     |> Multi.run(:config, fn repo, %{persisted_config: config, config_revision: %ConfigRevision{id: config_revision_id}} ->
       with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do

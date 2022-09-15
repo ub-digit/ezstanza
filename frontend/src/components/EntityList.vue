@@ -1,5 +1,5 @@
 <script>
-import { inject, toRef, ref, unref, toRaw, watch, onMounted } from 'vue'
+import { inject, toRef, ref, toRaw, watch, onMounted } from 'vue'
 import { FilterMatchMode } from 'primevue/api'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -40,16 +40,16 @@ export default {
   setup(props, context) {
 
     const api = inject('api')
-
     const defaultSortField = toRef(props, 'defaultSortField')
     const defaultSortOrder = ref(-1)
-
     const loading = ref(false)
     const lazyParams = ref({})
     const entities = ref([])
     const totalEntities = ref()
     const selectedEntities = ref([])
     const pageSize = ref(10)
+
+    const expandableRows = context.slots.expansion !== undefined
 
     // @todo: ugly, how to use defined standard breakpoints?
     const dialogBreakpoints = ref({
@@ -107,7 +107,6 @@ export default {
     }
 
     onMounted(() => {
-      loading.value = true
       lazyParams.value = {
         page: 1,
         //size: dt.value.rows,
@@ -116,6 +115,15 @@ export default {
       }
     })
 
+    const maybeLoadEntities = () => {
+      if (
+        (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
+          entities.value.length < lazyParams.value.size
+      ) {
+        loadEntities(toRaw(lazyParams.value))
+      }
+    }
+
     // Event handler with closure on entity
     const onDeleteEntity = (entity, close) => {
       // TODO: Delete from selected entities
@@ -123,13 +131,8 @@ export default {
         entities.value = entities.value.filter((s) => s.id !== entity.id)
         selectedEntities.value = selectedEntities.value.filter((s) => s.id !== entity.id)
         totalEntities.value = totalEntities.value - 1
-        if (
-            (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
-            entities.value.length < lazyParams.value.size
-        ) {
-          loadEntities(toRaw(lazyParams.value))
-        }
-      }).catch((error) => {
+        maybeLoadEntities()
+    }).catch((error) => {
         //TODO: toast with error
       })
       close()
@@ -142,7 +145,7 @@ export default {
         entities.value = entities.value.filter((s) => !entityIds.includes(s.id))
         selectedEntities.value = selectedEntities.value.filter((s) => !entityIds.includes(s.id))
         totalEntities.value = totalEntities.value - entityIds.length
-        loadEntities(toRaw(lazyParams.value))
+        maybeLoadEntities()
         close()
       }).catch((error) => {
         // @todo: toast with error
@@ -185,7 +188,8 @@ export default {
       onDeleteEntity,
       onDeleteSelectedEntities,
       dialogBreakpoints,
-      loadEntitiesUnpaginated
+      loadEntitiesUnpaginated,
+      expandableRows
     }
   },
   components: {
@@ -217,11 +221,10 @@ export default {
       >
         <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
         <template #header>
-          Confirm delete selection
+          Confirm deletion
         </template>
         <span class="p-confirm-dialog-message">Are you sure you want to delete selected {{ entityNamePluralized }}?</span>
       </ConfirmDialogButton>
-
     </template>
   </Toolbar>
 
@@ -267,5 +270,6 @@ export default {
         </div>
       </template>
     </Column>
+    <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
   </EntitySelect>
 </template>

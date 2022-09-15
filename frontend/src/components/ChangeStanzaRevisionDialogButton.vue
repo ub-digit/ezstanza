@@ -1,23 +1,37 @@
 <script>
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import { ref } from 'vue'
+import {inject, ref, toRefs } from 'vue'
 
 export default {
   emits: ['accept'],
   inheritAttrs: false,
   props: {
+    stanza: {
+      type: Object,
+      required: true
+    },
     breakpoints: {
       type: Object,
       default: null
     }
   },
-  setup(_props, { emit }) {
+  setup( props, { emit }) {
     const visible = ref(false)
     const loading = ref(false)
 
-    const onOpen = () => {
+    const api = inject('api')
+
+    const { stanza } = toRefs(props)
+
+    const stanzaRevisions = ref()
+
+    const onOpen = async () => {
       visible.value = true
+      const result = await api.stanzas.fetch(stanza.value.id, { include: "revisions" })
+      console.log('onOpen result:')
+      console.dir(result)
+      //stanzaRevisions.value = result.data.stanza_revisions
     }
     const close = () => {
       visible.value = false
@@ -36,7 +50,8 @@ export default {
       loading,
       onOpen,
       onAccept,
-      onDecline
+      onDecline,
+      stanzaRevisions
     }
   },
   components: {
@@ -50,10 +65,10 @@ export default {
   <Button v-bind="$attrs" @click="onOpen"/>
   <Dialog v-model:visible="visible" :modal="true" class="p-confirm-dialog" :closeOnEscape="true" :breakpoints="breakpoints">
     <template #header>
-      <slot name="header"></slot>
+      Select stanza revision
     </template>
     <template #default>
-      <slot></slot>
+      <pre>{{ stanzaRevisions }}</pre>
     </template>
     <template #footer>
       <Button label="No" @click="onDecline" class="p-button-text" :disabled="loading"/>

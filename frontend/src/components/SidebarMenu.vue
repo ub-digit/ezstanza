@@ -15,9 +15,9 @@ export default {
             icon: 'pi pi-fw pi-file',
             to: '/stanzas'
           }, {
-            label: 'Bundles',
+            label: 'Configs',
             icon: 'pi pi-fw pi-book',
-            to: '/bundles'
+            to: '/configs'
           }, {
             label: 'Tags',
             icon: 'pi pi-fw pi-tags',

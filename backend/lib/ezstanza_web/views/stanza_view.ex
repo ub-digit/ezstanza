@@ -1,6 +1,9 @@
 defmodule EzstanzaWeb.StanzaView do
   use EzstanzaWeb, :view
+  import EzstanzaWeb.ViewRelationshipHelpers
+
   alias EzstanzaWeb.StanzaView
+  alias EzstanzaWeb.StanzaRevisionView
   alias EzstanzaWeb.UserView
 
   def render("index.json", %{stanzas: stanzas, pages: pages, total: total}) do
@@ -30,5 +33,7 @@ defmodule EzstanzaWeb.StanzaView do
       user: render_one(stanza.user, UserView, "user_snippet.json"),
       revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json"),
     }
+    |> Map.merge(maybe_render_relationship(stanza, :revisions, StanzaRevisionView, "stanza_revision.json"))
   end
+
 end

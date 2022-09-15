@@ -13,7 +13,7 @@ defmodule EzstanzaWeb.TagController do
     assigns_key: :tag
   } when action in [:show, :update, :delete]
 
-  def index(conn, %{"page" => page, "size" => size} = params) do
+  def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Tags.paginate_tags(params)
     render(conn, "index.json", tags: result.tags, pages: result.pages, total: result.total)
   end
@@ -41,7 +41,7 @@ defmodule EzstanzaWeb.TagController do
     render(conn, "show.json", tag: tag)
   end
 
-  def update(conn, %{"id" => id, "tag" => tag_params}) do
+  def update(conn, %{"id" => _id, "tag" => tag_params}) do
     user = Auth.current_user(conn)
     tag_params = Map.merge(tag_params, %{"user_id" => user.id})
     tag = conn.assigns[:tag]

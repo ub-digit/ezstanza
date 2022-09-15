@@ -51,6 +51,8 @@ defmodule Ezstanza.Stanzas do
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
         dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+      {"id_not_in", value}, dynamic ->
+        dynamic([s], ^dynamic and s.id not in ^String.split(value, ","))
       {_, _}, dynamic ->
         dynamic
     end)
@@ -84,6 +86,8 @@ defmodule Ezstanza.Stanzas do
             |> offset(^offset)
             |> limit(^limit)
     count_query = query
+                  |> exclude(:join)
+                  |> exclude(:preload)
                   |> exclude(:preload)
                   |> exclude(:order_by)
                   |> exclude(:limit)
@@ -114,6 +118,21 @@ defmodule Ezstanza.Stanzas do
   """
   def get_stanza(id) do
     Repo.one(from s in stanza_base_query(), where: s.id == ^id)
+  end
+
+  def get_stanza(id, %{"include" => includes}) do
+    query = Enum.reduce(includes, stanza_base_query(), fn
+      "revisions", query ->
+        from s in query,
+        join: s_r in assoc(s, :revisions), as: :stanza_revisions,
+        join: s_r_u in assoc(s_r, :user), as: :stanza_revision_user,
+        join: s_r_s in assoc(s_r, :stanza), as: :stanza_revision_stanza,
+        join: s_r_s_u in assoc(s_r_s, :user), as: :stanza_user,
+        preload: [revisions: {s_r, user: s_r_u, stanza: {s_r_s, user: s_r_s_u}}]
+      _, query ->
+        query
+    end)
+    Repo.one(from s in query, where: s.id == ^id)
   end
 
   @doc """
@@ -209,4 +228,53 @@ defmodule Ezstanza.Stanzas do
   def change_stanza(%Stanza{} = stanza, attrs \\ %{}) do
     Stanza.changeset(stanza, attrs)
   end
+
+  @doc """
+  Gets multiple stanza revisions.
+
+  ## Examples
+
+      iex> get_stanza_revisions([123])
+      [%Stanza{}]
+
+      iex> get_stanza_revisions([456])
+      ** []
+
+  """
+  def get_stanza_revisions(revision_ids) do
+    Repo.all(from s in StanzaRevision, where: s.id in ^revision_ids)
+  end
+
+  def stanza_revision_base_query() do
+    from s_r in StanzaRevision,
+      join: s_r_u in assoc(s_r, :user), as: :stanza_revision_user,
+      join: s in assoc(s_r, :stanza), as: :stanza,
+      join: s_u in assoc(s, :user), as: :stanza_user,
+      preload: [user: s_r_u, stanza: {s, user: s_u}],
+      order_by: [desc: s_r.id]
+  end
+
+#  def config_base_query() do
+#    from s in Config,
+#      join: u in assoc(s, :user), as: :user,
+#      join: c_r in assoc(s, :current_revision), as: :current_revision,
+#      join: c_r_s_r in assoc(c_r, :stanza_revisions), as: :stanza_revisions,
+#      join: c_r_s_r_u in assoc(c_r_s_r, :user), as: :stanza_revision_user,
+#      join: c_r_s_r_s in assoc(c_r_s_r, :stanza), as: :stanza,
+#      join: c_r_s_r_s_u in assoc(c_r_s_r_s, :user), as: :stanza_user,
+#      join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
+#      preload: [
+#        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: {c_r_s_r, user: c_r_s_r_u, stanza: { c_r_s_r_s, user: c_r_s_r_s_u }}}
+#      ]
+#  end
+
+  defp stanza_revision_list_query(%{"stanza_id" => stanza_id}) do
+    stanza_revision_base_query()
+    |> where([s], s.id == ^stanza_id)
+  end
+
+  def list_stanza_revisions(%{"stanza_id" => _stanza_id} = params) do
+    Repo.all stanza_revision_list_query(params)
+  end
+
 end

@@ -13,9 +13,16 @@ defmodule EzstanzaWeb.StanzaController do
   plug EzstanzaWeb.Plug.GetEntity, %{
     callback: {Ezstanza.Stanzas, :get_stanza},
     assigns_key: :stanza
-  } when action in [:show, :update, :delete]
+  } when action in [:update, :delete]
 
-  def index(conn, %{"page" => page, "size" => size} = params) do
+  plug EzstanzaWeb.Plug.GetEntity, %{
+    callback: {Ezstanza.Stanzas, :get_stanza},
+    params_callback: {__MODULE__, :show_params},
+    assigns_key: :stanza
+  } when action in [:show]
+
+
+  def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Stanzas.paginate_stanzas(params)
     render(conn, "index.json", stanzas: result.stanzas, pages: result.pages, total: result.total)
   end
@@ -41,6 +48,15 @@ defmodule EzstanzaWeb.StanzaController do
   def show(conn, %{"id" => _id}) do
     stanza = conn.assigns[:stanza]
     render(conn, "show.json", stanza: stanza)
+  end
+
+  def show_params(conn) do
+    Enum.reduce(conn.query_params, %{}, fn {key, value}, params ->
+      case key do
+        "include" -> Map.put(params, key, String.split(value, ","))
+        _ -> params
+      end
+    end)
   end
 
   def update(conn, %{"id" => _id, "stanza" => stanza_params}) do

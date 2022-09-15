@@ -1,11 +1,8 @@
 <script>
-import { inject, toRef, ref, unref, watch } from 'vue'
+import { toRef, ref, unref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { FilterMatchMode } from 'primevue/api'
-import Button from 'primevue/button'
-import Toolbar from 'primevue/toolbar'
-import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 
 export default {
   props: {
@@ -32,6 +29,9 @@ export default {
     pageSize: {
       type: Number
     },
+    loading: {
+      type: Boolean
+    },
     loadEntitiesUnpaginated: {
       type: Function
     }
@@ -39,16 +39,13 @@ export default {
   emits: ['update:selectedEntities', 'update:entities', 'sort', 'page', 'filter'],
   setup(props, context) {
 
-    const api = inject('api')
-
     const defaultSortField = toRef(props, 'defaultSortField')
     const defaultSortOrder = toRef(props, 'defaultSortOrder')
 
-    const loading = ref(false)
-    const dt = ref()
+    const dt = ref() //TODO: remove??
     const selectAll  = ref(false)
     //const selectedEntities = toRef(props, 'selectedEntities')
-    const selectedEntities = ref(unref(props.selectedEntities.value)) //??
+    const selectedEntities = ref(unref(props.selectedEntities)) //??
     const entities = toRef(props, 'entities')
     const pageSize = toRef(props, 'pageSize')
     const totalEntities = toRef(props, 'totalEntities')
@@ -63,13 +60,13 @@ export default {
     // from selection on filtering
     watch(entities, (newValue) => {
       if (filtersChanged) {
-        let entityIds = []
+        let ids = []
         for (const entity of newValue) {
-          entityIds[entity.id] = true
+          ids[entity.id] = true
         }
-        selectedEntities.value = selectedEntities.value.filter((entity) => {
-          return entityIds[entity.id]
-        })
+        selectedEntities.value = selectedEntities.value.filter(
+          (entity) => ids[entity.id]
+        )
         onRowSelect()
         filtersChanged = false
       }
@@ -151,7 +148,6 @@ export default {
       totalEntities,
       pageSize,
       expandedRows,
-      loading,
       selectedEntities,
       filters,
       defaultSortField,
@@ -170,10 +166,7 @@ export default {
   },
   components: {
     DataTable,
-    Column,
-    Button,
-    Toolbar,
-    ConfirmDialogButton
+    Column
   }
 }
 </script>
@@ -200,7 +193,8 @@ export default {
     @row-unselect="onRowUnselect"
     resonsiveLayout="scroll"
     :totalRecords="totalEntities"
-    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown" :rowsPerPageOptions="[10,25,50]"
+    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+    :rowsPerPageOptions="[10,25,50]"
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
     :loading="loading"
   >

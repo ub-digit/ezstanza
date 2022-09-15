@@ -3,6 +3,7 @@ defmodule EzstanzaWeb.ConfigView do
   alias EzstanzaWeb.ConfigView
 
   alias EzstanzaWeb.UserView
+  alias EzstanzaWeb.StanzaRevisionView
 
   def render("index.json", %{configs: configs, pages: pages, total: total}) do
     %{
@@ -29,6 +30,7 @@ defmodule EzstanzaWeb.ConfigView do
       updated_at: config.updated_at,
       user: render_one(config.user, UserView, "user_snippet.json"),
       revision_user: render_one(config.current_revision.user, UserView, "user_snippet.json"),
+      stanza_revisions: render_many(config.current_revision.stanza_revisions, StanzaRevisionView, "stanza_revision.json"),
     }
   end
 end

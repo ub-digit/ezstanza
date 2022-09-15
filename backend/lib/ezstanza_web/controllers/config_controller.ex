@@ -8,12 +8,12 @@ defmodule EzstanzaWeb.ConfigController do
 
   action_fallback EzstanzaWeb.FallbackController
 
-  plug EzconfigWeb.Plug.GetEntity, %{
-    callback: {Ezconfig.Configs, :get_config},
+  plug EzstanzaWeb.Plug.GetEntity, %{
+    callback: {Ezstanza.Configs, :get_config},
     assigns_key: :config
   } when action in [:show, :update, :delete]
 
-  def index(conn, %{"page" => page, "size" => size} = params) do
+  def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Configs.paginate_configs(params)
     render(conn, "index.json", configs: result.configs, pages: result.pages, total: result.total)
   end

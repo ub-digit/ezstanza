@@ -4,16 +4,18 @@ import {EditorView, gutter, GutterMarker} from "@codemirror/view"
 import {StateField, StateEffect, RangeSet} from "@codemirror/state"
 import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
-import {isRef, unref, toRaw} from 'vue'
+import {toRaw} from 'vue'
 
 import {syntaxTree, Language, LanguageSupport} from '@codemirror/language'
 import {linter, lintGutter} from '@codemirror/lint'
 
+/*
 import {parser} from '../lezer/dist/index.es.js'
 import {styleTags, tags as t} from "@lezer/highlight"
 import {LRLanguage} from "@codemirror/language"
 import {javascript, esLint} from "@codemirror/lang-javascript"
 import Linter from "eslint4b-prebuilt"
+*/
 
 export default {
   emits: ['submit'],
@@ -120,6 +122,7 @@ export default {
     }))
 
     //extensions.push(ezProxyLinter)
+    /*
 
     extensions.push(linter(esLint(new Linter())))
     extensions.push(javascript())
@@ -136,6 +139,7 @@ export default {
     const stanzaLanguage = LRLanguage.define({
       parser: stanzaParser
     })
+    */
 
     //extensions.push(new LanguageSupport(stanzaLanguage))
 
@@ -157,7 +161,6 @@ export default {
       extensions,
       onSubmit,
       isSubmitting,
-      values,
       errors
     }
   },

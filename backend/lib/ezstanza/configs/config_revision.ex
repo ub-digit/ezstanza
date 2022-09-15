@@ -3,12 +3,15 @@ defmodule Ezstanza.Configs.ConfigRevision do
   import Ecto.Changeset
 
   alias Ezstanza.Configs.Config
+  alias Ezstanza.Stanzas.StanzaRevision
   alias Ezstanza.Accounts.User
 
   schema "config_revision" do
     belongs_to :config, Config
     belongs_to :user, User
-
+    many_to_many :stanza_revisions, StanzaRevision,
+      join_through: "config_revision_stanza_revision",
+      on_replace: :delete
     timestamps()
   end
 

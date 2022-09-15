@@ -91,6 +91,7 @@ defmodule Ezstanza.Tags do
             |> offset(^offset)
             |> limit(^limit)
     count_query = query
+                  |> exclude(:join)
                   |> exclude(:preload)
                   |> exclude(:order_by)
                   |> exclude(:limit)
