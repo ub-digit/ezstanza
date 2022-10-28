@@ -1,13 +1,14 @@
 <script>
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import {inject, ref, toRefs } from 'vue'
+import Dropdown from 'primevue/dropdown';
+import {inject, ref, toRef, toRefs } from 'vue'
 
 export default {
   emits: ['accept'],
   inheritAttrs: false,
   props: {
-    stanza: {
+    currentRevision: {
       type: Object,
       required: true
     },
@@ -18,20 +19,24 @@ export default {
   },
   setup( props, { emit }) {
     const visible = ref(false)
-    const loading = ref(false)
+    const loading = ref(true)
 
+    const currentRevision = toRef(props, 'currentRevision');
+
+    const selectedRevision = ref(currentRevision.value)
+    const revisions = ref()
+
+    const dayjs = inject('dayjs')
     const api = inject('api')
-
-    const { stanza } = toRefs(props)
-
-    const stanzaRevisions = ref()
 
     const onOpen = async () => {
       visible.value = true
-      const result = await api.stanzas.fetch(stanza.value.id, { include: "revisions" })
+      //const result = await api.stanzas.fetch(stanza.value.id, { include: "revisions" })
+      const result = await api.stanza_revisions.list({ stanza_id: selectedRevision.value.stanza_id })
       console.log('onOpen result:')
       console.dir(result)
-      //stanzaRevisions.value = result.data.stanza_revisions
+      revisions.value = result.data
+      loading.value = false
     }
     const close = () => {
       visible.value = false
@@ -51,12 +56,16 @@ export default {
       onOpen,
       onAccept,
       onDecline,
-      stanzaRevisions
+      revisions,
+      selectedRevision,
+      dayjs,
+      loading
     }
   },
   components: {
     Button,
-    Dialog
+    Dialog,
+    Dropdown
   }
 }
 
@@ -68,7 +77,20 @@ export default {
       Select stanza revision
     </template>
     <template #default>
-      <pre>{{ stanzaRevisions }}</pre>
+      <div class="flex flex-column">
+        <Dropdown :loading="loading" v-model="selectedRevision" dataKey="id" :options="revisions">
+          <template #option="{ option }">
+            <span :class="{'text-green-700': option.is_current_revision}">
+              Revision: {{ option.id }} ({{ dayjs(option.updated_at).format('L LT') }})
+            </span>
+          </template>
+          <template #value="{ value }">
+            <span :class="{'text-green-700': value.is_current_revision}">
+              Revision: {{ value.id }} ({{ dayjs(value.updated_at).format('L LT') }})
+            </span>
+          </template>
+        </Dropdown>
+      </div>
     </template>
     <template #footer>
       <Button label="No" @click="onDecline" class="p-button-text" :disabled="loading"/>

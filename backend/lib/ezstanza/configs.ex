@@ -5,6 +5,7 @@ defmodule Ezstanza.Configs do
 
   import Ecto.Query, warn: false
   import Ezstanza.TagsRelationship
+  import Ezstanza.Pagination
   use Ezstanza.MultiHelpers, :config
 
   alias Ecto.Multi
@@ -14,19 +15,30 @@ defmodule Ezstanza.Configs do
   alias Ezstanza.Configs.Config
   alias Ezstanza.Configs.ConfigRevision
 
+  alias Ezstanza.Stanzas.StanzaRevision
+
   alias Ezstanza.Stanzas
 
   def config_base_query() do
-    from s in Config,
-      join: u in assoc(s, :user), as: :user,
-      join: c_r in assoc(s, :current_revision), as: :current_revision,
-      join: c_r_s_r in assoc(c_r, :stanza_revisions), as: :stanza_revisions,
-      join: c_r_s_r_u in assoc(c_r_s_r, :user), as: :stanza_revision_user,
-      join: c_r_s_r_s in assoc(c_r_s_r, :stanza), as: :stanza,
-      join: c_r_s_r_s_u in assoc(c_r_s_r_s, :user), as: :stanza_user,
+    stanza_revisions_preloader = fn config_revision_ids ->
+      Repo.all(from s_r in Stanzas.stanza_revision_base_query,
+        join: s_r_c_r in assoc(s_r, :config_revisions),
+        where: s_r_c_r.id in ^config_revision_ids,
+        preload: [config_revisions: s_r_c_r]
+      )
+      |> Enum.flat_map(fn stanza_revision ->
+        Enum.map(stanza_revision.config_revisions, fn config_revision ->
+          {config_revision.id, stanza_revision}
+        end)
+      end)
+    end
+
+    from c in Config,
+      join: u in assoc(c, :user), as: :user,
+      join: c_r in assoc(c, :current_revision), as: :current_revision,
       join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
       preload: [
-        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: {c_r_s_r, user: c_r_s_r_u, stanza: { c_r_s_r_s, user: c_r_s_r_s_u }}}
+        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: ^stanza_revisions_preloader}
       ]
   end
 
@@ -77,34 +89,8 @@ defmodule Ezstanza.Configs do
   end
 
   # TODO: Generalize, macro?
-  def paginate_configs(%{"page" => page, "size" => size} = params) do
-    {page, _} = Integer.parse(page)
-    {size, _} = Integer.parse(size)
-    extra = Map.get(params, "extra", "0")
-    {extra, _} = Integer.parse(extra)
-
-    offset = (page - 1) * size
-    limit = size + extra
-
-    query = config_list_query(params)
-            |> offset(^offset)
-            |> limit(^limit)
-
-    count_query = query
-                  |> exclude(:join)
-                  |> exclude(:preload)
-                  |> exclude(:order_by)
-                  |> exclude(:limit)
-                  |> exclude(:offset)
-
-    count = Repo.one(from t in count_query, select: count("*"))
-
-    configs = Repo.all query
-    %{
-      pages: div(count, size) + 1,
-      total: count,
-      configs: configs
-    }
+  def paginate_configs(%{"page" => _page, "size" => _size} = params) do
+    paginate_entries(config_list_query(params), params)
   end
 
   @doc """

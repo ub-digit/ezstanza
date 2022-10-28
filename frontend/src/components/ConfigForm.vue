@@ -40,7 +40,7 @@ export default {
     const expandedRows = ref([])
 
     const onSubmit = handleSubmit((values, context) => {
-      values.stanza_revisions = values.stanza_revisions.map( stanza => stanza.revision_id );
+      values.stanza_revisions = values.stanza_revisions.map( stanza_revision => stanza_revision.id );
       emit('submit', values, context)
     })
 
@@ -77,10 +77,9 @@ export default {
     watch(
       () => configStanzas,
       (newConfigStanzas) => {
-        console.log('triggered')
         if (newConfigStanzas.value.length) {
           lazyParams.value.id_not_in = newConfigStanzas.value.map(
-            (stanza) => stanza.id
+            (stanza_revision) => stanza_revision.id
           ).join(',')
         }
         else {
@@ -91,8 +90,10 @@ export default {
     )
 
     const loadStanzas = (params) => {
+      console.log('loading')
+      console.dir(params)
       loading.value = true
-      api.stanzas.list(params).then(result => {
+      api.stanza_revisions.list(params).then(result => {
         stanzas.value = result.data
         totalStanzas.value = result.total
         loading.value = false
@@ -104,7 +105,7 @@ export default {
       let params = Object.assign({}, lazyParams.value)
       delete params.page
       delete params.size
-      let result = await api[props.stanzaNamePluralized].list(params)
+      let result = await api.stanza_revisions.list(params)
       return result.data
     }
 
@@ -138,9 +139,11 @@ export default {
     const openAddStanzasModal = () => {
       displayAddStanzasModal.value = true
     }
+
     const closeAddStanzasModal = () => {
       displayAddStanzasModal.value = false
     }
+
     const addStanzas = () => {
       configStanzas.value = configStanzas.value.concat(selectedStanzas.value)
       selectedStanzas.value = []
@@ -154,6 +157,7 @@ export default {
         ids[stanza.id] = true
       }
       configStanzas.value = configStanzas.value.filter((entity) => !ids[entity.id])
+      selectedStanzas.value = []
       close()
     }
 
@@ -167,6 +171,7 @@ export default {
       lazyParams.value.page = 1
       lazyParams.value.size = pageSize.value
       lazyParams.value.order_by = getOrderBy(defaultSortField.value, defaultSortOrder.value)
+      lazyParams.value.is_current_revision = true
     })
 
     watch(
@@ -320,7 +325,7 @@ export default {
         </template>
       </Column>
       <Column field="updated_at" header="Updated" :sortable="true"/>
-      <Column field="revision_id" header="Revision" :sortable="false"/>
+      <Column field="id" header="Revision" :sortable="false"/>
 
       <Column>
         <template #body="{ data }">
@@ -329,7 +334,7 @@ export default {
               icon="pi pi-pencil"
               class="p-button-text p-button-info"
               :breakpoints="dialogBreakpoints"
-              :stanza="data"
+              :currentRevision="data"
               @accept="onDeleteEntity(data, $event)"
             >
               <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />

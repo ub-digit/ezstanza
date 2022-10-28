@@ -31,7 +31,7 @@ defmodule EzstanzaWeb.StanzaView do
       inserted_at: stanza.inserted_at,
       updated_at: stanza.updated_at,
       user: render_one(stanza.user, UserView, "user_snippet.json"),
-      revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json"),
+      revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json")
     }
     |> Map.merge(maybe_render_relationship(stanza, :revisions, StanzaRevisionView, "stanza_revision.json"))
   end

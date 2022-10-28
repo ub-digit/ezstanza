@@ -5,6 +5,7 @@ defmodule Ezstanza.Stanzas do
 
   import Ecto.Query, warn: false
   import Ezstanza.TagsRelationship
+  import Ezstanza.Pagination
   use Ezstanza.MultiHelpers, :stanza
 
   alias Ecto.Multi
@@ -40,17 +41,19 @@ defmodule Ezstanza.Stanzas do
 
   defp dynamic_order_by(_), do: []
 
+  # TODO: put in helper module
+  defp filter_like(string), do: String.replace(string, ~r"[%_]", "")
+
   defp dynamic_where(params) do
-    filter_like = &(String.replace(&1, ~r"[%_]", ""))
     Enum.reduce(params, dynamic(true), fn
       {"name", value}, dynamic ->
         dynamic([s], ^dynamic and s.name == ^value)
       {"name_like", value}, dynamic ->
-        dynamic([s], ^dynamic and ilike(s.name, ^"%#{filter_like.(value)}%"))
+        dynamic([s], ^dynamic and ilike(s.name, ^"%#{filter_like(value)}%"))
       {"user_name", value}, dynamic ->
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
-        dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+        dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like(value)}%"))
       {"id_not_in", value}, dynamic ->
         dynamic([s], ^dynamic and s.id not in ^String.split(value, ","))
       {_, _}, dynamic ->
@@ -72,34 +75,8 @@ defmodule Ezstanza.Stanzas do
     Repo.all list_query(params)
   end
 
-  # TODO: Generalize, macro?
   def paginate_stanzas(%{"page" => page, "size" => size} = params) do
-    {page, _} = Integer.parse(page)
-    {size, _} = Integer.parse(size)
-    extra = Map.get(params, "extra", "0")
-    {extra, _} = Integer.parse(extra)
-
-    offset = (page - 1) * size
-    limit = size + extra
-
-    query = list_query(params)
-            |> offset(^offset)
-            |> limit(^limit)
-    count_query = query
-                  |> exclude(:join)
-                  |> exclude(:preload)
-                  |> exclude(:preload)
-                  |> exclude(:order_by)
-                  |> exclude(:limit)
-                  |> exclude(:offset)
-
-    count = Repo.one(from t in count_query, select: count("*"))
-    stanzas = Repo.all query
-    %{
-      pages: div(count, size) + 1,
-      total: count,
-      stanzas: stanzas
-    }
+    paginate_entries(list_query(params), params)
   end
 
   @doc """
@@ -120,7 +97,9 @@ defmodule Ezstanza.Stanzas do
     Repo.one(from s in stanza_base_query(), where: s.id == ^id)
   end
 
-  def get_stanza(id, %{"include" => includes}) do
+  #def get_stanza(id, %{"include" => includes} = params) do
+  def get_stanza(id, %{} = params) do
+    includes = Map.get(params, "includes", [])
     query = Enum.reduce(includes, stanza_base_query(), fn
       "revisions", query ->
         from s in query,
@@ -229,6 +208,8 @@ defmodule Ezstanza.Stanzas do
     Stanza.changeset(stanza, attrs)
   end
 
+
+  # Used for put_assoc in configs context, put in configs.ex or rename for clarity?
   @doc """
   Gets multiple stanza revisions.
 
@@ -247,34 +228,62 @@ defmodule Ezstanza.Stanzas do
 
   def stanza_revision_base_query() do
     from s_r in StanzaRevision,
-      join: s_r_u in assoc(s_r, :user), as: :stanza_revision_user,
       join: s in assoc(s_r, :stanza), as: :stanza,
       join: s_u in assoc(s, :user), as: :stanza_user,
+      join: s_r_u in assoc(s_r, :user), as: :user,
       preload: [user: s_r_u, stanza: {s, user: s_u}],
-      order_by: [desc: s_r.id]
+      select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", s_r.id, s.current_stanza_revision_id)},
+      #select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)},
+      order_by: [desc: s_r.id] #TODO: remove this!
   end
 
-#  def config_base_query() do
-#    from s in Config,
-#      join: u in assoc(s, :user), as: :user,
-#      join: c_r in assoc(s, :current_revision), as: :current_revision,
-#      join: c_r_s_r in assoc(c_r, :stanza_revisions), as: :stanza_revisions,
-#      join: c_r_s_r_u in assoc(c_r_s_r, :user), as: :stanza_revision_user,
-#      join: c_r_s_r_s in assoc(c_r_s_r, :stanza), as: :stanza,
-#      join: c_r_s_r_s_u in assoc(c_r_s_r_s, :user), as: :stanza_user,
-#      join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
-#      preload: [
-#        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: {c_r_s_r, user: c_r_s_r_u, stanza: { c_r_s_r_s, user: c_r_s_r_s_u }}}
-#      ]
-#  end
-
-  defp stanza_revision_list_query(%{"stanza_id" => stanza_id}) do
+  #defp stanza_revision_list_query(%{"stanza_id" => stanza_id}) do
+  defp stanza_revision_list_query(%{} = params) do
     stanza_revision_base_query()
-    |> where([s], s.id == ^stanza_id)
+    |> where(^stanza_revisions_dynamic_where(params))
   end
 
-  def list_stanza_revisions(%{"stanza_id" => _stanza_id} = params) do
+  def list_stanza_revisions(%{} = params) do
     Repo.all stanza_revision_list_query(params)
   end
+
+  def paginate_stanza_revisions(%{"page" => page, "size" => size} = params) do
+    paginate_entries(stanza_revision_list_query(params), params)
+  end
+
+  defp stanza_revisions_dynamic_where(params) do
+    Enum.reduce(params, dynamic(true), fn
+      {"name", value}, dynamic ->
+        dynamic([stanza: s], ^dynamic and s.name == ^value)
+      {"name_like", value}, dynamic ->
+        dynamic([stanza: s], ^dynamic and ilike(s.name, ^"%#{filter_like(value)}%"))
+      {"user_name", value}, dynamic ->
+        dynamic([user: u], ^dynamic and u.name == ^value)
+      {"user_name_like", value}, dynamic ->
+        dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like(value)}%"))
+      {"id_not_in", value}, dynamic ->
+        dynamic([s_r], ^dynamic and s_r.id not in ^String.split(value, ","))
+      {"stanza_id", value}, dynamic ->
+        dynamic([s_r], ^dynamic and s_r.stanza_id == ^value)
+      {"is_current_revision", true}, dynamic ->
+        dynamic([s_r, s], ^dynamic and s_r.id == s.current_stanza_revision_id)
+      {"is_current_revision", false}, dynamic ->
+        dynamic([s_r, s], ^dynamic and s_r.id != s.current_stanza_revision_id)
+      {_, _}, dynamic ->
+        dynamic
+    end)
+  end
+
+  defp stanza_revisions_dynamic_order_by("id"), do: [asc: dynamic([s_r], s_r.id)]
+  defp stanza_revisions_dynamic_order_by("id_desc"), do: [desc: dynamic([s_r], s_r.id)]
+  defp stanza_revisions_dynamic_order_by("name"), do: [asc: dynamic([stanza: s], s.name)]
+  defp stanza_revisions_dynamic_order_by("name_desc"), do: [desc: dynamic([stanza: s], s.name)]
+  defp stanza_revisions_dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
+  defp stanza_revisions_dynamic_order_by("user_desc"), do: [desc: dynamic([user: u], u.name)]
+  defp stanza_revisions_dynamic_order_by("inserted_at"), do: [asc: dynamic([s_r], s_r.inserted_at)]
+  defp stanza_revisions_dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s_r], s_r.inserted_at)]
+  defp stanza_revisions_dynamic_order_by("updated_at"), do: [asc: dynamic([s_r], s_r.updated_at)]
+  defp stanza_revisions_dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s_r], s_r.updated_at)]
+  defp stanza_revisions_dynamic_order_by(_), do: []
 
 end

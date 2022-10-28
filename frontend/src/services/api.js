@@ -92,7 +92,7 @@ class StanzasApiService extends ResourceApiService {
 
 class StanzaRevisoinsApiService extends ResourceApiService {
   constructor() {
-    super('stanzas_revisions')
+    super('stanza_revisions')
   }
 }
 
@@ -110,6 +110,7 @@ class ConfigsApiService extends ResourceApiService {
 
 const api = {
   stanzas: new StanzasApiService(),
+  stanza_revisions: new StanzaRevisoinsApiService(),
   tags: new TagsApiService(),
   configs: new ConfigsApiService()
 }

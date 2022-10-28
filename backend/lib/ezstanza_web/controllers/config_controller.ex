@@ -15,7 +15,7 @@ defmodule EzstanzaWeb.ConfigController do
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Configs.paginate_configs(params)
-    render(conn, "index.json", configs: result.configs, pages: result.pages, total: result.total)
+    render(conn, "index.json", configs: result.entries, pages: result.pages, total: result.total)
   end
 
   def index(conn, params) do

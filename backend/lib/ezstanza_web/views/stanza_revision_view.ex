@@ -4,6 +4,15 @@ defmodule EzstanzaWeb.StanzaRevisionView do
   alias EzstanzaWeb.StanzaRevisionView
   alias EzstanzaWeb.UserView
 
+
+  def render("index.json", %{stanza_revisions: stanza_revisions, pages: pages, total: total}) do
+    %{
+      data: render_many(stanza_revisions, StanzaRevisionView, "stanza_revision.json"),
+      pages: pages,
+      total: total
+    }
+  end
+
   def render("index.json", %{stanza_revisions: stanza_revisions}) do
     %{data: render_many(stanza_revisions, StanzaRevisionView, "stanza_revision.json")}
   end
@@ -14,8 +23,9 @@ defmodule EzstanzaWeb.StanzaRevisionView do
 
   def render("stanza_revision.json", %{stanza_revision: stanza_revision}) do
     %{
-      id: stanza_revision.stanza.id,
-      revision_id: stanza_revision.id,
+      id: stanza_revision.id,
+      stanza_id: stanza_revision.stanza_id,
+      is_current_revision: stanza_revision.is_current_revision,
       name: stanza_revision.stanza.name,
       body: stanza_revision.body,
       inserted_at: stanza_revision.inserted_at,

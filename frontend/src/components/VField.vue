@@ -28,19 +28,19 @@ export default {
 // increase margin if helptext?
 </script>
 <template>
-  <div class="field mb-5">
+  <div class="v-field mb-5">
     <slot :handleBlur="handleBlur" :handleChange="handleChange" :value="value" :hasErrors="!!errorMessage" :meta="meta"></slot>
     <small class="field-text" v-if="!!errorMessage" :class="{ 'p-error': !!errorMessage }">
       {{ errorMessage }}
     </small>
-    <small class="field-text text-600" v-else-if="helpText">{{ helpText }}</small>
+    <small class="v-field-text text-600" v-else-if="helpText">{{ helpText }}</small>
   </div>
 </template>
 <style>
-.field {
+.v-field {
   position: relative;
 }
-.field-text {
+.v-field-text {
   position: absolute;
   top: 100%;
   left: 0;

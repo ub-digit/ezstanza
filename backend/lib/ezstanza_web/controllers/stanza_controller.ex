@@ -24,7 +24,7 @@ defmodule EzstanzaWeb.StanzaController do
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Stanzas.paginate_stanzas(params)
-    render(conn, "index.json", stanzas: result.stanzas, pages: result.pages, total: result.total)
+    render(conn, "index.json", stanzas: result.entries, pages: result.pages, total: result.total)
   end
 
   def index(conn, params) do
