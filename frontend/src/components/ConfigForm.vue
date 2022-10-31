@@ -31,7 +31,7 @@ export default {
       }
     })
 
-    const configStanzas = useFieldModel('stanza_revisions')
+    const configStanzaRevisions = useFieldModel('stanza_revisions')
 
     const stanzas = ref([])
     const api = inject('api')
@@ -75,7 +75,7 @@ export default {
     const pageSize = ref(50)
 
     watch(
-      () => configStanzas,
+      () => configStanzaRevisions,
       (newConfigStanzas) => {
         if (newConfigStanzas.value.length) {
           lazyParams.value.id_not_in = newConfigStanzas.value.map(
@@ -145,9 +145,16 @@ export default {
     }
 
     const addStanzas = () => {
-      configStanzas.value = configStanzas.value.concat(selectedStanzas.value)
+      configStanzaRevisions.value = configStanzaRevisions.value.concat(selectedStanzas.value)
       selectedStanzas.value = []
       closeAddStanzasModal()
+    }
+
+    const onSetStanzaRevision = (newRevision) => {
+      let i = configStanzaRevisions.value.findIndex(
+        revision => revision.stanza_id === newRevision.value.stanza_id
+      )
+      configStanzaRevisions.value[i] = newRevision.value
     }
 
     //TODO: current_revision_id should be used??
@@ -156,7 +163,7 @@ export default {
       for (const stanza of selectedConfigStanzas.value) {
         ids[stanza.id] = true
       }
-      configStanzas.value = configStanzas.value.filter((entity) => !ids[entity.id])
+      configStanzaRevisions.value = configStanzaRevisions.value.filter((entity) => !ids[entity.id])
       selectedStanzas.value = []
       close()
     }
@@ -184,7 +191,7 @@ export default {
 
     return {
       stanzas,
-      configStanzas,
+      configStanzaRevisions,
       totalStanzas,
       pageSize,
       loading,
@@ -208,6 +215,7 @@ export default {
       addStanzas,
       displayAddStanzasModal,
       onRemoveSelectedStanzas,
+      onSetStanzaRevision,
       dialogBreakpoints
     }
   },
@@ -267,7 +275,7 @@ export default {
             <Button type="button" label="Add" icon="pi pi-plus" @click="addStanzas"/>
           </template>
         </Dialog>
-        <ConfirmDialogButton v-if="configStanzas.length"
+        <ConfirmDialogButton v-if="configStanzaRevisions.length"
           label="Remove stanzas"
           icon="pi pi-trash"
           class="p-button-danger"
@@ -284,8 +292,8 @@ export default {
       </template>
     </Toolbar>
 
-    <DataTable v-if="configStanzas.length"
-      :value="configStanzas"
+    <DataTable v-if="configStanzaRevisions.length"
+      :value="configStanzaRevisions"
       :rows="pageSize"
       dataKey="id"
       :sortField="defaultSortField"
@@ -335,7 +343,7 @@ export default {
               class="p-button-text p-button-info"
               :breakpoints="dialogBreakpoints"
               :currentRevision="data"
-              @accept="onDeleteEntity(data, $event)"
+              @accept="onSetStanzaRevision"
             >
               <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
               <template #header>

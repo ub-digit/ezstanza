@@ -31,10 +31,7 @@ export default {
 
     const onOpen = async () => {
       visible.value = true
-      //const result = await api.stanzas.fetch(stanza.value.id, { include: "revisions" })
       const result = await api.stanza_revisions.list({ stanza_id: selectedRevision.value.stanza_id })
-      console.log('onOpen result:')
-      console.dir(result)
       revisions.value = result.data
       loading.value = false
     }
@@ -43,8 +40,8 @@ export default {
       loading.value = false
     }
     const onAccept = () => {
-      loading.value = true
-      emit('accept', close)
+      emit('accept', selectedRevision)
+      close()
     }
     const onDecline = () => {
       close()
@@ -93,8 +90,8 @@ export default {
       </div>
     </template>
     <template #footer>
-      <Button label="No" @click="onDecline" class="p-button-text" :disabled="loading"/>
-      <Button label="Yes" @click="onAccept"  :autofocus="true" :disabled="loading"/>
+      <Button label="Cancel" @click="onDecline" class="p-button-text" :disabled="loading"/>
+      <Button label="Change" @click="onAccept"  :autofocus="true" :disabled="loading"/>
     </template>
   </Dialog>
 </template>
