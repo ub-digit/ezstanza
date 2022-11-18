@@ -215,7 +215,7 @@ defmodule Ezstanza.StanzaParser do
   def error_message(error) do
     messages = %{
       :missing_title => "Stanza requires a title",
-      :multiple_title => "Stanza has multiple titles"
+      :multiple_titles => "Stanza has multiple titles"
     }
     Map.get(messages, error, "Unknown error")
   end

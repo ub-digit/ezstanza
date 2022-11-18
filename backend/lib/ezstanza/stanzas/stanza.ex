@@ -15,6 +15,12 @@ defmodule Ezstanza.Stanzas.Stanza do
     belongs_to :current_revision, StanzaRevision,
       foreign_key: :current_stanza_revision_id
     belongs_to :user, User
+
+    has_many :configs, through: [:revisions, :config_revisions, :config] # Remove?
+
+    has_many :current_configs, through: [:revisions, :current_configs]
+    has_many :current_revision_current_configs, through: [:current_revision, :current_configs]
+
     timestamps()
   end
 

@@ -242,34 +242,34 @@ export default {
     :filterColumns="filterColumns"
     :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
   >
-    <Column field="inserted_at" header="Created" :sortable="true"/>
-    <Column field="updated_at" header="Updated" :sortable="true"/>
-
-    <Column style="min-with: 8rem">
-      <template #body="{ data }">
-        <div class="flex">
-          <router-link
-            custom
-            :to="{ name: editRouteName, params: { id: data.id }, query: { destination: destinationPath} }"
-            v-slot="{ navigate }"
-          >
-            <Button icon="pi pi-pencil" class="p-button-text p-button-info" @click="navigate"/>
-          </router-link>
-          <ConfirmDialogButton
-            icon="pi pi-trash"
-            class="p-button-text p-button-warning"
-            :breakpoints="dialogBreakpoints"
-            @accept="onDeleteEntity(data, $event)"
-          >
-            <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
-            <template #header>
-              Confirm delete
-            </template>
-            <span class="p-confirm-dialog-message">Are you sure you want to delete {{ entityName }}<b>"{{data.name}}"</b>?</span>
-          </ConfirmDialogButton>
-        </div>
-      </template>
-    </Column>
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
+    <template #reserved>
+      <Column field="updated_at" header="Updated" :sortable="true"/>
+      <Column style="min-with: 8rem">
+        <template #body="{ data }">
+          <div class="flex">
+            <router-link
+              custom
+              :to="{ name: editRouteName, params: { id: data.id }, query: { destination: destinationPath} }"
+              v-slot="{ navigate }"
+            >
+              <Button icon="pi pi-pencil" class="p-button-text p-button-info" @click="navigate"/>
+            </router-link>
+            <ConfirmDialogButton
+              icon="pi pi-trash"
+              class="p-button-text p-button-warning"
+              :breakpoints="dialogBreakpoints"
+              @accept="onDeleteEntity(data, $event)"
+            >
+              <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
+              <template #header>
+                Confirm delete
+              </template>
+              <span class="p-confirm-dialog-message">Are you sure you want to delete {{ entityName }}<b>"{{data.name}}"</b>?</span>
+            </ConfirmDialogButton>
+          </div>
+        </template>
+      </Column>
+    </template>
   </EntitySelect>
 </template>

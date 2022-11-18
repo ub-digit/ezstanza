@@ -13,7 +13,7 @@ defmodule Ezstanza.Configs.Config do
       on_replace: :delete
     has_many :revisions, ConfigRevision
     belongs_to :current_revision, ConfigRevision,
-      foreign_key: :current_config_revision_id
+      foreign_key: :current_config_revision_id # rename to current_revision_id, same for stanzas etc?
     belongs_to :user, User
 
     timestamps()

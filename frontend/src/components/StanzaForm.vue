@@ -1,13 +1,15 @@
 <script>
 import {useForm} from 'vee-validate'
+import {ref, toRef, unref, toRaw, inject, computed, watch} from 'vue'
 import {EditorView, gutter, GutterMarker} from "@codemirror/view"
 import {StateField, StateEffect, RangeSet} from "@codemirror/state"
-import VCodemirrorField from '@/components/VCodemirrorField.vue'
-import VTextField from '@/components/VTextField.vue'
-import {toRaw} from 'vue'
 
 import {syntaxTree, Language, LanguageSupport} from '@codemirror/language'
 import {linter, lintGutter} from '@codemirror/lint'
+
+import VCodemirrorField from '@/components/VCodemirrorField.vue'
+import VTextField from '@/components/VTextField.vue'
+import Checkbox from 'primevue/checkbox'
 
 /*
 import {parser} from '../lezer/dist/index.es.js'
@@ -25,7 +27,9 @@ export default {
       required: true
     },
   },
-  setup({ stanza }, { emit }) {
+  setup( { stanza }, { emit }) {
+
+    //const stanza = toRef(props, 'stanza')
 
     /*
     const invalidDirectiveMarker = new class extends GutterMarker {
@@ -144,29 +148,110 @@ export default {
     //extensions.push(new LanguageSupport(stanzaLanguage))
 
     const stanzaValues = toRaw(stanza)
-    const {handleSubmit, isSubmitting, values, errors} = useForm({
+    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, values, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
-        ...stanzaValues
+        ...stanzaValues,
+        include_in_configs: [],
+        publish_in_configs: []
       }
     })
 
     const onSubmit = handleSubmit((values, context) => {
+      // Hack, better way to handle this?
+      values.publish_in_configs = values.publish_in_configs.filter(
+        publishInConfig => values.include_in_configs.some(c => c.id === publishInConfig.id)
+      )
       emit('submit', values, context)
+    })
+
+    const api = inject('api')
+    const configOptions = ref([])
+
+    //setFieldValue('include_in_configs', [])
+    //setFieldValue('publish_in_configs', [])
+
+    const stanzaFormBody = useFieldModel('body')
+
+    const includeInConfigs = useFieldModel('include_in_configs')
+    const publishInConfigs = useFieldModel('publish_in_configs')
+
+    const publishInConfigOptions = computed(() => {
+      // Use includeInConfigs order
+      return configOptions.value.reduce((options, configOption) => {
+        let option = includeInConfigs.value.find(c => c.id === configOption.id)
+        if (option) {
+          options.push(option)
+        }
+        return options
+      }, [])
+    })
+
+    let currentConfigsById = Object.fromEntries(
+      stanzaValues.current_configs.map(config => [config.id, config])
+    )
+
+    api.configs.list().then(result => {
+      configOptions.value = result.data.map(
+        config => {
+          return {
+            name: config.name,
+            id: config.id,
+            has_stanza_revision: config.id in currentConfigsById,
+            has_current_stanza_revision: config.id in currentConfigsById && currentConfigsById[config.id].has_current_stanza_revision
+          }
+        }
+      )
+      // Set initial config values
+      includeInConfigs.value = configOptions.value.filter(
+        configOption => configOption.has_stanza_revision
+      )
+      publishInConfigs.value = configOptions.value.filter(
+        configOption => configOption.has_current_stanza_revision
+      )
+    })
+
+    const forcePublishInConfigs = computed(
+      () => includeInConfigs.value.filter(config => !config.has_stanza_revision)
+    )
+
+    watch(forcePublishInConfigs, () => {
+      forcePublishInConfigs.value.forEach((forcePublishConfig) => {
+        if (!publishInConfigs.value.find(config => config.id === forcePublishConfig.id)) {
+          publishInConfigs.value.push(forcePublishConfig)
+        }
+      })
+    })
+
+    const stanzaRevisionChanged = computed(() => stanza.body !== stanzaFormBody.value)
+    watch(stanzaRevisionChanged, () => {
+      // Changed back to unchaged current revision state
+      if(!stanzaRevisionChanged.value) {
+        publishInConfigs.value = configOptions.value.filter(
+          configOption => configOption.has_current_stanza_revision ||
+            forcePublishInConfigs.value.find(c => c.id === configOption.id)
+        )
+      }
     })
 
     return {
       //debouncedChange,
       //invalidLineGutter,
+      publishInConfigs,
+      includeInConfigs,
+      publishInConfigOptions,
+      configOptions,
       extensions,
       onSubmit,
       isSubmitting,
+      stanzaRevisionChanged,
       errors
     }
   },
   components: {
     VCodemirrorField,
-    VTextField
+    VTextField,
+    Checkbox
   }
 }
 </script>
@@ -179,6 +264,21 @@ export default {
     <!-- <VCodemirrorField id="body" name="body" :extensions="invalidLineGutter" @change="debouncedChange"/> -->
     <VCodemirrorField id="body" name="body" :extensions="extensions"/>
 
+    <template v-if="publishInConfigOptions.length">
+      <h5>Publish current revision in</h5>
+      <div class="formgroup-inline">
+        <div v-for="config in publishInConfigOptions" :key="config.id" class="field-checkbox">
+          <Checkbox :inputId="config.id" name="config" :value="config" v-model="publishInConfigs" :disabled="!stanzaRevisionChanged && config.has_current_stanza_revision || !config.has_stanza_revision"/>
+          <label :for="config.id">{{ config.name }}</label>
+        </div>
+      </div>
+    </template>
+
+    <h5>Include stanza in</h5>
+      <div v-for="config in configOptions" :key="config.id" class="field-checkbox">
+        <Checkbox :inputId="config.id" name="config" :value="config" v-model="includeInConfigs"/>
+        <label :for="config.id">{{ config.name }}</label>
+      </div>
     <Button type="submit" :disabled="isSubmitting" label="Save"></Button>
   </form>
 </template>

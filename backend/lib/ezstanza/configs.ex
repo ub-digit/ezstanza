@@ -25,6 +25,7 @@ defmodule Ezstanza.Configs do
         join: s_r_c_r in assoc(s_r, :config_revisions),
         where: s_r_c_r.id in ^config_revision_ids,
         preload: [config_revisions: s_r_c_r]
+        #select: {s_r_c_r.id, s_r} #TODO: Test this
       )
       |> Enum.flat_map(fn stanza_revision ->
         Enum.map(stanza_revision.config_revisions, fn config_revision ->
@@ -129,12 +130,12 @@ defmodule Ezstanza.Configs do
   def create_config(attrs \\ %{}) do
     Multi.new()
     |> Multi.insert(:persisted_config, change_config(%Config{}, attrs))
-    |> Multi.append(update_persisted_config_multi(attrs, :insert))
+    |> Multi.append(update_persisted_config_multi(attrs))
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:create_config_failed)
   end
 
-  defp update_persisted_config_multi(attrs, _operation) do
+  defp update_persisted_config_multi(attrs) do
     Multi.new()
     |> Multi.run(:config_revision, fn repo, %{persisted_config: %Config{id: config_id}} ->
       attrs = Map.merge(attrs, %{"config_id" => config_id})
@@ -172,7 +173,7 @@ defmodule Ezstanza.Configs do
   def update_config(%Config{} = config, attrs) do
     Multi.new()
     |> Multi.put(:persisted_config, config) # TODO: Config not from Multi "repo", problem?
-    |> Multi.append(update_persisted_config_multi(attrs, :update))
+    |> Multi.append(update_persisted_config_multi(attrs))
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:update_config_failed)
   end

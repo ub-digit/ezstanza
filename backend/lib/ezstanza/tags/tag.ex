@@ -15,7 +15,7 @@ defmodule Ezstanza.Tags.Tag do
   def changeset(tag, attrs) do
     tag
     |> cast(attrs, [:name, :user_id])
-    |> validate_required([:name])
+    |> validate_required([:name, :user_id])
     |> unique_constraint(:name)
   end
 end

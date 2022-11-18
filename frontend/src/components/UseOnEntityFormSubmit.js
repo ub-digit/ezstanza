@@ -17,7 +17,7 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
   }[op]
   const opPresentTense = {
     create: 'creating',
-    update: 'updateing'
+    update: 'updating'
   }[op]
   const opNoun = {
     create: 'creation',
@@ -41,15 +41,30 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
         if ('destination' in route.query) {
           router.push(route.query.destination)
         }
-      }).catch((errors) => {
-        if (typeof errors === 'object') {
-          setErrors(errors)
+      }).catch((error) => {
+        // Unprocessable entity, validation errors
+        if (error.response.status == 422) {
+          setErrors(error.response.data.errors)
         }
-        else if(typeof errors == 'string') {
+        // Conflict
+        else if (error.response.status == 409) {
           toast.add({
             severity: ToastSeverity.ERROR,
             summary: `${entityNameCapitalized} ${opNoun} failed`,
-            detail: `An error occured ${opPresentTense} ${entityName}: "${errors}"`,
+            detail: `The ${entityName} has been modified by another user`,
+            life: toastTimeout
+          })
+        }
+        else if (
+          typeof error.response.data === 'object' &&
+          'errors' in error.response.data &&
+          'detail' in error.response.data.errors
+        ) {
+          let detail = error.response.data.errors.detail
+          toast.add({
+            severity: ToastSeverity.ERROR,
+            summary: `${entityNameCapitalized} ${opNoun} failed`,
+            detail: `An error occured ${opPresentTense} ${entityName}: "${detail}"`,
             life: toastTimeout
           })
         }
@@ -57,10 +72,9 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
           toast.add({
             severity: ToastSeverity.ERROR,
             summary: `${entityNameCapitalized} ${opNoun} failed`,
-            detail: `An error occured ${opPresentTense} ${entityName}`,
+            detail: `An unknown error occured ${opPresentTense} ${entityName}: "${error.message}"`,
             life: toastTimeout
           })
-          console.dir(errors)
         }
       })
   }

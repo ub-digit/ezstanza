@@ -10,6 +10,7 @@ import dayjs from './plugins/dayjs'
 import api_service from './plugins/api_service'
 import ToastService from 'primevue/toastservice'
 import DialogService from 'primevue/dialogservice'
+import { Diff } from 'diff'
 
 // import 'primevue/resources/themes/bootstrap4-dark-blue/theme.css';
 import "primevue/resources/themes/lara-light-indigo/theme.css"
@@ -31,6 +32,7 @@ const app = createApp(App)
   .use(router)
   .use(auth)
   .use(dayjs)
+  .use(app => app.provide('diff', Diff))
   .component('InputText', InputText) //TODO: remove this and import in components
   .component('Checkbox', Checkbox)
   .component('Button', Button)

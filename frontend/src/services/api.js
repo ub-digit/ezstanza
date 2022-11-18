@@ -15,15 +15,7 @@ class BaseApiService {
   }
 
   handleErrors(error) {
-    if (typeof error.response.data === 'object' && 'errors' in error.response.data) {
-      throw error.response.data.errors
-    }
-    else {
-      // TODO: What to throw?
-      console.log("error")
-      console.dir(error)
-      throw "An error occured"
-    }
+    throw error
   }
 
 }

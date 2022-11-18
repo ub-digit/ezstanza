@@ -64,7 +64,8 @@ defmodule EzstanzaWeb.StanzaController do
     stanza_params = Map.merge(stanza_params, %{"user_id" => user.id})
     stanza = conn.assigns[:stanza]
 
-    with {:ok, %Stanza{id: stanza_id}} <- Stanzas.update_stanza(stanza, stanza_params) do
+    with {:ok, %Stanza{id: stanza_id}} <- Stanzas.update_stanza(stanza.id, stanza_params) do
+      # Call this in multi instead?
       stanza = Stanzas.get_stanza(stanza_id)
       render(conn, "show.json", stanza: stanza)
     end

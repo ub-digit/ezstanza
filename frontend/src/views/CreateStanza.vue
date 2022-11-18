@@ -5,7 +5,9 @@ import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 
 export default {
   setup() {
-    const stanza = ref({})
+    const stanza = ref({
+      current_configs: []
+    })
     const onSubmit = useOnSubmit('stanzas', 'stanza', 'create')
 
     return {

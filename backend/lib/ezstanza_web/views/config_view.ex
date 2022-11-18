@@ -21,10 +21,18 @@ defmodule EzstanzaWeb.ConfigView do
     %{data: render_one(config, ConfigView, "config.json")}
   end
 
+  def render("config_snippet.json", %{config: config}) do
+    %{
+      id: config.id,
+      revision_id: config.current_config_revision_id,
+      name: config.name,
+    }
+  end
+
   def render("config.json", %{config: config}) do
     %{
       id: config.id,
-      revision_id: config.current_revision.id,
+      revision_id: config.current_config_revision_id,
       name: config.name,
       inserted_at: config.inserted_at,
       updated_at: config.updated_at,

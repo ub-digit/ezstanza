@@ -23,8 +23,7 @@ export default {
 
     const configValues = toRaw(config)
 
-    // setFieldValue or useFieldModel, probably useFieldModel
-    const {handleSubmit, isSubmitting, values, errors, setFieldValue, useFieldModel} = useForm({
+    const {handleSubmit, isSubmitting, useFieldModel, values, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
         ...configValues
@@ -266,7 +265,6 @@ export default {
             :filterColumns="stanzaSelectFilterColumns"
             :loadEntitiesUnpaginated="loadStanzasUnpaginated"
           >
-            <Column field="inserted_at" header="Created" :sortable="true"/>
             <Column field="updated_at" header="Updated" :sortable="true"/>
           </EntitySelect>
 
@@ -333,7 +331,11 @@ export default {
         </template>
       </Column>
       <Column field="updated_at" header="Updated" :sortable="true"/>
-      <Column field="id" header="Revision" :sortable="false"/>
+      <Column field="id" header="Revision" :sortable="false">
+        <template #body="{ data }">
+          <span :class="{'text-green-700': data.is_current_revision}">{{ data.id }}</span>
+        </template>
+      </Column>
 
       <Column>
         <template #body="{ data }">

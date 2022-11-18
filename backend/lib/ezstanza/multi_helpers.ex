@@ -20,6 +20,8 @@ defmodule Ezstanza.MultiHelpers do
         # TODO: this can probably be improved, or might not be such a good idea?
         case failed_value do
           %Changeset{valid?: false} -> {:error, failed_value}
+          :stale -> {:error, :stale}
+          :not_found -> {:error, :not_found}
           _ -> {:error, fallback_error}
         end
       end

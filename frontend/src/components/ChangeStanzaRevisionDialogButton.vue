@@ -3,6 +3,8 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown';
 import {inject, ref, toRef, toRefs } from 'vue'
+import { diffLines } from 'diff'
+//import Diff from '@/components/Diff.vue'
 
 export default {
   emits: ['accept'],
@@ -31,7 +33,10 @@ export default {
 
     const onOpen = async () => {
       visible.value = true
-      const result = await api.stanza_revisions.list({ stanza_id: selectedRevision.value.stanza_id })
+      const result = await api.stanza_revisions.list({
+        stanza_id: selectedRevision.value.stanza_id,
+        order_by: 'id_desc'
+      })
       revisions.value = result.data
       loading.value = false
     }
@@ -55,7 +60,9 @@ export default {
       onDecline,
       revisions,
       selectedRevision,
+      currentRevision,
       dayjs,
+      diffLines,
       loading
     }
   },

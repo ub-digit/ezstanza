@@ -171,6 +171,7 @@ export default {
 }
 </script>
 <template>
+
   <DataTable
     :value="entities"
     :lazy="true"
@@ -216,6 +217,7 @@ export default {
       </Column>
     </template>
     <slot></slot>
+    <slot name="reserved"></slot>
     <template v-if="expandableRows" #expansion="{ data }">
       <slot name="expansion" :data="data"></slot>
     </template>
