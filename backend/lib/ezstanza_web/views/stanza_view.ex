@@ -56,8 +56,9 @@ defmodule EzstanzaWeb.StanzaView do
   def stanza_current_configs(current_configs, current_revision_current_configs) do
     Enum.map(current_configs, fn config ->
       %{
-        name: config.name,
         id: config.id,
+        name: config.name,
+        color: config.color,
         revision_id: config.current_config_revision_id,
         has_current_stanza_revision: Enum.any?(current_revision_current_configs, fn c -> c.id == config.id end)
       }

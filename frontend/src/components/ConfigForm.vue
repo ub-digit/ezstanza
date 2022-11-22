@@ -2,6 +2,7 @@
 import {inject, toRef, ref, toRaw, watch, onMounted, computed} from 'vue'
 import {useForm} from 'vee-validate'
 import VTextField from '@/components/VTextField.vue'
+import VColorPickerField from '@/components/VColorPickerField.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
 import DataTable from 'primevue/datatable'
 import { FilterMatchMode } from 'primevue/api'
@@ -226,6 +227,7 @@ export default {
     ConfirmDialogButton,
     ChangeStanzaRevisionDialogButton,
     VTextField,
+    VColorPickerField,
     EntitySelect
   }
 }
@@ -234,7 +236,12 @@ export default {
   <form>
     <label for="name" class="block text-900 font-medium mb-2">Name</label>
     <VTextField id="name" name="name"/>
-    <Toolbar class="mb-4">
+
+    <label for="color" class="block text-900 font-medium mb-2">Color</label>
+    <VColorPickerField id="color" name="color"/>
+
+    <label for="stanzas" class="block text-900 font-medium mb-2">Stanzas</label>
+    <Toolbar class="mb-4" id="stanzas">
       <template #start>
         <Button
           label="Add stanzas"

@@ -8,6 +8,7 @@ defmodule Ezstanza.Configs.Config do
 
   schema "config" do
     field :name, :string
+    field :color, :string
     many_to_many :tags, Tag,
       join_through: "config_tag",
       on_replace: :delete
@@ -22,8 +23,8 @@ defmodule Ezstanza.Configs.Config do
   @doc false
   def changeset(config, attrs) do
     config
-    |> cast(attrs, [:name, :user_id, :current_config_revision_id])
-    |> validate_required([:name, :user_id])
+    |> cast(attrs, [:name, :color, :user_id, :current_config_revision_id])
+    |> validate_required([:name, :color, :user_id])
     |> unique_constraint(:name)
   end
 end

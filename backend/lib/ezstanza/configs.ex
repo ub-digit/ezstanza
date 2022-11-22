@@ -148,10 +148,9 @@ defmodule Ezstanza.Configs do
       with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
         change_config(
           repo.preload(config, :tags),
-          %{
-            "name" => attrs["name"],
+          Map.merge(attrs, %{
             "current_config_revision_id" => config_revision_id
-          }
+          })
         ) |> Changeset.put_assoc(:tags, tags)
       end
       |> repo.update()

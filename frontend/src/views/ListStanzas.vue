@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
-import Chip from 'primevue/chip'
+import ColorChip from '@/components/ColorChip.vue'
 
 export default {
   setup() {
@@ -38,7 +38,7 @@ export default {
   components: {
     EntityList,
     Column,
-    Chip
+    ColorChip
   }
 }
 </script>
@@ -54,15 +54,15 @@ export default {
   >
     <Column field="current_configs" header="Configs" :sortable="false">
       <template #body="{ data }">
-        <Chip
+        <ColorChip
           v-for="config in data.current_configs"
           :key="config.id"
+          :color="config.color"
           class="mb-2"
-          :class="{ 'has-current-revision': config.has_current_stanza_revision }"
-          removable
+          :class="{ 'has-previous-revision': !config.has_current_stanza_revision }"
         >
           {{ config.name }}
-        </Chip>
+        </ColorChip>
       </template>
     </Column>
     <template #expansion="{ data }">
@@ -73,8 +73,7 @@ export default {
   </EntityList>
 </template>
 <style lang="scss" scoped>
-.p-chip.has-current-revision {
-  background: var(--primary-color);
-  color: var(--primary-color-text);
+.p-chip.has-previous-revision {
+  opacity: 0.4;
 }
 </style>

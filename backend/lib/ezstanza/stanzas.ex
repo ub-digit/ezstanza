@@ -297,10 +297,9 @@ defmodule Ezstanza.Stanzas do
         with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
           change_stanza(
             repo.preload(stanza, :tags),
-            %{
-              "name" => attrs["name"],
+            Map.merge(attrs, %{
               "current_stanza_revision_id" => stanza_revision_id
-            }
+            })
           )
           |> Changeset.put_assoc(:tags, tags)
         end
