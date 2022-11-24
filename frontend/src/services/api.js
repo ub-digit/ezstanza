@@ -100,11 +100,18 @@ class ConfigsApiService extends ResourceApiService {
   }
 }
 
+class UsersApiService extends ResourceApiService {
+  constructor() {
+    super('users')
+  }
+}
+
 const api = {
   stanzas: new StanzasApiService(),
   stanza_revisions: new StanzaRevisoinsApiService(),
   tags: new TagsApiService(),
-  configs: new ConfigsApiService()
+  configs: new ConfigsApiService(),
+  users: new UsersApiService()
 }
 
 export default api

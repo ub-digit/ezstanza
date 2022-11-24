@@ -52,7 +52,9 @@ defmodule Ezstanza.Configs do
   defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
   defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
   defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
-  defp dynamic_order_by("user_desc"), do: [desc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("user_name_desc"), do: [desc: dynamic([user: u], u.name)]
+  defp dynamic_order_by("revision_user_name"), do: [asc: dynamic([current_revision_user: u], u.name)]
+  defp dynamic_order_by("revision_user_name_desc"), do: [desc: dynamic([current_revision_user: u], u.name)]
   defp dynamic_order_by("inserted_at"), do: [asc: dynamic([s], s.inserted_at)]
   defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
   defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
@@ -71,6 +73,18 @@ defmodule Ezstanza.Configs do
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
         dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+      {"user_id", value}, dynamic ->
+        dynamic([user: u], ^dynamic and u.id == ^value)
+      {"user_ids", value}, dynamic ->
+        dynamic([user: u], ^dynamic and u.id in ^value)
+      {"revision_user_name", value}, dynamic ->
+        dynamic([current_revision_user: u], ^dynamic and u.name == ^value)
+      {"revision_user_name_like", value}, dynamic ->
+        dynamic([current_revision_user: u], ^dynamic and ilike(u.name, ^"%#{filter_like.(value)}%"))
+      {"revision_user_id", value}, dynamic ->
+        dynamic([current_revision_user: u], ^dynamic and u.id == ^value)
+      {"revision_user_ids", value}, dynamic ->
+        dynamic([current_revision_user: u], ^dynamic and u.id in ^value)
       {_, _}, dynamic ->
         dynamic
     end)

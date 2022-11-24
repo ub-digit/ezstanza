@@ -33,6 +33,7 @@ export default {
     entityNamePluralized="tags"
     defaultSortField="updated_at"
     :filterColumns="filterColumns"
+    :revisioned="false"
   >
   </EntityList>
 </template>

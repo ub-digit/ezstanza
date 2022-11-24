@@ -1,8 +1,11 @@
 <script>
+import {ref, inject} from 'vue'
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import ColorChip from '@/components/ColorChip.vue'
+import MultiSelect from 'primevue/multiselect'
+import { FilterMatchMode } from 'primevue/api'
 
 export default {
   setup() {
@@ -20,25 +23,47 @@ export default {
       { immediate: true }
     )
     */
+
+    const api = inject('api')
+    const configOptions = ref([])
+
+    api.configs.list().then(result => {
+      configOptions.value = result.data.map(
+        config => {
+          return {
+            name: config.name,
+            id: config.id
+          }
+        }
+      )
+    })
+
     const filterColumns = [
       {
         fieldName: 'name',
         filterFieldName: 'name',
         header: 'Name'
-      }, {
-        fieldName: 'user.name',
-        filterFieldName: 'user_name',
-        header: 'Created by'
       }
     ]
+
+    const filters = {
+      config_ids: {
+        matchMode: FilterMatchMode.EQUALS,
+        value: ''
+      }
+    }
+
     return {
-      filterColumns
+      filterColumns,
+      filters,
+      configOptions
     }
   },
   components: {
     EntityList,
     Column,
-    ColorChip
+    ColorChip,
+    MultiSelect
   }
 }
 </script>
@@ -51,8 +76,28 @@ export default {
     entityNamePluralized="stanzas"
     defaultSortField="updated_at"
     :filterColumns="filterColumns"
+    :filters="filters"
+    :revisioned="true"
   >
-    <Column field="current_configs" header="Configs" :sortable="false">
+    <Column
+      field="current_configs"
+      header="Configs"
+      :sortable="false"
+      filterField="config_ids"
+      :showFilterMenu="false"
+    >
+      <template #filter="{filterModel, filterCallback}">
+        <MultiSelect
+          v-model="filterModel.value"
+          @change="filterCallback()"
+          :options="configOptions"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Any"
+          display="chip"
+          class="p-column-filter"
+        />
+      </template>
       <template #body="{ data }">
         <ColorChip
           v-for="config in data.current_configs"

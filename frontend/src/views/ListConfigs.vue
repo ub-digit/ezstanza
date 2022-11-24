@@ -9,10 +9,6 @@ export default {
         fieldName: 'name',
         filterFieldName: 'name',
         header: 'Name'
-      }, {
-        fieldName: 'user.name',
-        filterFieldName: 'user_name',
-        header: 'Created by'
       }
     ]
     return {
@@ -33,6 +29,7 @@ export default {
     entityNamePluralized="configs"
     defaultSortField="updated_at"
     :filterColumns="filterColumns"
+    :revisioned="true"
   >
   </EntityList>
 </template>

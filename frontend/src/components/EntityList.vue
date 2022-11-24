@@ -1,11 +1,13 @@
 <script>
-import { inject, toRef, ref, toRaw, watch, onMounted } from 'vue'
+import { computed, inject, toRef, ref, unref, toRaw, watch, onMounted } from 'vue'
 import { FilterMatchMode } from 'primevue/api'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Toolbar from 'primevue/toolbar'
+import MultiSelect from 'primevue/multiselect'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
+
 
 export default {
   props: {
@@ -35,10 +37,17 @@ export default {
     },
     filterColumns: {
       type: Array
+    },
+    filters: {
+      type: Object
+    },
+    revisioned: {
+      type: Boolean
     }
   },
   setup(props, context) {
 
+    const dayjs = inject('dayjs')
     const api = inject('api')
     const defaultSortField = toRef(props, 'defaultSortField')
     const defaultSortOrder = ref(-1)
@@ -50,6 +59,38 @@ export default {
     const pageSize = ref(10)
 
     const expandableRows = context.slots.expansion !== undefined
+
+
+    const userOptions = ref([])
+    api.users.list().then(result => {
+      userOptions.value = result.data.map(
+        user => {
+          return {
+            name: user.name,
+            id: user.id
+          }
+        }
+      )
+    })
+
+    const userField = computed(() => {
+      return props.revisioned ? 'revision_user.name' : 'user.name';
+    })
+    const userFilterField = computed(() => {
+      return props.revisioned ? 'revision_user_ids' : 'user_ids';
+    })
+    const userSortField = computed(() => {
+      return props.revisioned ? 'revision_user_name' : 'user_name';
+    })
+
+    // TODO: Ugly, breaks reactivity, solve by settable computed?
+    const filters = ref(toRaw(props.filters) || {})
+    Object.assign(filters.value, {
+      [toRaw(userFilterField.value)]: {
+        matchMode: FilterMatchMode.EQUALS,
+        value: ''
+      }
+    })
 
     // @todo: ugly, how to use defined standard breakpoints?
     const dialogBreakpoints = ref({
@@ -175,6 +216,8 @@ export default {
     */
 
     return {
+      dayjs,
+      userOptions,
       entities,
       totalEntities,
       pageSize,
@@ -189,7 +232,11 @@ export default {
       onDeleteSelectedEntities,
       dialogBreakpoints,
       loadEntitiesUnpaginated,
-      expandableRows
+      expandableRows,
+      filters,
+      userField,
+      userFilterField,
+      userSortField
     }
   },
   components: {
@@ -197,6 +244,7 @@ export default {
     Column,
     Button,
     Toolbar,
+    MultiSelect,
     ConfirmDialogButton
   }
 }
@@ -240,11 +288,38 @@ export default {
     @page="onPage($event)"
     @filter="onFilter($event)"
     :filterColumns="filterColumns"
+    :filters="filters"
     :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
     <template #reserved>
-      <Column field="updated_at" header="Updated" :sortable="true"/>
+      <!-- TODO: format date -->
+      <Column field="updated_at" header="Updated" :sortable="true">
+        <template #body="{ data }">
+          {{ dayjs(data.updated_at).format('L LT') }}
+        </template>
+      </Column>
+      <Column
+        :field="userField"
+        header="Updated by"
+        :sortable="true"
+        :sortField="userSortField"
+        :filterField="userFilterField"
+        :showFilterMenu="false"
+      >
+        <template #filter="{filterModel, filterCallback}">
+          <MultiSelect
+            v-model="filterModel.value"
+            @change="filterCallback()"
+            :options="userOptions"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Any"
+            display="chip"
+            class="p-column-filter"
+          />
+        </template>
+      </Column>
       <Column style="min-with: 8rem">
         <template #body="{ data }">
           <div class="flex">

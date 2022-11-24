@@ -1,5 +1,5 @@
 <script>
-import { toRef, ref, unref, watch } from 'vue'
+import { toRef, toRaw, ref, unref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { FilterMatchMode } from 'primevue/api'
@@ -16,6 +16,9 @@ export default {
     },
     filterColumns: {
       type: Array
+    },
+    filters: {
+      type: Object
     },
     entities: {
       type: Array
@@ -45,7 +48,7 @@ export default {
     const dt = ref() //TODO: remove??
     const selectAll  = ref(false)
     //const selectedEntities = toRef(props, 'selectedEntities')
-    const selectedEntities = ref(unref(props.selectedEntities)) //??
+    const selectedEntities = ref(unref(props.selectedEntities)) //Fix readonly issue, there must be a better/more correct way??
     const entities = toRef(props, 'entities')
     const pageSize = toRef(props, 'pageSize')
     const totalEntities = toRef(props, 'totalEntities')
@@ -76,15 +79,20 @@ export default {
       context.emit('update:selectedEntities', newValue)
     })
 
-    // How to handle if empty?
-    const filters = ref(Object.fromEntries(
-      props.filterColumns.map(
-        filterColumn => [
-          filterColumn.filterFieldName,
-          { value: '', matchMode: FilterMatchMode.CONTAINS }
-        ]
+    const filters = ref(toRaw(props.filters) || {})
+    if (props.filterColumns) {
+      Object.assign(
+        filters.value,
+        Object.fromEntries(
+          props.filterColumns.map(
+            filterColumn => [
+              filterColumn.filterFieldName,
+              { value: '', matchMode: filterColumn.defaultFilterMatchMode || FilterMatchMode.CONTAINS }
+            ]
+          )
+        )
       )
-    ))
+    }
 
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
@@ -206,7 +214,6 @@ export default {
         :field="column.fieldName"
         :filterField="column.filterFieldName"
         :header="column.header"
-        filterMatchMode="startsWith"
         :ref="column.fieldName"
         :filterMatchModeOptions="filterMatchModeOptions"
         :sortable="true"

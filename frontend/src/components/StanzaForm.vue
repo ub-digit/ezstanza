@@ -148,6 +148,7 @@ export default {
     //extensions.push(new LanguageSupport(stanzaLanguage))
 
     const stanzaValues = toRaw(stanza)
+    // values not used?
     const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, values, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
@@ -170,7 +171,7 @@ export default {
 
     //setFieldValue('include_in_configs', [])
     //setFieldValue('publish_in_configs', [])
-
+    // Not used?
     const stanzaFormBody = useFieldModel('body')
 
     const includeInConfigs = useFieldModel('include_in_configs')
@@ -245,7 +246,7 @@ export default {
       onSubmit,
       isSubmitting,
       stanzaRevisionChanged,
-      errors
+      errors //remove?
     }
   },
   components: {
