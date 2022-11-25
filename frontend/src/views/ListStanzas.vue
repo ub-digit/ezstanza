@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import ColorChip from '@/components/ColorChip.vue'
-import MultiSelect from 'primevue/multiselect'
+import DropDown from 'primevue/dropdown'
 import { FilterMatchMode } from 'primevue/api'
 
 export default {
@@ -47,7 +47,7 @@ export default {
     ]
 
     const filters = {
-      config_ids: {
+      config_id: {
         matchMode: FilterMatchMode.EQUALS,
         value: ''
       }
@@ -63,7 +63,7 @@ export default {
     EntityList,
     Column,
     ColorChip,
-    MultiSelect
+    DropDown
   }
 }
 </script>
@@ -83,18 +83,18 @@ export default {
       field="current_configs"
       header="Configs"
       :sortable="false"
-      filterField="config_ids"
+      filterField="config_id"
       :showFilterMenu="false"
     >
       <template #filter="{filterModel, filterCallback}">
-        <MultiSelect
+        <DropDown
           v-model="filterModel.value"
           @change="filterCallback()"
           :options="configOptions"
+          dataKey="id"
           optionLabel="name"
           optionValue="id"
           placeholder="Any"
-          display="chip"
           class="p-column-filter"
         />
       </template>

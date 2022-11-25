@@ -138,7 +138,7 @@ export default {
 
     const onFilter = (filters) => {
       for (const [filter_name, value] of Object.entries(filters)) {
-        if (value.length) {
+        if (typeof value !== 'string' || value.length) { // Hmm??
           lazyParams.value[filter_name] = value
         }
         else {

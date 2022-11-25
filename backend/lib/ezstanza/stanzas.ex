@@ -24,7 +24,7 @@ defmodule Ezstanza.Stanzas do
     Enum.reduce(params, stanza_base_query(), fn
       {"includes", includes}, query ->
         process_stanza_includes(query, includes)
-      {_, _}, query ->
+      _, query ->
         query
     end)
   end
@@ -50,8 +50,25 @@ defmodule Ezstanza.Stanzas do
 
   defp list_query(%{} = params) do
     stanza_base_query(params)
+    |> process_stanza_list_query(params) # Replace with then?
     |> order_by(^dynamic_order_by(params["order_by"]))
     |> where(^dynamic_where(params))
+  end
+
+  defp process_stanza_list_query(query, %{} = params) do
+    Enum.reduce(params, query, fn
+      # TOOD: current_config_ids for consitency/clarity?
+      {"config_ids", config_ids}, query ->
+        from s in query,
+          join: s_c_c in assoc(s, :current_configs),
+          where: s_c_c.id in ^config_ids
+      {"config_id", config_id}, query ->
+        from s in query,
+          join: s_c_c in assoc(s, :current_configs),
+          where: s_c_c.id == ^config_id
+      _, query ->
+        query
+    end)
   end
 
   # TOOD: macro for this?
@@ -193,7 +210,7 @@ defmodule Ezstanza.Stanzas do
   defp get_current_config_revisions_with_stanza_revisions_and_config(config_ids, repo) do
     repo.all(
       from c_r in ConfigRevision,
-      join: c_r_c in Config,
+      join: c_r_c in assoc(c_r, :config),
       join: c_r_s_r in assoc(c_r, :stanza_revisions),
       where: c_r_c.current_config_revision_id == c_r.id and c_r_c.id in ^config_ids,
       preload: [stanza_revisions: c_r_s_r, config: c_r_c]
