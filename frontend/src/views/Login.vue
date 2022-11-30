@@ -17,7 +17,7 @@ export default {
       })
     })
 
-    const { handleSubmit, isSubmitting, values, errors } = useForm({
+    const { handleSubmit, isSubmitting, errors } = useForm({
       validationSchema: schema,
       initialValues: {
         auth : {
@@ -52,7 +52,7 @@ export default {
       })
     })
 
-    return { onSubmit, isSubmitting, values, errors };
+    return { onSubmit, isSubmitting, errors };
   },
   components: {
     Field,

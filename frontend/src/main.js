@@ -18,9 +18,18 @@ import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
 
-import InputText from 'primevue/inputtext'
-import Checkbox from 'primevue/checkbox'
-import Button from 'primevue/button'
+import Button from 'primevue/button' //TODO: Import locally instead?
+
+//TODO: Put in import
+//
+import { defineRule } from 'vee-validate'
+
+defineRule('required', (value) => {
+  if (!value && value !== 0 || typeof value === 'string' && !value.length) {
+    return 'This field is required'
+  }
+  return true
+})
 
 const app = createApp(App)
   .use(PrimeVue)
@@ -33,7 +42,5 @@ const app = createApp(App)
   .use(auth)
   .use(dayjs)
   .use(app => app.provide('diff', Diff))
-  .component('InputText', InputText) //TODO: remove this and import in components
-  .component('Checkbox', Checkbox)
   .component('Button', Button)
   .mount('#app')

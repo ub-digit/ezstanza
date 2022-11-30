@@ -1,6 +1,6 @@
 <script>
 import VField from '@/components/VField.vue'
-import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
 export default {
   inheritAttrs: false,
   props: {
@@ -14,12 +14,12 @@ export default {
   },
   components: {
     VField,
-    InputText
+    InputNumber
   }
 }
 </script>
 <template>
   <VField :name="name" :rules="rules" :class="containerClass" :helpText="helpText" v-slot="{handleBlur, handleChange, value, hasErrors}">
-    <InputText :modelValue="value" v-bind="$attrs" @blur="handleBlur" @update:modelValue="handleChange" :class="{'p-invalid': hasErrors}"/>
+    <InputNumber :modelValue="value" v-bind="$attrs" @blur="handleBlur" @update:modelValue="handleChange" mode="decimal" :class="{'p-invalid': hasErrors}"/>
   </VField>
 </template>

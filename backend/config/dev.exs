@@ -26,6 +26,10 @@ config :ezstanza, EzstanzaWeb.Endpoint,
   secret_key_base: "6MTiIiGt4j0yqZ3Zurr0B0BZo9w64TW88DySW7/43+4Nu+1W9FueXqi3oqbLpNCA",
   watchers: []
 
+config :ezstanza, Ezstanza.DeploymentProvider.SSH,
+  key_filepath: System.get_env("EZSTANZA_DEPLOY_SSH_KEY_PATH"),
+  known_hosts_filepath: System.get_env("EZSTANZA_DEPLOY_KNOWN_HOSTS_PATH")
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

@@ -8,7 +8,7 @@ export default {
   setup() {
     const route = useRoute()
     const tag = ref()
-    const onSubmit = useOnSubmit('tags', 'tag', 'update')
+    const onSubmit = useOnSubmit('tag', 'tags', 'update')
     const api = inject('api')
 
     // Replace with watchEffect?

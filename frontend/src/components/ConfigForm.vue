@@ -24,7 +24,7 @@ export default {
 
     const configValues = toRaw(config)
 
-    const {handleSubmit, isSubmitting, useFieldModel, values, errors} = useForm({
+    const {handleSubmit, isSubmitting, useFieldModel, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
         ...configValues

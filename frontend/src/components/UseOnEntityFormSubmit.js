@@ -2,15 +2,16 @@ import { inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { ToastSeverity } from 'primevue/api'
-
-export default function useOnEntityFormSubmit(resource, entityName, op) {
+// TODO: Rename entityName => entityLabel etc
+export default function useOnEntityFormSubmit(entityName, entityNamePluralized, op) {
 
   const api = inject('api')
   const toast = useToast()
   const route = useRoute()
   const router = useRouter()
 
-  const entityNameCapitalized = entityName.charAt(0).toUpperCase() + entityName.slice(1)
+  const entityLabelCapitalized = entityName.charAt(0).toUpperCase() + entityName.slice(1).replace('_', ' ')
+
   const opPastTense = {
     create: 'created',
     update: 'updated'
@@ -29,12 +30,12 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
     let args = op === 'update' ? [entity.id] : []
     args.push({ [entityName]: entity })
 
-    api[resource][op](...args)
+    api[entityNamePluralized][op](...args)
       .then((result) => {
         toast.add({
           severity: ToastSeverity.SUCCESS,
-          summary: `${entityNameCapitalized} ${opPastTense}`,
-          detail: `${entityNameCapitalized} "${result.data.name}" successfully ${opPastTense}`,
+          summary: `${entityLabelCapitalized} ${opPastTense}`,
+          detail: `${entityLabelCapitalized} "${result.data.name}" successfully ${opPastTense}`,
           life: toastTimeout
         })
         resetForm() //TODO: This should only be run on creation right??
@@ -50,7 +51,7 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
         else if (error.response.status == 409) {
           toast.add({
             severity: ToastSeverity.ERROR,
-            summary: `${entityNameCapitalized} ${opNoun} failed`,
+            summary: `${entityLabelCapitalized} ${opNoun} failed`,
             detail: `The ${entityName} has been modified by another user`,
             life: toastTimeout
           })
@@ -63,7 +64,7 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
           let detail = error.response.data.errors.detail
           toast.add({
             severity: ToastSeverity.ERROR,
-            summary: `${entityNameCapitalized} ${opNoun} failed`,
+            summary: `${entityLabelCapitalized} ${opNoun} failed`,
             detail: `An error occured ${opPresentTense} ${entityName}: "${detail}"`,
             life: toastTimeout
           })
@@ -71,7 +72,7 @@ export default function useOnEntityFormSubmit(resource, entityName, op) {
         else {
           toast.add({
             severity: ToastSeverity.ERROR,
-            summary: `${entityNameCapitalized} ${opNoun} failed`,
+            summary: `${entityLabelCapitalized} ${opNoun} failed`,
             detail: `An unknown error occured ${opPresentTense} ${entityName}: "${error.message}"`,
             life: toastTimeout
           })

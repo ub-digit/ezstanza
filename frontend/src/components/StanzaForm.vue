@@ -148,8 +148,7 @@ export default {
     //extensions.push(new LanguageSupport(stanzaLanguage))
 
     const stanzaValues = toRaw(stanza)
-    // values not used?
-    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, values, errors} = useForm({
+    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
         ...stanzaValues,

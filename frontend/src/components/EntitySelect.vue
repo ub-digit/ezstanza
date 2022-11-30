@@ -1,7 +1,8 @@
 <script>
-import { toRef, toRaw, ref, unref, watch } from 'vue'
+import { toRef, toRaw, ref, unref, watch, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
 import { FilterMatchMode } from 'primevue/api'
 
 export default {
@@ -37,9 +38,21 @@ export default {
     },
     loadEntitiesUnpaginated: {
       type: Function
+    },
+    selectable: {
+      type: Boolean,
+      default: true
+    },
+    filterDisplay: {
+      type: String,
+      default: "row"
+    },
+    lazy: {
+      type: Boolean,
+      default: true
     }
   },
-  emits: ['update:selectedEntities', 'update:entities', 'sort', 'page', 'filter'],
+  emits: ['update:selectedEntities', 'sort', 'page', 'filter'],
   setup(props, context) {
 
     const defaultSortField = toRef(props, 'defaultSortField')
@@ -47,8 +60,7 @@ export default {
 
     const dt = ref() //TODO: remove??
     const selectAll  = ref(false)
-    //const selectedEntities = toRef(props, 'selectedEntities')
-    const selectedEntities = ref(unref(props.selectedEntities)) //Fix readonly issue, there must be a better/more correct way??
+
     const entities = toRef(props, 'entities')
     const pageSize = toRef(props, 'pageSize')
     const totalEntities = toRef(props, 'totalEntities')
@@ -59,25 +71,42 @@ export default {
     // Hack of the century
     let filtersChanged = false
 
+    // TODO: filtering when all selected?
     // Watch entities and possibly remove
     // from selection on filtering
+    // TODO: paginering ballar ur
     watch(entities, (newValue) => {
       if (filtersChanged) {
         let ids = []
         for (const entity of newValue) {
           ids[entity.id] = true
         }
-        selectedEntities.value = selectedEntities.value.filter(
-          (entity) => ids[entity.id]
+
+        onUpdateSelection(
+          props.selectedEntities.filter(
+            entity => ids[entity.id]
+          ).map(entity => toRaw(entity))
         )
-        onRowSelect()
         filtersChanged = false
       }
     })
-
-    watch(selectedEntities, (newValue) => {
-      context.emit('update:selectedEntities', newValue)
+    const totalEntitiesLength = computed(() => {
+      return props.totalEntities ? props.totalEntities : props.entities.length
     })
+
+    watch(() => props.selectedEntities, () => {
+      // TODO: Since total entities set depending on lazy in parent component
+      // perhaps don't need to use computed property in dt
+      // or duplicate computed property here
+      //selectAll.value = props.selectedEntities.length === dt.value.totalRecordsLength
+      selectAll.value = props.selectedEntities.length === totalEntitiesLength.value
+    })
+
+    const onUpdateSelection = (value) => {
+      if (props.selectable) {
+        context.emit('update:selectedEntities', value)
+      }
+    }
 
     const filters = ref(toRaw(props.filters) || {})
     if (props.filterColumns) {
@@ -127,36 +156,33 @@ export default {
       if (event.checked) {
         // If not all entities fit into the first page
         // load all from backend
-        if (entities.value.length < totalEntities.value) {
+        if (entities.value.length < totalEntitiesLength.value) {
           props.loadEntitiesUnpaginated().then(entities => {
             selectAll.value = true
-            selectedEntities.value = entities
+            onUpdateSelection(entities)
           })
         }
         else {
           selectAll.value = true
-          selectedEntities.value = entities.value
+          onUpdateSelection(entities.value)
         }
       }
       else {
         selectAll.value = false
-        selectedEntities.value = []
-        context.emit('update:selectedEntities', [])
+        onUpdateSelection([])
       }
     }
-    const onRowSelect = () => {
-      selectAll.value = selectedEntities.value.length === totalEntities.value
-    }
-    const onRowUnselect = () => {
-      selectAll.value = false
-    }
+
+    // Hide paginator if all entities are currently displayed
+    const showPaginator = computed(() => {
+      return entities.length <= totalEntitiesLength.value
+    })
 
     return {
       entities,
       totalEntities,
       pageSize,
       expandedRows,
-      selectedEntities,
       filters,
       defaultSortField,
       defaultSortOrder,
@@ -164,26 +190,26 @@ export default {
       onSort,
       onPage,
       onSelectAllChange,
-      onRowSelect,
-      onRowUnselect,
+      onUpdateSelection,
       selectAll,
       filterMatchModeOptions,
       dt,
-      expandableRows
+      expandableRows,
+      showPaginator
     }
   },
   components: {
+    InputText,
     DataTable,
     Column
   }
 }
 </script>
 <template>
-
   <DataTable
     :value="entities"
-    :lazy="true"
-    :paginator="!loading"
+    :lazy="lazy"
+    :paginator="showPaginator"
     :rows="pageSize"
     ref="dt"
     dataKey="id"
@@ -192,14 +218,14 @@ export default {
     @page="onPage($event)"
     @sort="onSort($event)"
     @filter="onFilter($event)"
-    filterDisplay="row"
+    :filterDisplay="filterDisplay"
     v-model:filters="filters"
-    v-model:selection="selectedEntities"
+    :selection="selectedEntities"
+    @update:selection="onUpdateSelection"
+    compareSelectionBy="id"
     v-model:expandedRows="expandedRows"
     :selectAll="selectAll"
     @select-all-change="onSelectAllChange"
-    @row-select="onRowSelect"
-    @row-unselect="onRowUnselect"
     resonsiveLayout="scroll"
     :totalRecords="totalEntities"
     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -207,7 +233,7 @@ export default {
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
     :loading="loading"
   >
-    <Column selectionMode="multiple" headerStyle="width: 3em"/>
+    <Column v-if="selectable" selectionMode="multiple" headerStyle="width: 3em"/>
     <Column v-if="expandableRows" :expander="true" headerStyle="width: 3em"/>
     <template v-for="column in filterColumns">
       <Column

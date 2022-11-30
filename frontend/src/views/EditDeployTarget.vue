@@ -1,14 +1,14 @@
 <script>
-import { useRoute } from 'vue-router'
 import { watch, ref, inject } from 'vue'
+import { useRoute } from 'vue-router'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
-import ConfigForm from '@/components/ConfigForm.vue'
+import DeployTargetForm from '@/components/DeployTargetForm.vue'
 
 export default {
   setup() {
     const route = useRoute()
-    const config = ref()
-    const onSubmit = useOnSubmit('config', 'configs', 'update')
+    const deployTarget = ref()
+    const onSubmit = useOnSubmit('deploy_target', 'deploy_targets', 'update')
     const api = inject('api')
 
     // Replace with watchEffect?
@@ -18,23 +18,23 @@ export default {
         // Triggered when leaving route, WTF!?!?
         if (typeof newId !== 'undefined') {
           //TODO: error handling
-          const result = await api.configs.fetch(newId)
-          config.value = result.data
+          const result = await api.deploy_targets.fetch(newId)
+          deployTarget.value = result.data
         }
       },
       { immediate: true }
     )
 
     return {
-      config,
+      deployTarget,
       onSubmit
     }
   },
   components: {
-    ConfigForm
+    DeployTargetForm
   }
 }
 </script>
 <template>
-  <ConfigForm v-if="config" :config="config"  @submit="onSubmit"/>
+  <DeployTargetForm v-if="deployTarget" :deployTarget="deployTarget" @submit="onSubmit"/>
 </template>

@@ -8,7 +8,7 @@ export default {
     const stanza = ref({
       current_configs: []
     })
-    const onSubmit = useOnSubmit('stanzas', 'stanza', 'create')
+    const onSubmit = useOnSubmit('stanza', 'stanzas', 'create')
 
     return {
       stanza,

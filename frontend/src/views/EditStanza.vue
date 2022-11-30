@@ -8,7 +8,7 @@ export default {
   setup() {
     const route = useRoute()
     const stanza = ref()
-    const onSubmit = useOnSubmit('stanzas', 'stanza', 'update')
+    const onSubmit = useOnSubmit('stanza', 'stanzas', 'update')
     const api = inject('api')
 
     // Replace with watchEffect?

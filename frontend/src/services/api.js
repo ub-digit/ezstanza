@@ -33,9 +33,7 @@ class ResourceApiService extends BaseApiService {
     } : {}
 
     return axios.get(`${this.endpointUrl()}/${id}`, options)
-      .then(response => {
-        return response.data
-      })
+      .then(response => response.data)
       .catch(this.handleErrors)
   }
 
@@ -45,33 +43,25 @@ class ResourceApiService extends BaseApiService {
     } : {}
 
     return axios.get(this.endpointUrl(), options)
-      .then(response => {
-        return response.data
-      })
+      .then(response => response.data)
       .catch(this.handleErrors)
   }
 
   create(data) {
     return axios.post(`${this.endpointUrl()}`, data)
-      .then(response => {
-        return response.data
-      })
+      .then(response => response.data)
       .catch(this.handleErrors)
   }
 
   update(id, data) {
     return axios.put(`${this.endpointUrl()}/${id}`, data)
-      .then(response => {
-        return response.data
-      })
+      .then(response => response.data)
       .catch(this.handleErrors)
   }
 
   delete(id) {
     return axios.delete(`${this.endpointUrl()}/${id}`)
-      .then(response => {
-        return response.data
-      })
+      .then(response => response.data)
       .catch(this.handleErrors)
   }
 }
@@ -106,12 +96,33 @@ class UsersApiService extends ResourceApiService {
   }
 }
 
+class DeployTargetsApiService extends ResourceApiService {
+  constructor() {
+    super('deploy_targets')
+  }
+}
+
+class DeployTargetApiService extends BaseApiService {
+  constructor() {
+    super('deploy_target')
+  }
+
+  config_form_schema() {
+    return axios.get(`${this.endpointUrl()}/frontend_options_form_schema`)
+      .then(response => response.data)
+      .catch(this.handleErrors)
+  }
+
+}
+
 const api = {
   stanzas: new StanzasApiService(),
   stanza_revisions: new StanzaRevisoinsApiService(),
   tags: new TagsApiService(),
   configs: new ConfigsApiService(),
-  users: new UsersApiService()
+  users: new UsersApiService(),
+  deploy_targets: new DeployTargetsApiService(),
+  deploy_target: new DeployTargetApiService()
 }
 
 export default api

@@ -8,13 +8,14 @@
 import Config
 
 config :ezstanza,
-  ecto_repos: [Ezstanza.Repo]
+  ecto_repos: [Ezstanza.Repo],
+  deployment_provider: Ezstanza.DeploymentProvider.SSH
 
 # Configures the endpoint
 config :ezstanza, EzstanzaWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [view: EzstanzaWeb.ErrorView, accepts: ~w(json), layout: false],
-  pubsub_server: Ezstanza.PubSub,
+  pubsub_server: Ezstanza.PubSub, #???
   live_view: [signing_salt: "YuRSlpQo"]
 
 # Configures the mailer

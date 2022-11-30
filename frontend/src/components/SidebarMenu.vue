@@ -19,6 +19,10 @@ export default {
             icon: 'pi pi-fw pi-book',
             to: '/configs'
           }, {
+            label: 'Deploy targets',
+            icon: 'pi pi-fw pi-server',
+            to: '/deploy_targets'
+          }, {
             label: 'Tags',
             icon: 'pi pi-fw pi-tags',
             to: '/tags'

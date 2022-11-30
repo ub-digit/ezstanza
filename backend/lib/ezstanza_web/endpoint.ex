@@ -48,6 +48,6 @@ defmodule EzstanzaWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
-  plug Plug.Session, @session_options
+  plug Plug.Session, @session_options # remove?
   plug EzstanzaWeb.Router
 end

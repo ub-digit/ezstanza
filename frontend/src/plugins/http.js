@@ -37,7 +37,7 @@ export default (app) => {
       return response;
     },
     error => {
-      if (error.response.config.showLoader) {
+      if (error.config.showLoader) {
         loaderStore.done()
       }
       return Promise.reject(error);

@@ -14,7 +14,7 @@ export default {
   setup({ tag }, { emit }) {
 
     const tagValues = toRaw(tag)
-    const {handleSubmit, isSubmitting, values, errors} = useForm({
+    const {handleSubmit, isSubmitting, errors} = useForm({
       //validationSchema: schema,
       initialValues: {
         ...tagValues

@@ -42,7 +42,24 @@ export default {
       type: Object
     },
     revisioned: {
-      type: Boolean
+      type: Boolean,
+      default: true
+    },
+    userColumn: {
+      type: Boolean,
+      default: true
+    },
+    selectable: {
+      type: Boolean,
+      default: true
+    },
+    filterDisplay: {
+      type: String,
+      default: "row"
+    },
+    lazy: {
+      type: Boolean,
+      default: true
     }
   },
   setup(props, context) {
@@ -59,7 +76,6 @@ export default {
     const pageSize = ref(10)
 
     const expandableRows = context.slots.expansion !== undefined
-
 
     const userOptions = ref([])
     api.users.list().then(result => {
@@ -100,21 +116,23 @@ export default {
 
     const loadEntities = (params) => {
       loading.value = true
-      params = Object.assign({}, params)
+      params = Object.assign({}, unref(params))
       // Load ahead some entities so don't have to refetch
       // on every deletion
       // @todo: better name. ahead, ahead_size?
-      params.extra = 5
+      if (props.lazy) {
+        params.extra = 5
+      }
       api[props.entityNamePluralized].list(params).then(result => {
         entities.value = result.data
-        totalEntities.value = result.total
+        totalEntities.value = 'total' in result? result.total : result.data.length
         loading.value = false
       })
     }
 
     const loadEntitiesUnpaginated = async () => {
       // @todo: alternatively { ...lazyParams.value } ?
-      let params = Object.assign({}, lazyParams.value)
+      let params = Object.assign({}, unref(lazyParams))
       delete params.page
       delete params.size
       let result = await api[props.entityNamePluralized].list(params)
@@ -137,31 +155,35 @@ export default {
     }
 
     const onFilter = (filters) => {
-      for (const [filter_name, value] of Object.entries(filters)) {
-        if (typeof value !== 'string' || value.length) { // Hmm??
-          lazyParams.value[filter_name] = value
-        }
-        else {
-          delete lazyParams.value[filter_name]
+      if (props.lazy) {
+        for (const [filter_name, value] of Object.entries(filters)) {
+          if (typeof value !== 'string' || value.length) { // Hmm??
+            lazyParams.value[filter_name] = value
+          }
+          else {
+            delete lazyParams.value[filter_name]
+          }
         }
       }
     }
 
     onMounted(() => {
-      lazyParams.value = {
+      // TODO: rename lazyParams
+      lazyParams.value = props.lazy ? {
         page: 1,
         //size: dt.value.rows,
         size: pageSize.value,
         order_by: getOrderBy(defaultSortField.value, defaultSortOrder.value)
-      }
+      } : {}
     })
 
     const maybeLoadEntities = () => {
       if (
-        (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
+        props.lazy &&
+          (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
           entities.value.length < lazyParams.value.size
       ) {
-        loadEntities(toRaw(lazyParams.value))
+        loadEntities(lazyParams)
       }
     }
 
@@ -171,6 +193,7 @@ export default {
       api[props.entityNamePluralized].delete(entity.id).then(() => {
         entities.value = entities.value.filter((s) => s.id !== entity.id)
         selectedEntities.value = selectedEntities.value.filter((s) => s.id !== entity.id)
+        // TODO: Skip if not lazy?
         totalEntities.value = totalEntities.value - 1
         maybeLoadEntities()
     }).catch((error) => {
@@ -181,11 +204,12 @@ export default {
 
     // @todo: add backend patch operation for bulk deletion?
     const onDeleteSelectedEntities = (close) => {
-      const entityIds = selectedEntities.value.map((s) => s.id)
-      Promise.all(entityIds.map((id) => api[props.entityNamePluralized].delete(id))).then(() => {
-        entities.value = entities.value.filter((s) => !entityIds.includes(s.id))
-        selectedEntities.value = selectedEntities.value.filter((s) => !entityIds.includes(s.id))
-        totalEntities.value = totalEntities.value - entityIds.length
+      const selectedEntityIds = selectedEntities.value.map((s) => s.id)
+      Promise.all(selectedEntityIds.map((id) => api[props.entityNamePluralized].delete(id))).then(() => {
+        entities.value = entities.value.filter((s) => !selectedEntityIds.includes(s.id))
+        selectedEntities.value = selectedEntities.value.filter((s) => !selectedEntityIds.includes(s.id))
+        totalEntities.value = totalEntities.value - selectedEntityIds.length
+
         maybeLoadEntities()
         close()
       }).catch((error) => {
@@ -196,9 +220,8 @@ export default {
     watch(
       () => lazyParams,
       async newParams => {
-        await loadEntities(toRaw(newParams.value))
+        await loadEntities(newParams)
       },
-      //{ immediate: true, deep: true }
       { deep: true }
     )
 
@@ -213,7 +236,9 @@ export default {
       },
       { immediate: true }
     )
-    */
+     */
+    const entityLabel = computed(() => props.entityName.replace('_', ' '))
+    const entityLabelPluralized = computed(() => props.entityNamePluralized.replace('_', ' '))
 
     return {
       dayjs,
@@ -236,7 +261,9 @@ export default {
       filters,
       userField,
       userFilterField,
-      userSortField
+      userSortField,
+      entityLabel,
+      entityLabelPluralized
     }
   },
   components: {
@@ -260,6 +287,7 @@ export default {
         <Button label="New" icon="pi pi-plus" class="p-button-success mr-2" @click="navigate"/>
       </router-link>
       <ConfirmDialogButton
+        v-if="selectable"
         label="Delete"
         icon="pi pi-trash"
         class="p-button-danger"
@@ -271,13 +299,12 @@ export default {
         <template #header>
           Confirm deletion
         </template>
-        <span class="p-confirm-dialog-message">Are you sure you want to delete selected {{ entityNamePluralized }}?</span>
+        <span class="p-confirm-dialog-message">Are you sure you want to delete selected {{ entityLabelPluralized }}?</span>
       </ConfirmDialogButton>
     </template>
   </Toolbar>
-
   <EntitySelect
-    v-model:entities="entities"
+    :entities="entities"
     v-model:selectedEntities="selectedEntities"
     :pageSize="pageSize"
     :totalEntities="totalEntities"
@@ -287,9 +314,12 @@ export default {
     @sort="onSort($event)"
     @page="onPage($event)"
     @filter="onFilter($event)"
+    :filterDisplay="filterDisplay"
     :filterColumns="filterColumns"
     :filters="filters"
     :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
+    :selectable="selectable"
+    :lazy="lazy"
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
     <template #reserved>
@@ -300,6 +330,7 @@ export default {
         </template>
       </Column>
       <Column
+        v-if="userColumn"
         :field="userField"
         header="Updated by"
         :sortable="true"
@@ -340,7 +371,7 @@ export default {
               <template #header>
                 Confirm delete
               </template>
-              <span class="p-confirm-dialog-message">Are you sure you want to delete {{ entityName }}<b>"{{data.name}}"</b>?</span>
+              <span class="p-confirm-dialog-message">Are you sure you want to delete {{ entityLabel }} "{{data.name}}"?</span>
             </ConfirmDialogButton>
           </div>
         </template>

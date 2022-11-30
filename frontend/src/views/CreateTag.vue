@@ -6,7 +6,7 @@ import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 export default {
   setup() {
     const tag = ref({})
-    const onSubmit = useOnSubmit('tags', 'tag', 'create')
+    const onSubmit = useOnSubmit('tag', 'tags', 'create')
 
     return {
       tag,

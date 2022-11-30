@@ -7,10 +7,13 @@ export default {
       required: true
     },
     helpText: String,
-    rules: [String, Object]
+    rules: [String, Object, Function]
   },
   setup({ name, rules }) {
-    const { value, handleBlur, handleChange, errorMessage, meta } = useField(name, rules)
+    const { value, handleBlur, handleChange, errorMessage, meta } = useField(name, rules, {
+      validateOnValueUpdate: true,
+      validateOnMount: false
+    })
     //const hasError = computed(() => !!errorMessage)
     //const hasError = computed(() => errors.length )
     return {

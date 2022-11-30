@@ -28,12 +28,13 @@ defmodule EzstanzaWeb.Router do
     get "/session/user", SessionController, :user
     # Just for testing
     get "/users", UserController, :index
-    resources "/stanzas", StanzaController
-    post "/stanza/validate_lines", StanzaController, :validate_lines
+    resources "/stanzas", StanzaController, except: [:new, :edit]
     post "/stanza/validate_lines", StanzaController, :validate_lines
     resources "/stanza_revisions", StanzaRevisionController, only: [:show, :index]
-    resources "/tags", TagController
-    resources "/configs", ConfigController
+    resources "/tags", TagController, except: [:new, :edit]
+    resources "/configs", ConfigController, except: [:new, :edit]
+    resources "/deploy_targets", DeployTargetController, except: [:new, :edit]
+    get "/deploy_target/frontend_options_form_schema", DeployTargetController, :frontend_options_form_schema #TODO: Right now incosistent naming, decide on one and fix
   end
 
   # Enables LiveDashboard only for development

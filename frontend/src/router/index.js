@@ -14,6 +14,10 @@ import EditTag from '../views/EditTag.vue'
 import CreateTag from '../views/CreateTag.vue'
 import ListTags from '../views/ListTags.vue'
 
+import EditDeployTarget from '../views/EditDeployTarget.vue'
+import CreateDeployTarget from '../views/CreateDeployTarget.vue'
+import ListDeployTargets from '../views/ListDeployTargets.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -58,6 +62,21 @@ const router = createRouter({
       component: EditConfig,
       meta: { auth: true }
     }, {
+      path: '/deploy_targets',
+      name: 'ListDeployTargets',
+      component: ListDeployTargets,
+      meta: { auth: true }
+    }, {
+      path: '/deploy_targets/new',
+      name: 'CreateDeployTarget',
+      component: CreateDeployTarget,
+      meta: { auth: true }
+    }, {
+      path: '/deploy_targets/:id(\\d+)',
+      name: 'EditDeployTarget',
+      component: EditDeployTarget,
+      meta: { auth: true }
+    }, {
       path: '/tags',
       name: 'ListTags',
       component: ListTags,
@@ -73,7 +92,6 @@ const router = createRouter({
       component: EditTag,
       meta: { auth: true }
     }
-
   ]
 })
 
