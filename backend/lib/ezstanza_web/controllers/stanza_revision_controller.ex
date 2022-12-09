@@ -29,8 +29,6 @@ defmodule EzstanzaWeb.StanzaRevisionController do
   end
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
-    IO.puts("noramlized params")
-    IO.inspect(normalize_index_params(params))
     result = params
              |> normalize_index_params()
              |>Stanzas.paginate_stanza_revisions()

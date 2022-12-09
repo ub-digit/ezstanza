@@ -11,6 +11,8 @@ import Toolbar from 'primevue/toolbar'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import ChangeStanzaRevisionDialogButton from '@/components/ChangeStanzaRevisionDialogButton.vue'
 import Dialog from 'primevue/dialog'
+import InputText from 'primevue/inputtext'
+import UseLazyDataTable from '@/components/UseLazyDataTable.js'
 
 export default {
   emits: ['submit'],
@@ -35,8 +37,6 @@ export default {
 
     const stanzas = ref([])
     const api = inject('api')
-    const defaultSortField = ref('updated_at')
-    const defaultSortOrder = ref(-1)
     const expandedRows = ref([])
 
     const onSubmit = handleSubmit((values, context) => {
@@ -62,36 +62,42 @@ export default {
     })
 
     // TODO: remove
+    // ??
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
       { label: 'Equals', value: FilterMatchMode.EQUALS },
     ]
 
     const loading = ref(false)
-    const lazyParams = ref({})
     const totalStanzas = ref()
     const selectedStanzas = ref([])
     const selectedConfigStanzas = ref([])
     const pageSize = ref(50)
+    const defaultSortField = ref('updated_at')
+    const defaultSortOrder = ref(-1)
+
+    const { lazyParams, dataTableEvents } = UseLazyDataTable({
+      pageSize: pageSize.value,
+      defaultSortField: defaultSortField.value,
+      defaultSortOrder: defaultSortOrder.value
+    })
 
     watch(
       () => configStanzaRevisions,
-      (newConfigStanzas) => {
-        if (newConfigStanzas.value.length) {
-          lazyParams.value.id_not_in = newConfigStanzas.value.map(
-            (stanza_revision) => stanza_revision.id
+      (newConfigStanzaRevisions) => {
+        if (newConfigStanzaRevisions.value.length) {
+          lazyParams.value.stanza_id_not_in = newConfigStanzaRevisions.value.map(
+            (stanza_revision) => stanza_revision.stanza_id
           ).join(',')
         }
         else {
-          delete lazyParams.value.id_not_in
+          delete lazyParams.value.stanza_id_not_in
         }
       },
       { immediate: true, deep: true }
     )
 
     const loadStanzas = (params) => {
-      console.log('loading')
-      console.dir(params)
       loading.value = true
       api.stanza_revisions.list(params).then(result => {
         stanzas.value = result.data
@@ -107,32 +113,6 @@ export default {
       delete params.size
       let result = await api.stanza_revisions.list(params)
       return result.data
-    }
-
-    // TODO: Kludge
-    const getOrderBy = (sortField, sortOrder) => {
-      return sortField + (sortOrder === -1 ? '_desc' : '')
-    }
-
-    //TODO: Default sort by new
-    const onSort = (event) => {
-      lazyParams.value['order_by'] = getOrderBy(event.sortField, event.sortOrder)
-    }
-
-    const onPage = (event) => {
-      lazyParams.value.size = event.rows
-      lazyParams.value.page = event.page + 1
-    }
-
-    const onFilter = (filters) => {
-      for (const [filter_name, value] of Object.entries(filters)) {
-        if (value.length) {
-          lazyParams.value[filter_name] = value
-        }
-        else {
-          delete lazyParams.value[filter_name]
-        }
-      }
     }
 
     const displayAddStanzasModal = ref(false)
@@ -174,10 +154,6 @@ export default {
     })
 
     onMounted(() => {
-      loading.value = true
-      lazyParams.value.page = 1
-      lazyParams.value.size = pageSize.value
-      lazyParams.value.order_by = getOrderBy(defaultSortField.value, defaultSortOrder.value)
       lazyParams.value.is_current_revision = true
     })
 
@@ -200,9 +176,7 @@ export default {
       expandedRows,
       defaultSortField,
       defaultSortOrder,
-      onSort,
-      onPage,
-      onFilter,
+      dataTableEvents,
       filters,
       stanzaSelectFilterColumns,
       loadStanzasUnpaginated,
@@ -226,6 +200,7 @@ export default {
     Column,
     ConfirmDialogButton,
     ChangeStanzaRevisionDialogButton,
+    InputText,
     VTextField,
     VColorPickerField,
     EntitySelect
@@ -266,9 +241,7 @@ export default {
             :loading="loading"
             :defaultSortField="defaultSortField"
             :defaultSortOrder="defaultSortOrder"
-            @sort="onSort($event)"
-            @page="onPage($event)"
-            @filter="onFilter($event)"
+            v-on="dataTableEvents"
             :filterColumns="stanzaSelectFilterColumns"
             :loadEntitiesUnpaginated="loadStanzasUnpaginated"
           >

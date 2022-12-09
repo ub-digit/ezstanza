@@ -7,6 +7,7 @@ import Toolbar from 'primevue/toolbar'
 import MultiSelect from 'primevue/multiselect'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
+import UseLazyDataTable from '@/components/UseLazyDataTable.js'
 
 
 export default {
@@ -69,11 +70,16 @@ export default {
     const defaultSortField = toRef(props, 'defaultSortField')
     const defaultSortOrder = ref(-1)
     const loading = ref(false)
-    const lazyParams = ref({})
     const entities = ref([])
     const totalEntities = ref()
     const selectedEntities = ref([])
-    const pageSize = ref(10)
+    const pageSize = ref(5)
+
+    const { lazyParams, dataTableEvents } = props.lazy ? UseLazyDataTable({
+      pageSize: pageSize.value,
+      defaultSortField: defaultSortField.value,
+      defaultSortOrder: defaultSortOrder.value
+    }) : { lazyParams: ref({}), dataTableEvents: {} }
 
     const expandableRows = context.slots.expansion !== undefined
 
@@ -123,6 +129,7 @@ export default {
       if (props.lazy) {
         params.extra = 5
       }
+      // TODO: Error handling/toast
       api[props.entityNamePluralized].list(params).then(result => {
         entities.value = result.data
         totalEntities.value = 'total' in result? result.total : result.data.length
@@ -138,44 +145,6 @@ export default {
       let result = await api[props.entityNamePluralized].list(params)
       return result.data
     }
-
-    // TODO: Kludge
-    const getOrderBy = (sortField, sortOrder) => {
-      return sortField + (sortOrder === -1 ? '_desc' : '')
-    }
-
-    //TODO: Default sort by new
-    const onSort = (event) => {
-      lazyParams.value['order_by'] = getOrderBy(event.sortField, event.sortOrder)
-    }
-
-    const onPage = (event) => {
-      lazyParams.value.size = event.rows
-      lazyParams.value.page = event.page + 1
-    }
-
-    const onFilter = (filters) => {
-      if (props.lazy) {
-        for (const [filter_name, value] of Object.entries(filters)) {
-          if (typeof value !== 'string' || value.length) { // Hmm??
-            lazyParams.value[filter_name] = value
-          }
-          else {
-            delete lazyParams.value[filter_name]
-          }
-        }
-      }
-    }
-
-    onMounted(() => {
-      // TODO: rename lazyParams
-      lazyParams.value = props.lazy ? {
-        page: 1,
-        //size: dt.value.rows,
-        size: pageSize.value,
-        order_by: getOrderBy(defaultSortField.value, defaultSortOrder.value)
-      } : {}
-    })
 
     const maybeLoadEntities = () => {
       if (
@@ -250,9 +219,7 @@ export default {
       selectedEntities,
       defaultSortField,
       defaultSortOrder,
-      onSort,
-      onPage,
-      onFilter,
+      dataTableEvents,
       onDeleteEntity,
       onDeleteSelectedEntities,
       dialogBreakpoints,
@@ -311,9 +278,7 @@ export default {
     :loading="loading"
     :defaultSortField="defaultSortField"
     :defaultSortOrder="defaultSortOrder"
-    @sort="onSort($event)"
-    @page="onPage($event)"
-    @filter="onFilter($event)"
+    v-on="dataTableEvents"
     :filterDisplay="filterDisplay"
     :filterColumns="filterColumns"
     :filters="filters"

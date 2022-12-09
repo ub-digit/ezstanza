@@ -603,8 +603,8 @@ defmodule Ezstanza.Stanzas do
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
         dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like(value)}%"))
-      {"id_not_in", value}, dynamic ->
-        dynamic([s_r], ^dynamic and s_r.id not in ^String.split(value, ","))
+      {"stanza_id_not_in", value}, dynamic ->
+        dynamic([s_r], ^dynamic and s_r.stanza_id not in ^String.split(value, ","))
       {"stanza_id", value}, dynamic ->
         dynamic([s_r], ^dynamic and s_r.stanza_id == ^value)
       {"is_current_revision", true}, dynamic ->

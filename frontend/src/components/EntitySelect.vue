@@ -62,7 +62,6 @@ export default {
     const selectAll  = ref(false)
 
     const entities = toRef(props, 'entities')
-    const pageSize = toRef(props, 'pageSize')
     const totalEntities = toRef(props, 'totalEntities')
     const expandedRows = ref([])
 
@@ -122,16 +121,11 @@ export default {
         )
       )
     }
-
+    // ref?
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
       { label: 'Equals', value: FilterMatchMode.EQUALS },
     ]
-
-    const filterSuffix = {
-      [FilterMatchMode.CONTAINS]: '_like',
-      [FilterMatchMode.EQUALS]: ''
-    }
 
     const onPage = (event) => {
       context.emit('page', event)
@@ -143,13 +137,8 @@ export default {
     }
 
     const onFilter = (event) => {
-      let newFilters = {}
-      for (const [filter, data] of Object.entries(event.filters)) {
-        const filter_name = filter + filterSuffix[data.matchMode]
-        newFilters[filter_name] = data.value
-      }
       filtersChanged = true
-      context.emit('filter', newFilters)
+      context.emit('filter', event)
     }
 
     const onSelectAllChange = (event) => {
@@ -175,13 +164,12 @@ export default {
 
     // Hide paginator if all entities are currently displayed
     const showPaginator = computed(() => {
-      return entities.length <= totalEntitiesLength.value
+      return entities.value.length <= totalEntitiesLength.value
     })
 
     return {
       entities,
       totalEntities,
-      pageSize,
       expandedRows,
       filters,
       defaultSortField,
