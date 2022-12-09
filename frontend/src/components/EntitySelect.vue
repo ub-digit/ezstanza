@@ -164,7 +164,11 @@ export default {
 
     // Hide paginator if all entities are currently displayed
     const showPaginator = computed(() => {
-      return entities.value.length <= totalEntitiesLength.value
+      // Feature not a but that page size not reacative
+      // since don't want to hide pagination if first
+      // visiable even if increasing page size to fit all
+      // entities
+      return totalEntitiesLength.value > props.pageSize
     })
 
     return {

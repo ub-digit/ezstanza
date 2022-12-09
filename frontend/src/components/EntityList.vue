@@ -73,7 +73,7 @@ export default {
     const entities = ref([])
     const totalEntities = ref()
     const selectedEntities = ref([])
-    const pageSize = ref(5)
+    const pageSize = ref(10)
 
     const { lazyParams, dataTableEvents } = props.lazy ? UseLazyDataTable({
       pageSize: pageSize.value,
@@ -186,13 +186,18 @@ export default {
       })
     }
 
-    watch(
-      () => lazyParams,
-      async newParams => {
-        await loadEntities(newParams)
-      },
-      { deep: true }
-    )
+    if (props.lazy) {
+      watch(
+        () => lazyParams,
+        async newParams => {
+          await loadEntities(newParams)
+        },
+        { deep: true }
+      )
+    }
+    else {
+      loadEntities(lazyParams)
+    }
 
     /*
     watch(
