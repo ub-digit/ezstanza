@@ -18,7 +18,7 @@ export default {
         // Triggered when leaving route, WTF!?!?
         if (typeof newId !== 'undefined') {
           //TODO: error handling
-          const result = await api.configs.fetch(newId)
+          const result = await api.configs.fetch(newId, { includes: ['stanza_revisions'] })
           config.value = result.data
         }
       },

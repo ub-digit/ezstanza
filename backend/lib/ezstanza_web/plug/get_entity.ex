@@ -16,7 +16,11 @@ defmodule EzstanzaWeb.Plug.GetEntity do
         # TODO: alternatively skip hard coded id handling and let params_callback fetch all arguments
         # (and also rename to arguments_callback in that case)
         args = case Map.get(opts, :params_callback) do
-          nil -> [id]
+          nil ->
+            case map_size(conn.query_params) do
+              0 -> [id]
+              _ -> [id, conn.query_params]
+            end
           {module, params_fun} -> [id, apply(module, params_fun, [conn])]
         end
         case apply(module, get_fun, args) do

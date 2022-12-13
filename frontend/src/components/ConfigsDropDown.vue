@@ -3,17 +3,26 @@ import {toRaw, ref, inject} from 'vue'
 import DropDown from 'primevue/dropdown'
 
 export default {
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'change'],
   props: {
     modelValue: {
-      type: Number,
+      type: [Number, Object],
       default: null
+    },
+    revisions: {
+      type: Boolean,
+      default: false
+    },
+    placeholder: {
+      type: String,
+      default: "Any"
     }
   },
-  setup(_props, { emit }) {
+  setup(props, { emit }) {
     const api = inject('api')
     const configOptions = ref([])
-    api.configs.list().then(result => {
+    const params = props.revisions ? { includes: ['revisions'] } : {}
+    api.configs.list(params).then(result => {
       configOptions.value = result.data.map(
         config => {
           return {
@@ -36,13 +45,11 @@ export default {
 <template>
   <DropDown
     :modelValue="modelValue"
-    @change="$emit('update:modelValue', $event.value)"
+    @update:modelValue="$emit('update:modelValue', $event)"
+    @change="$emit('change', $event)"
     :options="configOptions"
     dataKey="id"
     optionLabel="name"
-    optionValue="id"
-    placeholder="Select"
-    class="-column-filter"
+    :placeholder="placeholder"
   />
-
 </template>

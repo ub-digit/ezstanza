@@ -1,9 +1,10 @@
 <script>
-import {ref, inject} from 'vue'
+import {ref} from 'vue'
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import ColorChip from '@/components/ColorChip.vue'
+import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
 import DropDown from 'primevue/dropdown'
 import { FilterMatchMode } from 'primevue/api'
 
@@ -24,20 +25,6 @@ export default {
     )
     */
 
-    const api = inject('api')
-    const configOptions = ref([])
-
-    api.configs.list().then(result => {
-      configOptions.value = result.data.map(
-        config => {
-          return {
-            name: config.name,
-            id: config.id
-          }
-        }
-      )
-    })
-
     const filterColumns = [
       {
         fieldName: 'name',
@@ -49,20 +36,20 @@ export default {
     const filters = {
       config_id: {
         matchMode: FilterMatchMode.EQUALS,
-        value: ''
+        value: null
       }
     }
 
     return {
       filterColumns,
-      filters,
-      configOptions
+      filters
     }
   },
   components: {
     EntityList,
     Column,
     ColorChip,
+    ConfigsDropDown, //TODO: UsersDropDown?
     DropDown
   }
 }
@@ -87,15 +74,12 @@ export default {
       :showFilterMenu="false"
     >
       <template #filter="{filterModel, filterCallback}">
-        <DropDown
-          v-model="filterModel.value"
-          @change="filterCallback()"
-          :options="configOptions"
-          dataKey="id"
-          optionLabel="name"
-          optionValue="id"
+        <ConfigsDropDown
           placeholder="Any"
           class="p-column-filter"
+          v-model="filterModel.value"
+          optionValue="id"
+          @change="filterCallback()"
         />
       </template>
       <template #body="{ data }">

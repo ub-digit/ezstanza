@@ -7,6 +7,7 @@ defmodule Ezstanza.Configs.ConfigRevision do
   alias Ezstanza.Accounts.User
 
   schema "config_revision" do
+    field :is_current_revision, :boolean, virtual: true
     belongs_to :config, Config
     belongs_to :user, User
     many_to_many :stanza_revisions, StanzaRevision,

@@ -17,16 +17,13 @@ export default {
     },
   },
   setup({ deployTarget }, { emit }) {
-    const deployTargetValues = toRaw(deployTarget)
     const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, errors} = useForm({
       /*
       validationSchema: {
         name: 'required',
         },
       */
-      initialValues: {
-        ...deployTargetValues,
-      },
+      initialValues: toRaw(deployTarget),
       validateOnMount: false
     })
 
@@ -89,6 +86,8 @@ export default {
     <ConfigsDropDown
       id="default_config"
       v-model="defaultConfigId"
+      optionValue="id"
+      placeholder="Select"
       class="mb-5"
     />
     <DynamicFormPartial v-if="optionsFieldsSchema" :fieldsSchema="optionsFieldsSchema"/>

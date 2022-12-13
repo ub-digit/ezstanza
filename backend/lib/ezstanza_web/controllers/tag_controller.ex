@@ -15,7 +15,7 @@ defmodule EzstanzaWeb.TagController do
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = Tags.paginate_tags(params)
-    render(conn, "index.json", tags: result.tags, pages: result.pages, total: result.total)
+    render(conn, "index.json", tags: result.entries, pages: result.pages, total: result.total)
   end
 
   def index(conn, params) do

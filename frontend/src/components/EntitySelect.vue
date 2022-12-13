@@ -231,6 +231,7 @@ export default {
       <Column
         :field="column.fieldName"
         :filterField="column.filterFieldName"
+        :sortField="column.filterFieldName"
         :header="column.header"
         :ref="column.fieldName"
         :filterMatchModeOptions="filterMatchModeOptions"

@@ -37,8 +37,6 @@ defmodule EzstanzaWeb.StanzaView do
       user: render_one(stanza.user, UserView, "user_snippet.json"),
       revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json"),
       current_configs: stanza_current_configs(stanza.current_configs, stanza.current_revision_current_configs)
-      #current_configs: render_many(stanza.current_configs, ConfigView, "config_snippet.json"),
-      #current_revision_current_configs: render_many(stanza.current_revision_current_configs, ConfigView, "config_snippet.json")
     }
     |> then(fn struct ->
       case stanza do

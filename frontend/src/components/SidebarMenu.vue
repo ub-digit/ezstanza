@@ -19,6 +19,10 @@ export default {
             icon: 'pi pi-fw pi-book',
             to: '/configs'
           }, {
+            label: 'Deployments',
+            icon: 'pi pi-fw pi-cloud-upload',
+            to: '/deployments'
+          }, {
             label: 'Deploy targets',
             icon: 'pi pi-fw pi-server',
             to: '/deploy_targets'

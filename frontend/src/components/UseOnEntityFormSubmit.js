@@ -30,18 +30,22 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
     let args = op === 'update' ? [entity.id] : []
     args.push({ [entityName]: entity })
 
-    api[entityNamePluralized][op](...args)
+    return api[entityNamePluralized][op](...args)
       .then((result) => {
+        let detail = result.data.name ?
+          `${entityLabelCapitalized} "${result.data.name}" successfully ${opPastTense}` :
+          `${entityLabelCapitalized} successfully ${opPastTense}`
         toast.add({
           severity: ToastSeverity.SUCCESS,
           summary: `${entityLabelCapitalized} ${opPastTense}`,
-          detail: `${entityLabelCapitalized} "${result.data.name}" successfully ${opPastTense}`,
+          detail: detail,
           life: toastTimeout
         })
         resetForm() //TODO: This should only be run on creation right??
         if ('destination' in route.query) {
           router.push(route.query.destination)
         }
+        return result.data
       }).catch((error) => {
         // Unprocessable entity, validation errors
         if (error.response.status == 422) {

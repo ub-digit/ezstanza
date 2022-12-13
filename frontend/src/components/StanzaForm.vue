@@ -148,7 +148,7 @@ export default {
     //extensions.push(new LanguageSupport(stanzaLanguage))
 
     const stanzaValues = toRaw(stanza)
-    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel, errors} = useForm({
+    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel} = useForm({
       //validationSchema: schema,
       initialValues: {
         ...stanzaValues,
@@ -244,8 +244,7 @@ export default {
       extensions,
       onSubmit,
       isSubmitting,
-      stanzaRevisionChanged,
-      errors //remove?
+      stanzaRevisionChanged
     }
   },
   components: {
@@ -256,7 +255,7 @@ export default {
 }
 </script>
 <template>
-  <form  @submit="onSubmit">
+  <form @submit="onSubmit">
     <label for="name" class="block text-900 font-medium mb-2">Name</label>
     <VTextField id="name" name="name"/>
 

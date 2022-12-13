@@ -7,8 +7,8 @@ defmodule EzstanzaWeb.DeployTargetController do
   action_fallback EzstanzaWeb.FallbackController
 
   def index(conn, _params) do
-    deploy_target = DeployTargets.list_deploy_target()
-    render(conn, "index.json", deploy_target: deploy_target)
+    deploy_targets = DeployTargets.list_deploy_targets()
+    render(conn, "index.json", deploy_targets: deploy_targets)
   end
 
   def create(conn, %{"deploy_target" => deploy_target_params}) do
@@ -21,12 +21,12 @@ defmodule EzstanzaWeb.DeployTargetController do
   end
 
   def show(conn, %{"id" => id}) do
-    deploy_target = DeployTargets.get_deploy_target!(id)
+    deploy_target = DeployTargets.get_deploy_target(id)
     render(conn, "show.json", deploy_target: deploy_target)
   end
 
   def update(conn, %{"id" => id, "deploy_target" => deploy_target_params}) do
-    deploy_target = DeployTargets.get_deploy_target!(id)
+    deploy_target = DeployTargets.get_deploy_target(id)
 
     with {:ok, %DeployTarget{} = deploy_target} <- DeployTargets.update_deploy_target(deploy_target, deploy_target_params) do
       render(conn, "show.json", deploy_target: deploy_target)
@@ -34,7 +34,7 @@ defmodule EzstanzaWeb.DeployTargetController do
   end
 
   def delete(conn, %{"id" => id}) do
-    deploy_target = DeployTargets.get_deploy_target!(id)
+    deploy_target = DeployTargets.get_deploy_target(id)
 
     with {:ok, %DeployTarget{}} <- DeployTargets.delete_deploy_target(deploy_target) do
       send_resp(conn, :no_content, "")

@@ -36,7 +36,7 @@ defmodule EzstanzaWeb.ConfigController do
     end
   end
 
-  def show(conn, %{"id" => _id}) do
+  def show(conn, %{"id" => _id} = params) do
     config = conn.assigns[:config]
     render(conn, "show.json", config: config)
   end

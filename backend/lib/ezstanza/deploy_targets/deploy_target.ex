@@ -6,8 +6,8 @@ defmodule Ezstanza.DeployTargets.DeployTarget do
 
   schema "deploy_target" do
     field :name, :string
-    belongs_to :config, Config,
-      foreign_key: :default_config_id
+    belongs_to :default_config, Config,
+      foreign_key: :default_config_id # can remove?
     embeds_one :options, Application.fetch_env!(:ezstanza, :deployment_provider)
     timestamps()
   end

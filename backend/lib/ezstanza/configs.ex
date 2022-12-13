@@ -19,13 +19,19 @@ defmodule Ezstanza.Configs do
 
   alias Ezstanza.Stanzas
 
-  def config_base_query() do
+  defp process_config_includes(query, includes) when is_list(includes) do
+    config_revisions_preloader = fn config_ids ->
+      Repo.all(from s_r in config_revision_base_query(),
+        where: s_r.config_id in ^config_ids
+      )
+    end
+
     stanza_revisions_preloader = fn config_revision_ids ->
       Repo.all(from s_r in Stanzas.stanza_revision_base_query,
         join: s_r_c_r in assoc(s_r, :config_revisions),
         where: s_r_c_r.id in ^config_revision_ids,
         preload: [config_revisions: s_r_c_r]
-        #select: {s_r_c_r.id, s_r} #TODO: Test this
+        #select: {s_r_c_r.id, s_r} #TODO: Test this instead of flat_map below
       )
       |> Enum.flat_map(fn stanza_revision ->
         Enum.map(stanza_revision.config_revisions, fn config_revision ->
@@ -34,17 +40,41 @@ defmodule Ezstanza.Configs do
       end)
     end
 
+    Enum.reduce(includes, query, fn
+      "revisions", query ->
+        # TODO: Replace with Repo.preload
+        from c in query,
+        preload: [revisions: ^config_revisions_preloader]
+      "stanza_revisions", query ->
+        query
+        |> preload([current_revision: c_r], [current_revision: {c_r, stanza_revisions: ^stanza_revisions_preloader}])
+      _, query ->
+        query
+    end)
+  end
+  defp process_stanza_includes(query, _), do: query
+
+  def config_base_query(%{} = params) do
+    Enum.reduce(params, config_base_query(), fn
+      {"includes", includes}, query ->
+        process_config_includes(query, includes)
+      _, query ->
+        query
+    end)
+  end
+
+  def config_base_query() do
     from c in Config,
       join: u in assoc(c, :user), as: :user,
       join: c_r in assoc(c, :current_revision), as: :current_revision,
       join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
       preload: [
-        user: u, current_revision: {c_r, user: c_r_u, stanza_revisions: ^stanza_revisions_preloader}
+        user: u, current_revision: {c_r, user: c_r_u}
       ]
   end
 
   defp config_list_query(%{} = params) do
-    config_base_query()
+    config_base_query(params)
     |> order_by(^dynamic_order_by(params["order_by"]))
     |> where(^dynamic_where(params))
   end
@@ -122,8 +152,11 @@ defmodule Ezstanza.Configs do
       ** nil
 
   """
-  def get_config(id) do
-    Repo.one(from s in config_base_query(), where: s.id == ^id)
+  #def get_config(id) do
+  #  Repo.one(from s in config_base_query(), where: s.id == ^id)
+  #end
+  def get_config(id, %{} = params \\ %{}) do
+    Repo.one(from s in config_base_query(params), where: s.id == ^id)
   end
 
   @doc """
@@ -218,6 +251,16 @@ defmodule Ezstanza.Configs do
   """
   def change_config(%Config{} = config, attrs \\ %{}) do
     Config.changeset(config, attrs)
+  end
+
+  def config_revision_base_query() do
+    from c_r in ConfigRevision,
+      join: c in assoc(c_r, :config), as: :config,
+      join: c_u in assoc(c, :user), as: :config_user,
+      join: c_r_u in assoc(c_r, :user), as: :user,
+      preload: [user: c_r_u, config: {c, user: c_u}],
+      select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", c_r.id, c.current_config_revision_id)}
+      #select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)},
   end
 
   @doc """

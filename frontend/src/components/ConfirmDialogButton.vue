@@ -4,12 +4,15 @@ import Button from 'primevue/button'
 import { ref } from 'vue'
 
 export default {
-  emits: ['accept'],
+  emits: ['accept', 'close', 'open'],
   inheritAttrs: false,
   props: {
     breakpoints: {
       type: Object,
-      default: null
+      default: {
+        '960px': '75vw',
+        '640px': '90vw'
+      }
     }
   },
   setup(_props, { emit }) {
@@ -18,10 +21,12 @@ export default {
 
     const onOpen = () => {
       visible.value = true
+      emit('open')
     }
     const close = () => {
       visible.value = false
       loading.value = false
+      emit('close')
     }
     const onAccept = () => {
       loading.value = true

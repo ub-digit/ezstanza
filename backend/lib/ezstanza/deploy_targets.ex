@@ -8,17 +8,25 @@ defmodule Ezstanza.DeployTargets do
 
   alias Ezstanza.DeployTargets.DeployTarget
 
+
+ def base_query() do
+    from s in DeployTarget,
+      join: c in assoc(s, :default_config), as: :default_config,
+      preload: [default_config: c]
+  end
+
+
   @doc """
   Returns the list of deploy_target.
 
   ## Examples
 
-      iex> list_deploy_target()
+      iex> list_deploy_targets()
       [%DeployTarget{}, ...]
 
   """
-  def list_deploy_target do
-    Repo.all(DeployTarget)
+  def list_deploy_targets do
+    Repo.all base_query()
   end
 
   @doc """
@@ -28,14 +36,16 @@ defmodule Ezstanza.DeployTargets do
 
   ## Examples
 
-      iex> get_deploy_target!(123)
+      iex> get_deploy_target(123)
       %DeployTarget{}
 
-      iex> get_deploy_target!(456)
-      ** (Ecto.NoResultsError)
+      iex> get_deploy_target(456)
+      nil
 
   """
-  def get_deploy_target!(id), do: Repo.get!(DeployTarget, id)
+  def get_deploy_target(id) do
+    Repo.one(from d_t in base_query(), where: d_t.id == ^id)
+  end
 
   @doc """
   Creates a deploy_target.

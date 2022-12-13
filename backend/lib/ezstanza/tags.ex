@@ -6,6 +6,8 @@ defmodule Ezstanza.Tags do
   import Ecto.Query, warn: false
   alias Ezstanza.Repo
 
+  import Ezstanza.Pagination
+
   alias Ezstanza.Tags.Tag
 
 
@@ -83,31 +85,8 @@ defmodule Ezstanza.Tags do
 
   # TODO: Generalize, macro?
   def paginate_tags(%{"page" => page, "size" => size} = params) do
-    {page, _} = Integer.parse(page)
-    {size, _} = Integer.parse(size)
-    extra = Map.get(params, "extra", "0")
-    {extra, _} = Integer.parse(extra)
-
-    offset = (page - 1) * size
-    limit = size + extra
-
-    query = list_query(params)
-            |> offset(^offset)
-            |> limit(^limit)
-    count_query = query
-                  |> exclude(:join)
-                  |> exclude(:preload)
-                  |> exclude(:order_by)
-                  |> exclude(:limit)
-                  |> exclude(:offset)
-
-    count = Repo.one(from t in count_query, select: count("*"))
-    tags = Repo.all query
-    %{
-      pages: div(count, size) + 1,
-      total: count,
-      tags: tags
-    }
+    list_query(params)
+    |> paginate_entries(params)
   end
 
   @doc """

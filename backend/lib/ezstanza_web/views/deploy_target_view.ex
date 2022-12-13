@@ -1,9 +1,12 @@
 defmodule EzstanzaWeb.DeployTargetView do
   use EzstanzaWeb, :view
-  alias EzstanzaWeb.DeployTargetView
+  #import EzstanzaWeb.ViewRelationshipHelpers
 
-  def render("index.json", %{deploy_target: deploy_target}) do
-    %{data: render_many(deploy_target, DeployTargetView, "deploy_target.json")}
+  alias EzstanzaWeb.DeployTargetView
+  alias EzstanzaWeb.ConfigView
+
+  def render("index.json", %{deploy_targets: deploy_targets}) do
+    %{data: render_many(deploy_targets, DeployTargetView, "deploy_target.json")}
   end
 
   def render("show.json", %{deploy_target: deploy_target}) do
@@ -19,5 +22,6 @@ defmodule EzstanzaWeb.DeployTargetView do
       updated_at: deploy_target.updated_at,
       options: deploy_target.options
     }
+    #|> Map.merge(maybe_render_relationship(deploy_target, :default_config, ConfigView, "config_snippet.json"))
   end
 end

@@ -1,9 +1,11 @@
 defmodule EzstanzaWeb.ConfigView do
   use EzstanzaWeb, :view
   alias EzstanzaWeb.ConfigView
+  import EzstanzaWeb.ViewRelationshipHelpers
 
   alias EzstanzaWeb.UserView
   alias EzstanzaWeb.StanzaRevisionView
+  alias EzstanzaWeb.ConfigRevisionView
 
   def render("index.json", %{configs: configs, pages: pages, total: total}) do
     %{
@@ -21,7 +23,6 @@ defmodule EzstanzaWeb.ConfigView do
     %{data: render_one(config, ConfigView, "config.json")}
   end
 
-  # TODO: Remove, currently not used?
   def render("config_snippet.json", %{config: config}) do
     %{
       id: config.id,
@@ -40,7 +41,9 @@ defmodule EzstanzaWeb.ConfigView do
       updated_at: config.updated_at,
       user: render_one(config.user, UserView, "user_snippet.json"),
       revision_user: render_one(config.current_revision.user, UserView, "user_snippet.json"),
-      stanza_revisions: render_many(config.current_revision.stanza_revisions, StanzaRevisionView, "stanza_revision.json"),
+      #stanza_revisions: render_many(config.current_revision.stanza_revisions, StanzaRevisionView, "stanza_revision.json"),
     }
+    |> Map.merge(maybe_render_relationship(config.current_revision, :stanza_revisions, StanzaRevisionView, "stanza_revision.json"))
+    |> Map.merge(maybe_render_relationship(config, :revisions, ConfigRevisionView, "config_revision.json"))
   end
 end

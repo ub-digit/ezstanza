@@ -8,7 +8,7 @@ import MultiSelect from 'primevue/multiselect'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
 import UseLazyDataTable from '@/components/UseLazyDataTable.js'
-
+import CreateEntityButton from '@/components/CreateEntityButton.vue'
 
 export default {
   props: {
@@ -244,20 +244,15 @@ export default {
     Button,
     Toolbar,
     MultiSelect,
-    ConfirmDialogButton
+    ConfirmDialogButton,
+    CreateEntityButton
   }
 }
 </script>
 <template>
   <Toolbar class="mb-4">
     <template #start>
-      <router-link
-        custom
-        :to="{ name: createRouteName, query: { destination: destinationPath } }"
-        v-slot="{ navigate }"
-      >
-        <Button label="New" icon="pi pi-plus" class="p-button-success mr-2" @click="navigate"/>
-      </router-link>
+      <CreateEntityButton :createRouteName="createRouteName" :destinationPath="destinationPath"/>
       <ConfirmDialogButton
         v-if="selectable"
         label="Delete"

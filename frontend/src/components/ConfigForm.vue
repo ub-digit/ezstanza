@@ -299,9 +299,11 @@ export default {
           <InputText type="text" v-model="filterModel.value" @keydown.enter="filterCallback()" placeholder="Search"/>
         </template>
       </Column>
+      <!-- sortField missing?? -->
       <Column
         header="User"
         field="user.name"
+        sortField="user_name"
         filterMatchMode="startsWith"
         :filterMatchModeOptions="filterMatchModeOptions"
         :sortable="true"

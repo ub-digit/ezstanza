@@ -115,6 +115,13 @@ class DeployTargetApiService extends BaseApiService {
 
 }
 
+class DeploymentsApiService extends ResourceApiService {
+  constructor() {
+    super('deployments')
+  }
+}
+
+
 const api = {
   stanzas: new StanzasApiService(),
   stanza_revisions: new StanzaRevisoinsApiService(),
@@ -122,7 +129,8 @@ const api = {
   configs: new ConfigsApiService(),
   users: new UsersApiService(),
   deploy_targets: new DeployTargetsApiService(),
-  deploy_target: new DeployTargetApiService()
+  deploy_target: new DeployTargetApiService(),
+  deployments: new DeploymentsApiService()
 }
 
 export default api

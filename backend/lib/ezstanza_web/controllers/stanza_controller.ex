@@ -50,6 +50,7 @@ defmodule EzstanzaWeb.StanzaController do
     render(conn, "show.json", stanza: stanza)
   end
 
+  # TODO: REMOVE THIS, include should be sent as array
   def show_params(conn) do
     Enum.reduce(conn.query_params, %{}, fn {key, value}, params ->
       case key do

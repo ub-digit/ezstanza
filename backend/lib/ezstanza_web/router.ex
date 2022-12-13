@@ -35,6 +35,7 @@ defmodule EzstanzaWeb.Router do
     resources "/configs", ConfigController, except: [:new, :edit]
     resources "/deploy_targets", DeployTargetController, except: [:new, :edit]
     get "/deploy_target/frontend_options_form_schema", DeployTargetController, :frontend_options_form_schema #TODO: Right now incosistent naming, decide on one and fix
+    resources "/deployments", DeploymentController, except: [:new, :edit]
   end
 
   # Enables LiveDashboard only for development

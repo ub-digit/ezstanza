@@ -11,7 +11,7 @@ defmodule EzstanzaWeb.TagView do
     }
   end
 
-  def render("index.json", %{tag: tag}) do
+  def render("index.json", %{tags: tag}) do #tags: ??
     %{data: render_many(tag, TagView, "tag.json")}
   end
 

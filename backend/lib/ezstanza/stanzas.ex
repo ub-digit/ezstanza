@@ -19,6 +19,22 @@ defmodule Ezstanza.Stanzas do
   alias Ezstanza.Configs.Config
   alias Ezstanza.Configs.ConfigRevision
 
+  defp process_stanza_includes(query, includes) when is_list(includes) do
+    stanza_revisions_preloader = fn stanza_ids ->
+      Repo.all(from s_r in stanza_revision_base_query(),
+        where: s_r.stanza_id in ^stanza_ids
+      )
+    end
+    Enum.reduce(includes, query, fn
+      "revisions", query ->
+        # TODO: Replace with Repo.preload?
+        from s in query,
+          preload: [revisions: ^stanza_revisions_preloader]
+      _, query ->
+        query
+    end)
+  end
+  defp process_stanza_includes(query, _), do: query
 
   def stanza_base_query(%{} = params) do
     Enum.reduce(params, stanza_base_query(), fn
@@ -157,23 +173,6 @@ defmodule Ezstanza.Stanzas do
   def get_stanza(id, %{} = params) do
     Repo.one(from s in stanza_base_query(params), where: s.id == ^id)
   end
-
-  defp process_stanza_includes(query, includes) when is_list(includes) do
-    stanza_revisions_preloader = fn stanza_ids ->
-      Repo.all(from s_r in stanza_revision_base_query(),
-        where: s_r.stanza_id in ^stanza_ids
-      )
-    end
-    Enum.reduce(includes, query, fn
-      "revisions", query ->
-        # TODO: Replace with Repo.preload?
-        from s in query,
-          preload: [revisions: ^stanza_revisions_preloader]
-      _, query ->
-        query
-    end)
-  end
-  defp process_stanza_includes(query, _), do: query
 
   @doc """
   Creates a stanza.
