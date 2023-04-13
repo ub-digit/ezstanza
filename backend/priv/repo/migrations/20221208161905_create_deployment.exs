@@ -5,7 +5,7 @@ defmodule Ezstanza.Repo.Migrations.CreateDeployment do
     create table(:deployment) do
       add :status, :string
       add :config_revision_id, references(:config_revision, on_delete: :nothing)
-      add :deploy_target_id, references(:deploy_target, on_delete: :nothing)
+      add :deploy_target_id, references(:deploy_target, on_delete: :delete_all)
       add :user_id, references(:user, on_delete: :nothing)
 
       timestamps()

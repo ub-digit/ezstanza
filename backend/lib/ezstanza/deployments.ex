@@ -9,7 +9,7 @@ defmodule Ezstanza.Deployments do
   import Ezstanza.Pagination
 
   alias Ezstanza.Deployments.Deployment
-
+  alias Ezstanza.DeployTargets.DeployServer
   alias Ezstanza.Configs
 
   def base_query() do
@@ -120,38 +120,10 @@ defmodule Ezstanza.Deployments do
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a deployment.
-
-  ## Examples
-
-      iex> update_deployment(deployment, %{field: new_value})
-      {:ok, %Deployment{}}
-
-      iex> update_deployment(deployment, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_deployment(%Deployment{} = deployment, attrs) do
-    deployment
-    |> Deployment.changeset(attrs)
+  # TODO: Status validation when in "failed" "succeded"?
+  def update_deployment_status(%Deployment{} = deployment, status) do
+    Ecto.Changeset.change(deployment, status: status)
     |> Repo.update()
-  end
-
-  @doc """
-  Deletes a deployment.
-
-  ## Examples
-
-      iex> delete_deployment(deployment)
-      {:ok, %Deployment{}}
-
-      iex> delete_deployment(deployment)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_deployment(%Deployment{} = deployment) do
-    Repo.delete(deployment)
   end
 
   @doc """
@@ -166,4 +138,11 @@ defmodule Ezstanza.Deployments do
   def change_deployment(%Deployment{} = deployment, attrs \\ %{}) do
     Deployment.changeset(deployment, attrs)
   end
+
+
+  def deploy(%Deployment{} = deployment) do
+    # Ensure stanza_revisions loaded
+    DeployServer.deploy(deployment)
+  end
+
 end

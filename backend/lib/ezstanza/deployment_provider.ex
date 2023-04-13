@@ -1,7 +1,9 @@
-defmodule Ezstanza.DeploymentProvider do #Provisioner/Service?
+defmodule Ezstanza.DeploymentProvider do #TODO: Provisioner/Service? Deployment.Provider?
   @moduledoc ~S"""
   Defines a deployment behaviour
   """
+  # TODO: fix return type
+  @callback deploy(target_name :: String.t(), user :: String.t(), stanzas_config :: String.t(), options :: map()) :: atom()
 
   #TODO: Fields schema stuff should/could be broken out to separate module/behavior?
 
@@ -234,10 +236,8 @@ defmodule Ezstanza.DeploymentProvider do #Provisioner/Service?
     Keyword.merge(@form_field_default_options, [component: :checkbox])
   end
 
-
   #defp form_field_required_options(type) do
   #end
-
 
   @callback changeset_alter(Ecto.Changeset.t()) ::  Ecto.Changeset.t()
 
@@ -246,7 +246,6 @@ defmodule Ezstanza.DeploymentProvider do #Provisioner/Service?
   end
 
   def form_json() do
-
 
   end
 

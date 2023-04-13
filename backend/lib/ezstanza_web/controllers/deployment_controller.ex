@@ -6,6 +6,8 @@ defmodule EzstanzaWeb.DeploymentController do
   alias Ezstanza.Deployments
   alias Ezstanza.Deployments.Deployment
 
+  alias EzstanzaWeb.Endpoint
+
   action_fallback EzstanzaWeb.FallbackController
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
@@ -22,6 +24,8 @@ defmodule EzstanzaWeb.DeploymentController do
     user = Auth.current_user(conn)
     deployment_params = Map.merge(deployment_params, %{"user_id" => user.id})
     with {:ok, %Deployment{id: deployment_id}} <- Deployments.create_deployment(deployment_params) do
+      # Testing broadcast
+      Endpoint.broadcast("deployment", "deployment_status_change", %{id: deployment_id, status: "pending"})
       deployment = Deployments.get_deployment(deployment_id)
       conn
       |> put_status(:created)
@@ -31,23 +35,8 @@ defmodule EzstanzaWeb.DeploymentController do
   end
 
   def show(conn, %{"id" => id}) do
-    deployment = Deployments.get_deployment!(id)
+    deployment = Deployments.get_deployment(id)
     render(conn, "show.json", deployment: deployment)
   end
 
-  def update(conn, %{"id" => id, "deployment" => deployment_params}) do
-    deployment = Deployments.get_deployment!(id)
-
-    with {:ok, %Deployment{} = deployment} <- Deployments.update_deployment(deployment, deployment_params) do
-      render(conn, "show.json", deployment: deployment)
-    end
-  end
-
-  def delete(conn, %{"id" => id}) do
-    deployment = Deployments.get_deployment!(id)
-
-    with {:ok, %Deployment{}} <- Deployments.delete_deployment(deployment) do
-      send_resp(conn, :no_content, "")
-    end
-  end
 end

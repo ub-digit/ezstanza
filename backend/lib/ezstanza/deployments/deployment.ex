@@ -7,7 +7,8 @@ defmodule Ezstanza.Deployments.Deployment do
   alias Ezstanza.Accounts.User
 
   schema "deployment" do
-    field :status, Ecto.Enum, values: [:pending, :completed, :failed], default: :pending
+    # TODO: Enums stored in table?,
+    field :status, Ecto.Enum, values: [:pending, :deploying, :completed, :failed], default: :pending
     belongs_to :config_revision, ConfigRevision
     belongs_to :deploy_target, DeployTarget
     belongs_to :user, User

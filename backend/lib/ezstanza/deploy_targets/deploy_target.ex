@@ -15,6 +15,7 @@ defmodule Ezstanza.DeployTargets.DeployTarget do
   @doc false
   def changeset(deploy_target, attrs) do
     deploy_target
+    # TODO: unique constraint for name
     |> cast(attrs, [:name, :default_config_id])
     |> validate_required([:name, :default_config_id])
     |> cast_embed(:options)

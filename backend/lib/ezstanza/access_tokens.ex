@@ -34,7 +34,7 @@ defmodule Ezstanza.AccessTokens do
   ## Examples
 
       iex> get_access_token_user("f3f9211f-0819-4147-973d-dacc06524553")
-      %AccessToken{}
+      %User{}
 
       iex> get_access_token_user("b436517a-e294-4211-8312-8576933f2db1")
       ** (Ecto.NoResultsError)

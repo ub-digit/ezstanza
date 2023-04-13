@@ -15,6 +15,7 @@ defmodule Ezstanza.MultiHelpers do
         {:error, failed_operation, failed_value, changes_so_far},
         fallback_error
       ) do
+        #TODO: Logging!
         IO.puts("Multi error")
         IO.inspect([failed_operation, failed_value, changes_so_far])
         # TODO: this can probably be improved, or might not be such a good idea?

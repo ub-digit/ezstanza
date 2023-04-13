@@ -45,7 +45,9 @@ defmodule Ezstanza.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:argon2_elixir, "~> 3.0"},
-      {:corsica, "~> 1.0"}
+      {:corsica, "~> 1.0"},
+      {:ssh_client_key_api, "~> 0.2.0"},
+      {:sshkit, "~> 0.1"}
     ]
   end
 

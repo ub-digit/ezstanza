@@ -1,5 +1,5 @@
 <script>
-import { ref, unref, toRaw, inject, watch, computed, onMounted } from 'vue'
+import { ref, unref, toRaw, inject, watch, computed, onUnmounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
 import Toolbar from 'primevue/toolbar'
 import DropDown from 'primevue/dropdown'
@@ -9,7 +9,10 @@ import Dialog from 'primevue/dialog'
 import { FilterMatchMode } from 'primevue/api'
 import UseLazyDataTable from '@/components/UseLazyDataTable.js'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
-import {useForm} from 'vee-validate'
+import { useForm } from 'vee-validate'
+
+import { Socket } from "phoenix"
+//import { useAuth } from '@websanova/vue-auth/src/v3.js'
 
 //TODO: User filter
 //TODO: reset filters on create new?
@@ -22,6 +25,7 @@ export default {
     const loading = ref(false)
     const dayjs = inject('dayjs')
     const api = inject('api')
+    const socket = inject('socket')
     const dt = ref() //TODO: Unused, remove?
 
     const deployments = ref([])
@@ -55,12 +59,54 @@ export default {
       deployTarget.value = null
     }
 
-    const onDeploymentSubmit = useOnSubmit('deployment', 'deployments', 'create')
-    const onSubmit = handleSubmit((deployment, context) => {
+    //const auth = useAuth()
+    //TODO process.env.VUE_APP_SOCKET_URL
+    //TODO: useSocket, takes token, returning singleton?
+    //const socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: auth.token()}})
+    //console.log('connecting')
+    //console.dir({params: {token: auth.token()}})
+    //socket.connect()
+    const channel = socket.channel("deployment", {})
+    channel.on("deployment_status_change", payload => {
+      const deployment = deployments.value.find(deployment => deployment.id === payload.id)
+      deployment.status = payload.status
+    })
+    channel.join()
+      .receive("ok", resp => { console.log("Joined successfully", resp) })
+      .receive("error", resp => { console.log("Unable to join", resp) })
+
+    onUnmounted(() => {
+      channel.leave()
+        .receive("ok", resp => { console.log("Left successfully", resp) })
+        .receive("error", resp => { console.log("Unable to leae", resp) }) // Does this even exists?
+    })
+
+    //const onDeploymentSubmit = useOnSubmit('deployment', 'deployments', 'create')
+    const onSubmit = handleSubmit((deployment, { setErrors, resetForm }) => {
+      /* create:deployment? */
+      channel.push("create_deployment", deployment)
+        .receive("ok", payload => {
+          console.log("create deployment reply", payload)
+          resetForm()
+          deployments.value.unshift(payload) //Or reload all?
+          closeCreateDeploymentDialog()
+        })
+        .receive("error", err => {
+          if (err.data && err.data.errors) {
+            setErrors(err.data.errors)
+          }
+          else {
+            console.dir(err)
+            //TOOD: Toast??
+          }
+        })
+        .receive("timeout", () => console.log('timeout pushing, toast?'))
+      /*
       onDeploymentSubmit(deployment, context).then((deployment) => {
         deployments.value.unshift(deployment) //Or reload all?
         closeCreateDeploymentDialog()
       })
+      */
     })
 
     const { lazyParams, dataTableEvents } = UseLazyDataTable({
@@ -96,7 +142,7 @@ export default {
       configs.value = result.data
     })
 
-    //TODO: Tomorrow find out how to set/get object instead
+    //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
       setFieldValue('deploy_target_id', newDeployTarget ? newDeployTarget.id : null)
       if (newDeployTarget) {

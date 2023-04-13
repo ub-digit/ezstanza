@@ -5,6 +5,8 @@ defmodule Ezstanza.Application do
 
   use Application
 
+  alias Ezstanza.DeployTargets
+
   @impl true
   def start(_type, _args) do
     children = [
@@ -15,7 +17,8 @@ defmodule Ezstanza.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Ezstanza.PubSub},
       # Start the Endpoint (http/https)
-      EzstanzaWeb.Endpoint
+      EzstanzaWeb.Endpoint,
+      Ezstanza.DeployTargets.Supervisor
       # Start a worker by calling: Ezstanza.Worker.start_link(arg)
       # {Ezstanza.Worker, arg}
     ]
@@ -23,7 +26,18 @@ defmodule Ezstanza.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ezstanza.Supervisor]
-    Supervisor.start_link(children, opts)
+    start_link_result = Supervisor.start_link(children, opts)
+
+    # Hack, is there a more proper way?
+    deploy_targets = DeployTargets.list_deploy_targets()
+    Enum.each(
+      deploy_targets,
+      fn deploy_target ->
+        DeployTargets.DeployServer.Supervisor.start_child(deploy_target)
+      end
+    )
+
+    start_link_result
   end
 
   # Tell Phoenix to update the endpoint configuration

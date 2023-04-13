@@ -7,6 +7,7 @@ defmodule Ezstanza.DeployTargets do
   alias Ezstanza.Repo
 
   alias Ezstanza.DeployTargets.DeployTarget
+  alias Ecto.Multi
 
 
  def base_query() do
@@ -60,9 +61,21 @@ defmodule Ezstanza.DeployTargets do
 
   """
   def create_deploy_target(attrs \\ %{}) do
-    %DeployTarget{}
-    |> DeployTarget.changeset(attrs)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:deploy_target, DeployTarget.changeset(%DeployTarget{}, attrs))
+    |> Multi.run(:deploy_server, fn _repo, %{deploy_target: deploy_target} ->
+      case Ezstanza.DeployTargets.DeployServer.Supervisor.start_child(deploy_target) do
+        {:ok, child} -> {:ok, child}
+        _ -> {:error, :failed_to_start_deploy_server}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{deploy_target: deploy_target}} -> {:ok, deploy_target}
+      {:error, :deploy_target, changeset, _changes_so_far} -> {:error, changeset}
+      {:error, :deploy_server, error, _changes_so_far} -> {:error, error}
+      _ -> {:error, :unknown_error} # TODO: This should never happen?
+    end
   end
 
   @doc """
@@ -96,6 +109,8 @@ defmodule Ezstanza.DeployTargets do
 
   """
   def delete_deploy_target(%DeployTarget{} = deploy_target) do
+    # TODO: Should perhaps put inside of multi, as in create_deploy_target
+    #Ezstanza.DeployTargets.DeployServer.Supervisor.terminate_child(deploy_target)
     Repo.delete(deploy_target)
   end
 

@@ -1,16 +1,7 @@
 defmodule EzstanzaWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ezstanza
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
-  @session_options [
-    store: :cookie,
-    key: "_ezstanza_key",
-    signing_salt: "s//3c93U"
-  ]
-
-  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
+  socket "/socket", EzstanzaWeb.UserSocket, websocket: true, longpoll: false
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -48,6 +39,5 @@ defmodule EzstanzaWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
-  plug Plug.Session, @session_options # remove?
   plug EzstanzaWeb.Router
 end

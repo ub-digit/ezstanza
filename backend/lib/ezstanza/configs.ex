@@ -294,4 +294,16 @@ defmodule Ezstanza.Configs do
     ConfigRevision.changeset(config_revision, attrs)
   end
 
+  def config_revision_to_string(%ConfigRevision{} = config_revision) do
+    # TODO: Better separator between stanzas etc
+    # Ensure stanza_revisions loaded
+    config_revision
+    |> Repo.preload(:stanza_revisions)
+    |> Map.fetch!(:stanza_revisions)
+    |> Enum.map_join("\n\n", fn stanza_revision ->
+        # TODO: Edited by user, date comment?
+        stanza_revision.body
+    end)
+  end
+
 end
