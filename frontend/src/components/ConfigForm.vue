@@ -341,7 +341,7 @@ export default {
 
       <template #expansion="{ data }">
         <div class="grid">
-          <div class="col-12">{{ data.body }}</div>
+          <pre class="col-12">{{ data.body }}</pre>
         </div>
       </template>
 
