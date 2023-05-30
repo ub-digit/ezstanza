@@ -41,9 +41,8 @@ defmodule EzstanzaWeb.ConfigView do
       updated_at: config.updated_at,
       user: render_one(config.user, UserView, "user_snippet.json"),
       revision_user: render_one(config.current_revision.user, UserView, "user_snippet.json"),
-      #stanza_revisions: render_many(config.current_revision.stanza_revisions, StanzaRevisionView, "stanza_revision.json"),
     }
-    |> Map.merge(maybe_render_relationship(config.current_revision, :stanza_revisions, StanzaRevisionView, "stanza_revision.json"))
+    |> Map.merge(maybe_render_relationship(config.current_revision, :stanza_revisions, StanzaRevisionView, "stanza_revision.json")) # @fixme: Is this used somewhere?
     |> Map.merge(maybe_render_relationship(config, :revisions, ConfigRevisionView, "config_revision.json"))
   end
 end

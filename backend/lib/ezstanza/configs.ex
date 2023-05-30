@@ -192,7 +192,7 @@ defmodule Ezstanza.Configs do
       |> repo.insert()
     end)
     |> Multi.run(:config, fn repo, %{persisted_config: config, config_revision: %ConfigRevision{id: config_revision_id}} ->
-      with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
+      with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do # TODO: Remove tags?
         change_config(
           repo.preload(config, :tags),
           Map.merge(attrs, %{
@@ -218,7 +218,7 @@ defmodule Ezstanza.Configs do
   """
   def update_config(%Config{} = config, attrs) do
     Multi.new()
-    |> Multi.put(:persisted_config, config) # TODO: Config not from Multi "repo", problem?
+    |> Multi.put(:persisted_config, config) # TODO: Config not from Multi "repo", problem? Fix same way as for stanzas?
     |> Multi.append(update_persisted_config_multi(attrs))
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:update_config_failed)
@@ -290,7 +290,7 @@ defmodule Ezstanza.Configs do
       %Ecto.Changeset{data: %ConfigRevision{}}
 
   """
-  def change_config_revision(%ConfigRevision{} = config_revision, attrs \\ %{}) do
+  def change_config_revision(%ConfigRevision{} = config_revision, attrs \\ %{}) do #TODO: WTF, attrs?
     ConfigRevision.changeset(config_revision, attrs)
   end
 

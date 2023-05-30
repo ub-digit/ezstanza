@@ -8,6 +8,7 @@ defmodule Ezstanza.Configs.ConfigRevision do
 
   schema "config_revision" do
     field :is_current_revision, :boolean, virtual: true
+    field :log_message, :string
     belongs_to :config, Config
     belongs_to :user, User
     many_to_many :stanza_revisions, StanzaRevision,
@@ -19,7 +20,7 @@ defmodule Ezstanza.Configs.ConfigRevision do
   @doc false
   def changeset(config_revision, attrs) do
     config_revision
-    |> cast(attrs, [:config_id, :user_id])
-    |> validate_required([:config_id, :user_id])
+    |> cast(attrs, [:log_message, :config_id, :user_id])
+    |> validate_required([:config_id, :user_id]) #:log_message?
   end
 end

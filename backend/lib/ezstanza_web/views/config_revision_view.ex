@@ -27,6 +27,7 @@ defmodule EzstanzaWeb.ConfigRevisionView do
       config_id: config_revision.config_id,
       is_current_revision: config_revision.is_current_revision,
       name: config_revision.config.name,
+      log_message: config_revision.log_message,
       color: config_revision.config.color,
       inserted_at: config_revision.inserted_at,
       updated_at: config_revision.updated_at,

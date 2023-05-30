@@ -28,6 +28,7 @@ defmodule EzstanzaWeb.StanzaRevisionView do
       is_current_revision: stanza_revision.is_current_revision,
       name: stanza_revision.stanza.name,
       body: stanza_revision.body,
+      log_message: stanza_revision.log_message,
       inserted_at: stanza_revision.inserted_at,
       updated_at: stanza_revision.updated_at,
       user: render_one(stanza_revision.stanza.user, UserView, "user_snippet.json"),

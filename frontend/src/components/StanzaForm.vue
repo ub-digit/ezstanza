@@ -9,6 +9,7 @@ import {linter, lintGutter} from '@codemirror/lint'
 
 import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
+import VTextareaField from '@/components/VTextareaField.vue'
 import Checkbox from 'primevue/checkbox'
 
 /*
@@ -158,20 +159,29 @@ export default {
     })
 
     const onSubmit = handleSubmit((values, context) => {
-      // Hack, better way to handle this?
-      values.publish_in_configs = values.publish_in_configs.filter(
-        publishInConfig => values.include_in_configs.some(c => c.id === publishInConfig.id)
-      )
+      values.configs = values.include_in_configs.map(includeInConfig => {
+        return {
+          id: includeInConfig.id,
+          publish: values.publish_in_configs.some(publishInConfig => {
+            return publishInConfig.id === includeInConfig.id
+          })
+        }
+      })
+      // Better way of handling this, cast model module?
+      // Are these bound?
+      delete values.publish_in_configs
+      delete values.include_in_configs
+      delete values.current_configs
+      delete values.revision_user // Unset here or elsewhere?
+      delete values.user // Unset here or elsewhere?
       emit('submit', values, context)
     })
 
     const api = inject('api')
     const configOptions = ref([])
 
-    //setFieldValue('include_in_configs', [])
-    //setFieldValue('publish_in_configs', [])
-    // Not used?
-    const stanzaFormBody = useFieldModel('body')
+    const body = useFieldModel('body')
+    const logMessage = useFieldModel('log_message')
 
     const includeInConfigs = useFieldModel('include_in_configs')
     const publishInConfigs = useFieldModel('publish_in_configs')
@@ -187,7 +197,7 @@ export default {
       }, [])
     })
 
-    let currentConfigsById = Object.fromEntries(
+    const currentConfigsById = Object.fromEntries(
       stanzaValues.current_configs.map(config => [config.id, config])
     )
 
@@ -223,16 +233,36 @@ export default {
       })
     })
 
-    const stanzaRevisionChanged = computed(() => stanza.body !== stanzaFormBody.value)
+    const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, () => {
-      // Changed back to unchaged current revision state
+      // Enforce unchanged current revision state
       if(!stanzaRevisionChanged.value) {
-        publishInConfigs.value = configOptions.value.filter(
-          configOption => configOption.has_current_stanza_revision ||
-            forcePublishInConfigs.value.find(c => c.id === configOption.id)
-        )
+        logMessage.value = stanza.log_message
+        publishInConfigs.value = configOptions.value.filter((configOption) => {
+          return configOption.has_current_stanza_revision ||
+            forcePublishInConfigs.value.some(c => c.id === configOption.id) ||
+            publishInConfigs.value.some(c => c.id === configOption.id)
+        })
       }
     })
+
+    // TODO: break out to computed property includeInConfigsRemoved?
+    const stanzaRemovedFromConfig = computed(() => {
+      return configOptions.value.some(configOption => {
+        return configOption.has_stanza_revision
+          && !includeInConfigs.value.some(config => config.id === configOption.id)
+      })
+    })
+
+
+    /*
+    watch(stanzaRemovedFromConfig, () => {
+      if(stanzaRemovedFromConfig.value) {
+
+      }
+    })
+    */
+
 
     return {
       //debouncedChange,
@@ -250,12 +280,14 @@ export default {
   components: {
     VCodemirrorField,
     VTextField,
+    VTextareaField,
     Checkbox
   }
 }
 </script>
 <template>
   <form @submit="onSubmit">
+    <!-- TODO: Lots of repition, add component for label -->
     <label for="name" class="block text-900 font-medium mb-2">Name</label>
     <VTextField id="name" name="name"/>
 
@@ -267,11 +299,27 @@ export default {
       <h5>Publish current revision in</h5>
       <div class="formgroup-inline">
         <div v-for="config in publishInConfigOptions" :key="config.id" class="field-checkbox">
-          <Checkbox :inputId="config.id" name="config" :value="config" v-model="publishInConfigs" :disabled="!stanzaRevisionChanged && config.has_current_stanza_revision || !config.has_stanza_revision"/>
+          <Checkbox
+            :inputId="config.id"
+            name="config"
+            :value="config"
+            v-model="publishInConfigs"
+            :disabled="!stanzaRevisionChanged && config.has_current_stanza_revision || !config.has_stanza_revision"
+          />
           <label :for="config.id">{{ config.name }}</label>
         </div>
       </div>
     </template>
+
+    <label for="log-message" class="block text-900 font-medium mb-2">Log</label>
+    <VTextareaField
+      id="log-message"
+      name="log_message"
+      rows="2"
+      cols="50"
+      helpText="Provide a log message describing the current change"
+      :disabled="!stanzaRevisionChanged"
+    />
 
     <h5>Include stanza in</h5>
       <div v-for="config in configOptions" :key="config.id" class="field-checkbox">

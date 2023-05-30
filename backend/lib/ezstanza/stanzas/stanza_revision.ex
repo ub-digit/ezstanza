@@ -11,6 +11,7 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
 
   schema "stanza_revision" do
     field :body, :string
+    field :log_message, :string
     field :is_current_revision, :boolean, virtual: true
     belongs_to :stanza, Stanza
     belongs_to :user, User
@@ -45,8 +46,8 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
   @doc false
   def changeset(stanza_revision, attrs) do
     stanza_revision
-    |> cast(attrs, [:body, :stanza_id, :user_id])
-    |> validate_required([:body, :stanza_id, :user_id])
+    |> cast(attrs, [:body, :log_message, :stanza_id, :user_id])
+    |> validate_required([:body, :stanza_id, :user_id]) # :log_message?
     |> validate_stanza(:body)
   end
 end
