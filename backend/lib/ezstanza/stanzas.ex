@@ -20,6 +20,7 @@ defmodule Ezstanza.Stanzas do
   alias Ezstanza.Configs.ConfigRevision
 
   defp process_stanza_includes(query, includes) when is_list(includes) do
+    # TODO: Replace with preloader query?
     stanza_revisions_preloader = fn stanza_ids ->
       Repo.all(from s_r in stanza_revision_base_query(),
         where: s_r.stanza_id in ^stanza_ids
@@ -48,18 +49,15 @@ defmodule Ezstanza.Stanzas do
   def stanza_base_query() do
     from s in Stanza,
       join: u in assoc(s, :user), as: :user,
-      join: c_r in assoc(s, :current_revision), as: :current_revision,
+      join: c_r in assoc(s, :current_revision), as: :current_revision, # Preload through base query?
       join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
-      #preload: [current_configs: ^current_configs_preloader, user: u, current_revision: {c_r, user: c_r_u}]
-      #preload: [revisions: ^stanza_revisions_preloader, user: u, current_revision: {c_r, user: c_r_u}]
       preload: [
-        :current_revision_current_configs,
-        :current_configs,
+        #:current_revision_current_configs,
+        #:current_configs,
         user: u,
-        current_revision: {c_r, user: c_r_u}
+        current_revision: {c_r, user: c_r_u},
+        current_configs_stanza_revisions: ^stanza_revision_base_query()
       ]
-      #preload: [:current_revision_current_configs, :current_configs, user: u, current_revision: {c_r, user: c_r_u}]
-      #preload: [user: u, current_revision: {c_r, user: c_r_u}]
   end
 
   # join config_revisions, join current_config_revisions/ current_configs
@@ -583,7 +581,7 @@ defmodule Ezstanza.Stanzas do
       join: s in assoc(s_r, :stanza), as: :stanza,
       join: s_u in assoc(s, :user), as: :stanza_user,
       join: s_r_u in assoc(s_r, :user), as: :user,
-      preload: [user: s_r_u, stanza: {s, user: s_u}],
+      preload: [:current_configs, user: s_r_u, stanza: {s, user: s_u}], #TODO: Add current deployments?
       select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", s_r.id, s.current_stanza_revision_id)}
       #select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)},
   end

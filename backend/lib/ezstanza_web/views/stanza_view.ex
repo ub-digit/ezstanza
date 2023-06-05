@@ -37,7 +37,7 @@ defmodule EzstanzaWeb.StanzaView do
       updated_at: stanza.updated_at,
       user: render_one(stanza.user, UserView, "user_snippet.json"),
       revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json"),
-      current_configs: stanza_current_configs(stanza.current_configs, stanza.current_revision_current_configs)
+      current_configs: stanza_current_configs(stanza.current_configs_stanza_revisions)
     }
     |> then(fn struct ->
       case stanza do
@@ -52,15 +52,21 @@ defmodule EzstanzaWeb.StanzaView do
     #|> Map.merge(maybe_render_relationship(stanza, :revisions, StanzaRevisionView, "stanza_revision.json"))
   end
 
-  def stanza_current_configs(current_configs, current_revision_current_configs) do
-    Enum.map(current_configs, fn config ->
-      %{
-        id: config.id,
-        name: config.name,
-        color: config.color,
-        revision_id: config.current_config_revision_id,
-        has_current_stanza_revision: Enum.any?(current_revision_current_configs, fn c -> c.id == config.id end)
-      }
+  def stanza_current_configs(current_configs_current_revisions) do
+    current_configs_current_revisions
+    |> Enum.reduce([], fn stanza_revision, configs ->
+      stanza_revision.current_configs
+      |> Enum.map(fn config ->
+        %{
+          id: config.id,
+          name: config.name,
+          color: config.color,
+          revision_id: config.current_config_revision_id,
+          has_current_stanza_revision: stanza_revision.is_current_revision, #Remove since superfluous?
+          stanza_revision: render_one(stanza_revision, StanzaRevisionView, "stanza_revision.json")
+        }
+      end)
+      |> Enum.concat(configs)
     end)
   end
 

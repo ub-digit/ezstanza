@@ -16,8 +16,10 @@ defmodule Ezstanza.Stanzas.Stanza do
       foreign_key: :current_stanza_revision_id
     belongs_to :user, User
 
-    has_many :configs, through: [:revisions, :config_revisions, :config] # Remove?
+    many_to_many :current_configs_stanza_revisions, StanzaRevision,
+      join_through: "stanza_current_config_revision_stanza_revision"
 
+    has_many :configs, through: [:revisions, :config_revisions, :config] # Remove?
     has_many :current_configs, through: [:revisions, :current_configs]
     has_many :current_revision_current_configs, through: [:current_revision, :current_configs]
 
