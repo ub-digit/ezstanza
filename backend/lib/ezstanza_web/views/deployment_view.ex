@@ -24,7 +24,7 @@ defmodule EzstanzaWeb.DeploymentView do
   def render("deployment.json", %{deployment: deployment}) do
     %{
       id: deployment.id,
-      deploy_target: render_one(deployment.deploy_target, DeployTargetView, "deploy_target.json"),
+      deploy_target: render_one(deployment.deploy_target, DeployTargetView, "deploy_target_snippet.json"),
       config_revision: render_one(deployment.config_revision, ConfigRevisionView, "config_revision.json"),
       user: render_one(deployment.user, UserView, "user_snippet.json"),
       inserted_at: deployment.inserted_at,

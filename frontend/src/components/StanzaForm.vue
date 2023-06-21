@@ -11,6 +11,8 @@ import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
 import VTextareaField from '@/components/VTextareaField.vue'
 import Checkbox from 'primevue/checkbox'
+import Fieldset from 'primevue/fieldset'
+import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
 
 /*
 import {parser} from '../lezer/dist/index.es.js'
@@ -179,6 +181,7 @@ export default {
 
     const api = inject('api')
     const configOptions = ref([])
+    const deployTargets = ref([])
 
     const body = useFieldModel('body')
     const logMessage = useFieldModel('log_message')
@@ -200,6 +203,10 @@ export default {
     const currentConfigsById = Object.fromEntries(
       stanzaValues.current_configs.map(config => [config.id, config])
     )
+
+    api.deploy_targets.list().then(result => {
+      deployTargets.value = result.data
+    })
 
     api.configs.list().then(result => {
       configOptions.value = result.data.map(
@@ -233,6 +240,13 @@ export default {
       })
     })
 
+    const configDeployments = ref([]);
+
+    watch(publishInConfigs, () => {
+
+
+    })
+
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, () => {
       // Enforce unchanged current revision state
@@ -263,7 +277,6 @@ export default {
     })
     */
 
-
     return {
       //debouncedChange,
       //invalidLineGutter,
@@ -271,17 +284,21 @@ export default {
       includeInConfigs,
       publishInConfigOptions,
       configOptions,
+      deployTargets,
       extensions,
       onSubmit,
       isSubmitting,
-      stanzaRevisionChanged
+      stanzaRevisionChanged,
+      stanza
     }
   },
   components: {
     VCodemirrorField,
     VTextField,
     VTextareaField,
-    Checkbox
+    Checkbox,
+    Fieldset,
+    StanzaCurrentConfigChip
   }
 }
 </script>
@@ -295,22 +312,6 @@ export default {
     <!-- <VCodemirrorField id="body" name="body" :extensions="invalidLineGutter" @change="debouncedChange"/> -->
     <VCodemirrorField id="body" name="body" :extensions="extensions"/>
 
-    <template v-if="publishInConfigOptions.length">
-      <h5>Publish current revision in</h5>
-      <div class="formgroup-inline">
-        <div v-for="config in publishInConfigOptions" :key="config.id" class="field-checkbox">
-          <Checkbox
-            :inputId="config.id"
-            name="config"
-            :value="config"
-            v-model="publishInConfigs"
-            :disabled="!stanzaRevisionChanged && config.has_current_stanza_revision || !config.has_stanza_revision"
-          />
-          <label :for="config.id">{{ config.name }}</label>
-        </div>
-      </div>
-    </template>
-
     <label for="log-message" class="block text-900 font-medium mb-2">Log</label>
     <VTextareaField
       id="log-message"
@@ -321,11 +322,43 @@ export default {
       :disabled="!stanzaRevisionChanged"
     />
 
-    <h5>Include stanza in</h5>
-      <div v-for="config in configOptions" :key="config.id" class="field-checkbox">
-        <Checkbox :inputId="config.id" name="config" :value="config" v-model="includeInConfigs"/>
+    <h5 class="mb-2">Include in</h5>
+    <div class="flex flex-column align-items-start gap-2">
+      <!--
+      <StanzaCurrentConfigChip
+        v-for ="config in stanza.current_configs"
+        :currentConfig="config"
+      />
+      -->
+    </div>
+
+    <div v-for="config in configOptions" :key="config.id" class="field-checkbox">
+      <Checkbox :inputId="config.id" name="config" :value="config" v-model="includeInConfigs"/>
+      <label :for="config.id">{{ config.name }}</label>
+    </div>
+
+    <template v-if="publishInConfigOptions.length">
+      <h5 class="mb-2">Publish current revision in</h5>
+      <div v-for="config in publishInConfigOptions" :key="config.id" class="field-checkbox">
+        <Checkbox
+          :inputId="config.id"
+          name="config"
+          :value="config"
+          v-model="publishInConfigs"
+          :disabled="!stanzaRevisionChanged && config.has_current_stanza_revision || !config.has_stanza_revision"
+        />
         <label :for="config.id">{{ config.name }}</label>
       </div>
+    </template>
+    <template v-if="publishInConfigs.length">
+      <Fieldset legend="Deployment" class="mb-3">
+        <template v-for="config in publishInConfigOptions" :key="config.id" class="field-checkbox">
+          <h4>{{ config.name }}</h4>
+            <h5 class="mb-2">Deploy to</h5>
+        </template>
+      </Fieldset>
+    </template>
+
     <Button type="submit" :disabled="isSubmitting" label="Save"></Button>
   </form>
 </template>

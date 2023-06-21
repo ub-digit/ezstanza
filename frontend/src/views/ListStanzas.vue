@@ -3,7 +3,8 @@ import {ref} from 'vue'
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
-import ColorChip from '@/components/ColorChip.vue'
+import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
+import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
 import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
 import DropDown from 'primevue/dropdown'
 import { FilterMatchMode } from 'primevue/api'
@@ -48,7 +49,8 @@ export default {
   components: {
     EntityList,
     Column,
-    ColorChip,
+    StanzaCurrentConfigChip,
+    StanzaCurrentDeployment,
     ConfigsDropDown, //TODO: UsersDropDown?
     DropDown
   }
@@ -67,6 +69,12 @@ export default {
     :revisioned="true"
   >
     <Column
+      field="revision_id"
+      header="Revision id"
+      :sortable="false"
+    >
+    </Column>
+    <Column
       field="current_configs"
       header="Configs"
       :sortable="false"
@@ -83,17 +91,31 @@ export default {
         />
       </template>
       <template #body="{ data }">
-        <ColorChip
-          v-for="config in data.current_configs"
-          :key="config.id"
-          :color="config.color"
-          class="mb-2"
-          :class="{ 'has-previous-revision': !config.has_current_stanza_revision }"
-        >
-          {{ config.name }}
-        </ColorChip>
+        <div class="flex flex-column align-items-start gap-2">
+          <StanzaCurrentConfigChip
+            v-for ="config in data.current_configs"
+            :currentConfig="config"
+            :currentStanzaRevisionId="data.revision_id"
+          />
+        </div>
       </template>
     </Column>
+    <Column
+      field="current_deployments"
+      header="Deployments"
+      :sortable="false"
+    >
+      <template #body="{ data }">
+        <div class="flex flex-column align-items-start gap-2">
+          <StanzaCurrentDeployment
+            v-for="deployment in data.current_deployments"
+            :deployment="deployment.deployment"
+            :stanzaRevision="deployment.stanza_revision"
+          />
+        </div>
+      </template>
+    </Column>
+
     <template #expansion="{ data }">
       <div class="grid">
         <pre class="col-12">{{ data.body }}</pre>

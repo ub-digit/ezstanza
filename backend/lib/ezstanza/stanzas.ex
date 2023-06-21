@@ -19,6 +19,8 @@ defmodule Ezstanza.Stanzas do
   alias Ezstanza.Configs.Config
   alias Ezstanza.Configs.ConfigRevision
 
+  alias Ezstanza.Deployments
+
   defp process_stanza_includes(query, includes) when is_list(includes) do
     # TODO: Replace with preloader query?
     stanza_revisions_preloader = fn stanza_ids ->
@@ -30,7 +32,7 @@ defmodule Ezstanza.Stanzas do
       "revisions", query ->
         # TODO: Replace with Repo.preload?
         from s in query,
-          preload: [revisions: ^stanza_revisions_preloader]
+          preload: [revisions: ^stanza_revisions_preloader] # ^stanza_revisions_base_query() instead?
       _, query ->
         query
     end)
@@ -56,7 +58,8 @@ defmodule Ezstanza.Stanzas do
         #:current_configs,
         user: u,
         current_revision: {c_r, user: c_r_u},
-        current_configs_stanza_revisions: ^stanza_revision_base_query()
+        current_configs_stanza_revisions: ^stanza_revision_base_query(),
+        current_deployments_stanza_revisions: ^stanza_revision_base_query()
       ]
   end
 
@@ -560,6 +563,7 @@ defmodule Ezstanza.Stanzas do
 
 
   # Used for put_assoc in configs context, put in configs.ex or rename for clarity?
+  # Overload with non list argument?
   @doc """
   Gets multiple stanza revisions.
 
@@ -581,9 +585,9 @@ defmodule Ezstanza.Stanzas do
       join: s in assoc(s_r, :stanza), as: :stanza,
       join: s_u in assoc(s, :user), as: :stanza_user,
       join: s_r_u in assoc(s_r, :user), as: :user,
-      preload: [:current_configs, user: s_r_u, stanza: {s, user: s_u}], #TODO: Add current deployments?
-      select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", s_r.id, s.current_stanza_revision_id)}
-      #select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)},
+      preload: [:current_configs, current_deployments: ^Deployments.base_query(), user: s_r_u, stanza: {s, user: s_u}],
+      #select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", s_r.id, s.current_stanza_revision_id)}
+      select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)}
   end
 
   #defp stanza_revision_list_query(%{"stanza_id" => stanza_id}) do

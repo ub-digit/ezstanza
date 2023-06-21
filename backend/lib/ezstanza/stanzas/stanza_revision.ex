@@ -5,6 +5,7 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
   alias Ezstanza.Stanzas.Stanza
   alias Ezstanza.Configs.ConfigRevision
   alias Ezstanza.Configs.Config
+  alias Ezstanza.Deployments.Deployment
   alias Ezstanza.Accounts.User
 
   alias Ezstanza.StanzaParser
@@ -15,12 +16,15 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
     field :is_current_revision, :boolean, virtual: true
     belongs_to :stanza, Stanza
     belongs_to :user, User
-    many_to_many :config_revisions, ConfigRevision,
+    many_to_many :config_revisions, ConfigRevision, #@FIXME Not used? remove?
       join_through: "config_revision_stanza_revision",
       on_replace: :delete #???
     many_to_many :current_configs, Config,
       join_through: "config_revision_stanza_revision",
       join_keys: [stanza_revision_id: :id, config_revision_id: :current_config_revision_id]
+
+    many_to_many :current_deployments, Deployment,
+      join_through: "stanza_revision_current_deployment"
 
     timestamps()
   end

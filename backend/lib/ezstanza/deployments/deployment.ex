@@ -11,6 +11,10 @@ defmodule Ezstanza.Deployments.Deployment do
     field :status, Ecto.Enum, values: [:pending, :deploying, :completed, :failed], default: :pending
     belongs_to :config_revision, ConfigRevision
     belongs_to :deploy_target, DeployTarget
+
+    #has_one :current_deploy_target, DeployTarget,
+    #  foreign_key: :current_deployment_id
+
     belongs_to :user, User
 
     timestamps()

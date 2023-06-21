@@ -14,6 +14,7 @@ defmodule Ezstanza.Configs.ConfigRevision do
     many_to_many :stanza_revisions, StanzaRevision,
       join_through: "config_revision_stanza_revision",
       on_replace: :delete
+
     timestamps()
   end
 

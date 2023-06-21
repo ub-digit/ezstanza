@@ -49,3 +49,6 @@ export default {
 <style>
 @import '@/assets/base.css';
 </style>
+<style lang="scss">
+@import '@/assets/main.scss';
+</style>

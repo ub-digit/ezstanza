@@ -3,11 +3,15 @@ defmodule Ezstanza.DeployTargets.DeployTarget do
   import Ecto.Changeset
 
   alias Ezstanza.Configs.Config
+  alias Ezstanza.Deployments.Deployment
 
   schema "deploy_target" do
     field :name, :string
     belongs_to :default_config, Config,
       foreign_key: :default_config_id # can remove?
+    belongs_to :current_deployment, Deployment
+
+    #  foreign_key: :current_deployment_id # can remove?
     embeds_one :options, Application.fetch_env!(:ezstanza, :deployment_provider)
     timestamps()
   end

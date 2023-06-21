@@ -13,18 +13,16 @@ defmodule Ezstanza.Deployments do
   alias Ezstanza.Configs
 
   def base_query() do
-    config_revisions_preloader = fn config_revision_ids ->
-      Repo.all(from s_r in Configs.config_revision_base_query(),
-        where: s_r.id in ^config_revision_ids
-      )
-    end
-    # TODO: Possible to join on config_revision_base_query, subquery?
     from d in Deployment,
       #join: c_r in assoc(d, :config_revision), as: :config_revision,
       join: d_t in assoc(d, :deploy_target), as: :deploy_target,
       join: u in assoc(d, :user), as: :user,
       join: c_r in assoc(d, :config_revision), as: :config_revision,
-      preload: [config_revision: ^config_revisions_preloader, deploy_target: d_t, user: u]
+      preload: [
+        config_revision: ^Configs.config_revision_base_query(),
+        deploy_target: d_t,
+        user: u
+      ]
   end
 
   @doc """
@@ -122,8 +120,21 @@ defmodule Ezstanza.Deployments do
 
   # TODO: Status validation when in "failed" "succeded"?
   def update_deployment_status(%Deployment{} = deployment, status) do
-    Ecto.Changeset.change(deployment, status: status)
-    |> Repo.update()
+    Repo.transaction(fn ->
+      # TODO: Probably should invert order of updates?
+      case Ecto.Changeset.change(deployment, status: status) |> Repo.update() do
+        {:ok, deployment} ->
+          deploy_target = Ecto.Changeset.change(deployment.deploy_target, current_deployment_id: deployment.id)
+          case Repo.update(deploy_target) do
+            {:ok, _} -> {:ok, deployment}
+            {:error, _changeset} ->
+              Repo.rollback(:deploy_target_set_current_deployment_failed)
+          end
+        {:error, _changeset} ->
+          #Log??
+          Repo.rollback(:deployment_status_update_failed)
+      end
+    end)
   end
 
   @doc """

@@ -7,13 +7,14 @@ defmodule Ezstanza.DeployTargets do
   alias Ezstanza.Repo
 
   alias Ezstanza.DeployTargets.DeployTarget
+  alias Ezstanza.Deployments
   alias Ecto.Multi
 
 
- def base_query() do
+  def base_query() do
     from s in DeployTarget,
       join: c in assoc(s, :default_config), as: :default_config,
-      preload: [default_config: c]
+      preload: [default_config: c, current_deployment: ^Deployments.base_query()]
   end
 
 

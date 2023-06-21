@@ -12,6 +12,9 @@ defmodule Ezstanza.Stanzas.Stanza do
       join_through: "stanza_tag",
       on_replace: :delete
     has_many :revisions, StanzaRevision
+
+    # Rename relationshiop to current_stanza_revision
+    # and remove foreigh key?
     belongs_to :current_revision, StanzaRevision,
       foreign_key: :current_stanza_revision_id
     belongs_to :user, User
@@ -22,6 +25,9 @@ defmodule Ezstanza.Stanzas.Stanza do
     has_many :configs, through: [:revisions, :config_revisions, :config] # Remove?
     has_many :current_configs, through: [:revisions, :current_configs]
     has_many :current_revision_current_configs, through: [:current_revision, :current_configs]
+
+    many_to_many :current_deployments_stanza_revisions, StanzaRevision,
+      join_through: "stanza_current_deployment_stanza_revision"
 
     timestamps()
   end

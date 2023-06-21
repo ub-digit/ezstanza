@@ -33,7 +33,7 @@ defmodule Ezstanza.Configs do
         preload: [config_revisions: s_r_c_r]
         #select: {s_r_c_r.id, s_r} #TODO: Test this instead of flat_map below
       )
-      |> Enum.flat_map(fn stanza_revision ->
+      |> Enum.flat_map(fn stanza_revision -> #TODO: Review this
         Enum.map(stanza_revision.config_revisions, fn config_revision ->
           {config_revision.id, stanza_revision}
         end)
@@ -47,7 +47,7 @@ defmodule Ezstanza.Configs do
         preload: [revisions: ^config_revisions_preloader]
       "stanza_revisions", query ->
         query
-        |> preload([current_revision: c_r], [current_revision: {c_r, stanza_revisions: ^stanza_revisions_preloader}])
+        |> preload([current_revision: c_r], [current_revision: {c_r, stanza_revisions: ^stanza_revisions_preloader}]) # Bit confused, can first preload be removed???
       _, query ->
         query
     end)
@@ -259,8 +259,8 @@ defmodule Ezstanza.Configs do
       join: c_u in assoc(c, :user), as: :config_user,
       join: c_r_u in assoc(c_r, :user), as: :user,
       preload: [user: c_r_u, config: {c, user: c_u}],
-      select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", c_r.id, c.current_config_revision_id)}
-      #select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)},
+      #select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", c_r.id, c.current_config_revision_id)}
+      select_merge: %{is_current_revision: fragment("? = ?", c_r.id, c.current_config_revision_id)}
   end
 
   @doc """

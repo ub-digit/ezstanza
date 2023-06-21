@@ -1,6 +1,7 @@
 <script>
 import { ref, unref, toRaw, inject, watch, computed, onUnmounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
+import DeploymentStatus from '@/components/DeploymentStatus.vue'
 import Toolbar from 'primevue/toolbar'
 import DropDown from 'primevue/dropdown'
 import DataTable from 'primevue/datatable'
@@ -243,7 +244,8 @@ export default {
     DataTable,
     Column,
     ColorChip,
-    Dialog
+    Dialog,
+    DeploymentStatus
   }
 }
 </script>
@@ -343,7 +345,13 @@ export default {
     :loading="loading"
   >
     <Column field="inserted_at" header="Deploy date" :sortable="true"/>
-    <Column field="status" header="Status" :sortable="true"/>
+    <Column field="status" header="Status" :sortable="true">
+      <template #body="{ data: {status: status} }">
+        <div class="text-center">
+          <DeploymentStatus :status="status"/>
+        </div>
+      </template>
+    </Column>
     <!--TODO filters -->
     <Column field="user.name" header="User" sortField="user_name" :sortable="true"/>
     <Column
@@ -387,10 +395,9 @@ export default {
       <template #body="{ data: {config_revision: revision} }">
         <ColorChip
           :color="revision.color"
+          :label="revision.name"
           :class="{ 'is-previous-revision': !revision.is_current_revision }"
-        >
-          {{ revision.name }}
-        </ColorChip>
+        />
       </template>
     </Column>
     <!-- TODO: field prop dito? -->

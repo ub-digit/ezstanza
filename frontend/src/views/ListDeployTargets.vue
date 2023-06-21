@@ -25,7 +25,7 @@ export default {
 }
 </script>
 <template>
-  <!-- fix entityNamePluralized, used for service endpoint which should be separate property or override with fallback to pluralized -->
+  <!-- fix entityNamePluralized, used for service endpoint which should be separate property or override with fallback to pluralized, remove Updated column since pretty irrelevant and confusing? -->
   <EntityList
     createRouteName="CreateDeployTarget"
     editRouteName="EditDeployTarget"
@@ -41,5 +41,8 @@ export default {
     :lazy="false"
   >
     <Column field="name" header="Name" :sortable="true"/>
+    <Column field="current_deployment.config_revision.name" header="Deployed config" :sortable="false"/>
+    <Column field="current_deployment.inserted_at" header="Deployed" :sortable="false"/>
+    <Column field="current_deployment.status" header="Status" :sortable="false"/>
   </EntityList>
 </template>

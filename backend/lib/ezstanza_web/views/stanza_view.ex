@@ -6,6 +6,7 @@ defmodule EzstanzaWeb.StanzaView do
   alias EzstanzaWeb.StanzaRevisionView
   alias EzstanzaWeb.UserView
   alias EzstanzaWeb.ConfigView
+  alias EzstanzaWeb.DeploymentView
 
   alias Ezstanza.Stanzas.Stanza
   alias Ezstanza.Stanzas.StanzaRevision
@@ -37,7 +38,8 @@ defmodule EzstanzaWeb.StanzaView do
       updated_at: stanza.updated_at,
       user: render_one(stanza.user, UserView, "user_snippet.json"),
       revision_user: render_one(stanza.current_revision.user, UserView, "user_snippet.json"),
-      current_configs: stanza_current_configs(stanza.current_configs_stanza_revisions)
+      current_configs: stanza_current_configs(stanza.current_configs_stanza_revisions),
+      current_deployments: stanza_current_deployments(stanza.current_deployments_stanza_revisions)
     }
     |> then(fn struct ->
       case stanza do
@@ -57,17 +59,33 @@ defmodule EzstanzaWeb.StanzaView do
     |> Enum.reduce([], fn stanza_revision, configs ->
       stanza_revision.current_configs
       |> Enum.map(fn config ->
+        #FIXME: Review this, possible to use ConfigView?
         %{
           id: config.id,
           name: config.name,
           color: config.color,
           revision_id: config.current_config_revision_id,
           has_current_stanza_revision: stanza_revision.is_current_revision, #Remove since superfluous?
-          stanza_revision: render_one(stanza_revision, StanzaRevisionView, "stanza_revision.json")
+          stanza_revision: render_one(stanza_revision, StanzaRevisionView, "stanza_revision_snippet.json")
         }
       end)
       |> Enum.concat(configs)
     end)
   end
+
+  def stanza_current_deployments(current_deployments_current_revisions) do
+    current_deployments_current_revisions
+    |> Enum.reduce([], fn stanza_revision, deployments ->
+      stanza_revision.current_deployments
+      |> Enum.map(fn deployment ->
+        %{
+          deployment: render_one(deployment, DeploymentView, "deployment.json"), #Snippet
+          stanza_revision: render_one(stanza_revision, StanzaRevisionView, "stanza_revision_snippet.json")
+        }
+      end)
+      |> Enum.concat(deployments)
+    end)
+  end
+
 
 end

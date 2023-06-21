@@ -1,6 +1,6 @@
 <script>
-import Chip from 'primevue/chip'
-import { toRaw } from 'vue';
+import Chip from '@/components/Chip.vue'
+import useTextClassForBackground from '@/components/UseTextClassForBackground.js' //BackgroundColor?
 export default {
   //inheritAttrs: false, // ??
   props: {
@@ -10,18 +10,10 @@ export default {
     }
   },
   setup({ color }) {
-    const hexToYIQ = (hexColor) => {
-      // Convert hex to RGB
-      // Quick and dirty without validation
-      const [r, g, b] = hexColor.match(/.{2}/g).map(val => parseInt(val, 16))
-      // Convert RGB to YIQ
-      return ((r * 299) + (g * 587) + (b * 114)) / 1000
-    }
-    // Configurable threshold?
-    const threshold = 128
-    const textColor = hexToYIQ(toRaw(color)) >= threshold ? 'dark-text' : 'bright-text'
+    const textColorClass = useTextClassForBackground(color, 'text-black', 'text-white')
     return {
-      textColor
+      color,
+      textColorClass
     }
   },
   components: {
@@ -30,15 +22,23 @@ export default {
 }
 </script>
 <template>
-  <Chip :style="{ 'background-color': '#' + color }">
-    <span :class="textColor"><slot></slot></span>
+  <Chip
+    :class="textColorClass"
+    :style="{ 'background-color': '#' + color }"
+  >
+    <template v-for="(_, name) in $slots" v-slot:[name]="slotProps">
+      <slot v-if="slotProps" :name="name" v-bind="slotProps" />
+      <slot v-else :name="name" />
+    </template>
   </Chip>
 </template>
-<style lang="scss" scoped>
-.p-chip .dark-text {
-  color: #000;
-}
-.p-chip .bright-text {
-  color: #fff;
+<style lang="scss">
+.p-chip {
+  .dark-text {
+    color: #000;
+  }
+  .bright-text {
+    color: #fff;
+  }
 }
 </style>
