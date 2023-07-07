@@ -5,9 +5,8 @@ import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 
 export default {
   setup() {
-    const deployTarget = ref({
-      default_config_id: null
-    })
+    const deployTarget = ref({})
+
     const onSubmit = useOnSubmit('deploy_target', 'deploy_targets', 'create')
 
     return {

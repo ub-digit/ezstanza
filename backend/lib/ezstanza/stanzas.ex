@@ -58,7 +58,6 @@ defmodule Ezstanza.Stanzas do
         #:current_configs,
         user: u,
         current_revision: {c_r, user: c_r_u},
-        current_configs_stanza_revisions: ^stanza_revision_base_query(),
         current_deployments_stanza_revisions: ^stanza_revision_base_query()
       ]
   end
@@ -74,15 +73,24 @@ defmodule Ezstanza.Stanzas do
 
   defp process_stanza_list_query(query, %{} = params) do
     Enum.reduce(params, query, fn
-      # TOOD: current_config_ids for consitency/clarity?
-      {"config_ids", config_ids}, query ->
+      {"deployment_ids", deployment_ids}, query -> #Remove?
         from s in query,
-          join: s_c_c in assoc(s, :current_configs),
-          where: s_c_c.id in ^config_ids
-      {"config_id", config_id}, query ->
+          join: s_c_c in assoc(s, :deployments),
+          where: s_c_c.id in ^deployment_ids
+      {"deployment_id", deployment_id}, query ->
         from s in query,
-          join: s_c_c in assoc(s, :current_configs),
-          where: s_c_c.id == ^config_id
+          join: s_c_c in assoc(s, :deployments),
+          where: s_c_c.id == ^deployment_id
+      {"deployment_id_not_equal", deployment_id}, query ->
+        stanza_ids_in_deployment = from sr in StanzaRevision,
+          join: d_sr in "deployment_stanza_revision",
+          on: sr.id == d_sr.stanza_revision_id,
+          where: d_sr.deployment_id == ^deployment_id,
+          select: %{
+            stanza_id: sr.stanza_id
+          }
+        from s in query,
+          where: s.id not in subquery(stanza_ids_in_deployment)
       _, query ->
         query
     end)
@@ -358,174 +366,174 @@ defmodule Ezstanza.Stanzas do
   #def update_stanza(%Stanza{} = stanza, attrs) do
   # TODO: Macro for stale checking
   def update_stanza(id, %{"revision_id" => revision_id} = attrs) do
-    # TODO: Validate attrs, user input, might crash?
-    configs = Map.get(attrs, "configs", [])
-    include_in_config_ids = configs
-                            |> Enum.map(&Map.get(&1, "id"))
-    publish_in_config_ids = configs
-                            |> Enum.filter(&Map.get(&1, "publish"))
-                            |> Enum.map(&Map.get(&1, "id"))
-    remove_stanza_revision_by_stanza_id = fn stanza_revisions, stanza_id ->
-      Enum.reject(stanza_revisions, fn stanza_revision ->
-        stanza_revision.stanza_id == stanza_id
-      end)
-    end
-
-    Multi.new()
-    |> Multi.run(:persisted_stanza, fn repo, _changes ->
-      case repo.get(Stanza, id) do
-        %Stanza{current_stanza_revision_id: ^revision_id} = stanza ->
-          {:ok, stanza}
-        %Stanza{} = stanza ->
-          {:error, :stale}
-        nil ->
-          {:error, :not_found}
-      end
-    end)
-    |> Multi.run(
-      :previous_stanza_with_configs,
-      fn repo, %{persisted_stanza: %Stanza{id: id}} ->
-        # TODO: Join preloads? Use base query???
-        case repo.one(from s in Stanza,
-          where: s.id == ^id,
-          preload: [:current_configs, :current_revision_current_configs]
-        ) do
-          nil -> {:error, :not_found}
-          stanza ->
-            {:ok, stanza}
-        end
-      end
-    )
-    |> Multi.append(update_persisted_stanza_multi(attrs))
-    # TODO: Add multi run adding attribute for if new revision?
-    |> Multi.run(:add_to_config_revisions, fn repo, %{
-      stanza_revision: %StanzaRevision{id: stanza_revision_id},
-      persisted_stanza: %Stanza{current_stanza_revision_id: previous_stanza_revision_id},
-      previous_stanza_with_configs: %Stanza{current_revision_current_configs: current_revision_current_configs}
-    } ->
-        # Get configs where has been added
-        if stanza_revision_id == previous_stanza_revision_id do
-          # If stanza revision not changed, only add to configs
-          # not already containg current revision
-          Enum.reject(publish_in_config_ids, fn id ->
-            Enum.any?(current_revision_current_configs, fn current_config ->
-              current_config.id == id
-            end)
-          end)
-        else
-          publish_in_config_ids
-        end
-        |> get_current_config_revisions_with_stanza_revisions(repo)
-    end)
-    |> Multi.append(maybe_add_stanza_revision_to_configs_multi(attrs))
-    |> Multi.run(
-      :remove_from_current_config_revisions,
-      fn repo, %{
-        previous_stanza_with_configs: %Stanza{current_configs: current_configs}
-      } ->
-        # Get configs where has been removed
-        Enum.reject(current_configs, fn current_config ->
-          Enum.any?(include_in_config_ids, fn id ->
-            id == current_config.id
-          end)
-        end)
-        |> Enum.map(fn config -> config.id end)
-        |> get_current_config_revisions_with_stanza_revisions(repo)
-      end
-    )
-    # Maybe remove, break out in function?
-    |> Multi.merge(
-      fn %{
-        remove_from_current_config_revisions: remove_from_current_config_revisions,
-        stanza_revision: %StanzaRevision{stanza_id: stanza_id}
-      } ->
-        remove_from_current_config_revisions
-        |> Enum.reduce( Multi.new(), fn %ConfigRevision{config_id: config_id, config: config} = config_revision, multi ->
-          config_revision_attrs = %{
-            "user_id" => attrs["user_id"],
-            "log_message" => attrs["stanza_removed_log_message"],
-            "config_id" => config_id
-          }
-          # Remove current stanza revision
-          config_revision_changeset =
-            %ConfigRevision{}
-            |> ConfigRevision.changeset(config_revision_attrs)
-            |> Changeset.put_assoc(
-              :stanza_revisions,
-              remove_stanza_revision_by_stanza_id.(config_revision.stanza_revisions, stanza_id)
-            )
-          config_revision_multi_key = {:removed_from_config_revision, config_id}
-          multi
-          |> Multi.insert(config_revision_multi_key, config_revision_changeset)
-          |> Multi.update(
-            {:removed_from_config, config_id},
-            fn %{^config_revision_multi_key => %ConfigRevision{id: id}} ->
-              config
-              |> Config.changeset(Map.take(attrs, ["user_id"]))
-              |> Changeset.put_change(:current_config_revision_id, id)
-            end
-          )
-        end)
-      end
-    )
-    |> Multi.run(:replace_in_config_revisions, fn repo, %{
-      stanza_revision: %StanzaRevision{id: stanza_revision_id},
-      persisted_stanza: %Stanza{current_stanza_revision_id: previous_stanza_revision_id},
-      previous_stanza_with_configs: %Stanza{current_revision_current_configs: current_revision_current_configs}
-    } ->
-        if stanza_revision_id == previous_stanza_revision_id do
-          # Stanza revision has not changed, nothing to replace
-          {:ok, []}
-        else
-          # Get configs which contains a previous revision
-          # and thus has not had stanza revision previously added
-          # (see :add_to_config_revisions)
-          Enum.filter(publish_in_config_ids, fn id ->
-            Enum.any?(current_revision_current_configs, fn current_config ->
-              current_config.id == id
-            end)
-          end)
-          |> get_current_config_revisions_with_stanza_revisions(repo)
-        end
-    end)
-    |> Multi.merge(fn %{
-      replace_in_config_revisions: replace_in_config_revisions, #TODO: remove from_current_config_revisions?
-      stanza_revision: %StanzaRevision{stanza_id: stanza_id} = stanza_revision
-    } ->
-        Enum.reduce(replace_in_config_revisions, Multi.new(), fn %ConfigRevision{config_id: config_id, config: config} = config_revision, multi ->
-          config_revision_attrs = %{
-            "user_id" => attrs["user_id"],
-            "log_message" => attrs["log_message"], ##???
-            "config_id" => config_id
-          }
-          # Replace current stanza revision
-          config_revision_changeset =
-            %ConfigRevision{}
-            |> ConfigRevision.changeset(config_revision_attrs)
-            |> Changeset.put_assoc(
-              :stanza_revisions, [
-                stanza_revision |
-                remove_stanza_revision_by_stanza_id.(
-                  config_revision.stanza_revisions,
-                  stanza_id
-                )
-              ]
-            )
-          config_revision_multi_key = {:replaced_in_config_revision, config_id}
-          multi
-          |> Multi.insert(config_revision_multi_key, config_revision_changeset)
-          |> Multi.update(
-            {:replaced_in_config, config_id},
-            fn %{^config_revision_multi_key => %ConfigRevision{id: id}} ->
-              config
-              |> Config.changeset(Map.take(attrs, ["user_id"]))
-              |> Changeset.put_change(:current_config_revision_id, id)
-            end
-          )
-        end)
-    end)
-    |> Repo.transaction()
-    |> handle_entity_multi_transaction_result(:update_stanza_failed)
+#    # TODO: Validate attrs, user input, might crash?
+#    configs = Map.get(attrs, "configs", [])
+#    include_in_config_ids = configs
+#                            |> Enum.map(&Map.get(&1, "id"))
+#    publish_in_config_ids = configs
+#                            |> Enum.filter(&Map.get(&1, "publish"))
+#                            |> Enum.map(&Map.get(&1, "id"))
+#    remove_stanza_revision_by_stanza_id = fn stanza_revisions, stanza_id ->
+#      Enum.reject(stanza_revisions, fn stanza_revision ->
+#        stanza_revision.stanza_id == stanza_id
+#      end)
+#    end
+#
+#    Multi.new()
+#    |> Multi.run(:persisted_stanza, fn repo, _changes ->
+#      case repo.get(Stanza, id) do
+#        %Stanza{current_stanza_revision_id: ^revision_id} = stanza ->
+#          {:ok, stanza}
+#        %Stanza{} = stanza ->
+#          {:error, :stale}
+#        nil ->
+#          {:error, :not_found}
+#      end
+#    end)
+#    |> Multi.run(
+#      :previous_stanza_with_configs,
+#      fn repo, %{persisted_stanza: %Stanza{id: id}} ->
+#        # TODO: Join preloads? Use base query???
+#        case repo.one(from s in Stanza,
+#          where: s.id == ^id,
+#          preload: [:current_configs, :current_revision_current_configs]
+#        ) do
+#          nil -> {:error, :not_found}
+#          stanza ->
+#            {:ok, stanza}
+#        end
+#      end
+#    )
+#    |> Multi.append(update_persisted_stanza_multi(attrs))
+#    # TODO: Add multi run adding attribute for if new revision?
+#    |> Multi.run(:add_to_config_revisions, fn repo, %{
+#      stanza_revision: %StanzaRevision{id: stanza_revision_id},
+#      persisted_stanza: %Stanza{current_stanza_revision_id: previous_stanza_revision_id},
+#      previous_stanza_with_configs: %Stanza{current_revision_current_configs: current_revision_current_configs}
+#    } ->
+#        # Get configs where has been added
+#        if stanza_revision_id == previous_stanza_revision_id do
+#          # If stanza revision not changed, only add to configs
+#          # not already containg current revision
+#          Enum.reject(publish_in_config_ids, fn id ->
+#            Enum.any?(current_revision_current_configs, fn current_config ->
+#              current_config.id == id
+#            end)
+#          end)
+#        else
+#          publish_in_config_ids
+#        end
+#        |> get_current_config_revisions_with_stanza_revisions(repo)
+#    end)
+#    |> Multi.append(maybe_add_stanza_revision_to_configs_multi(attrs))
+#    |> Multi.run(
+#      :remove_from_current_config_revisions,
+#      fn repo, %{
+#        previous_stanza_with_configs: %Stanza{current_configs: current_configs}
+#      } ->
+#        # Get configs where has been removed
+#        Enum.reject(current_configs, fn current_config ->
+#          Enum.any?(include_in_config_ids, fn id ->
+#            id == current_config.id
+#          end)
+#        end)
+#        |> Enum.map(fn config -> config.id end)
+#        |> get_current_config_revisions_with_stanza_revisions(repo)
+#      end
+#    )
+#    # Maybe remove, break out in function?
+#    |> Multi.merge(
+#      fn %{
+#        remove_from_current_config_revisions: remove_from_current_config_revisions,
+#        stanza_revision: %StanzaRevision{stanza_id: stanza_id}
+#      } ->
+#        remove_from_current_config_revisions
+#        |> Enum.reduce( Multi.new(), fn %ConfigRevision{config_id: config_id, config: config} = config_revision, multi ->
+#          config_revision_attrs = %{
+#            "user_id" => attrs["user_id"],
+#            "log_message" => attrs["stanza_removed_log_message"],
+#            "config_id" => config_id
+#          }
+#          # Remove current stanza revision
+#          config_revision_changeset =
+#            %ConfigRevision{}
+#            |> ConfigRevision.changeset(config_revision_attrs)
+#            |> Changeset.put_assoc(
+#              :stanza_revisions,
+#              remove_stanza_revision_by_stanza_id.(config_revision.stanza_revisions, stanza_id)
+#            )
+#          config_revision_multi_key = {:removed_from_config_revision, config_id}
+#          multi
+#          |> Multi.insert(config_revision_multi_key, config_revision_changeset)
+#          |> Multi.update(
+#            {:removed_from_config, config_id},
+#            fn %{^config_revision_multi_key => %ConfigRevision{id: id}} ->
+#              config
+#              |> Config.changeset(Map.take(attrs, ["user_id"]))
+#              |> Changeset.put_change(:current_config_revision_id, id)
+#            end
+#          )
+#        end)
+#      end
+#    )
+#    |> Multi.run(:replace_in_config_revisions, fn repo, %{
+#      stanza_revision: %StanzaRevision{id: stanza_revision_id},
+#      persisted_stanza: %Stanza{current_stanza_revision_id: previous_stanza_revision_id},
+#      previous_stanza_with_configs: %Stanza{current_revision_current_configs: current_revision_current_configs}
+#    } ->
+#        if stanza_revision_id == previous_stanza_revision_id do
+#          # Stanza revision has not changed, nothing to replace
+#          {:ok, []}
+#        else
+#          # Get configs which contains a previous revision
+#          # and thus has not had stanza revision previously added
+#          # (see :add_to_config_revisions)
+#          Enum.filter(publish_in_config_ids, fn id ->
+#            Enum.any?(current_revision_current_configs, fn current_config ->
+#              current_config.id == id
+#            end)
+#          end)
+#          |> get_current_config_revisions_with_stanza_revisions(repo)
+#        end
+#    end)
+#    |> Multi.merge(fn %{
+#      replace_in_config_revisions: replace_in_config_revisions, #TODO: remove from_current_config_revisions?
+#      stanza_revision: %StanzaRevision{stanza_id: stanza_id} = stanza_revision
+#    } ->
+#        Enum.reduce(replace_in_config_revisions, Multi.new(), fn %ConfigRevision{config_id: config_id, config: config} = config_revision, multi ->
+#          config_revision_attrs = %{
+#            "user_id" => attrs["user_id"],
+#            "log_message" => attrs["log_message"], ##???
+#            "config_id" => config_id
+#          }
+#          # Replace current stanza revision
+#          config_revision_changeset =
+#            %ConfigRevision{}
+#            |> ConfigRevision.changeset(config_revision_attrs)
+#            |> Changeset.put_assoc(
+#              :stanza_revisions, [
+#                stanza_revision |
+#                remove_stanza_revision_by_stanza_id.(
+#                  config_revision.stanza_revisions,
+#                  stanza_id
+#                )
+#              ]
+#            )
+#          config_revision_multi_key = {:replaced_in_config_revision, config_id}
+#          multi
+#          |> Multi.insert(config_revision_multi_key, config_revision_changeset)
+#          |> Multi.update(
+#            {:replaced_in_config, config_id},
+#            fn %{^config_revision_multi_key => %ConfigRevision{id: id}} ->
+#              config
+#              |> Config.changeset(Map.take(attrs, ["user_id"]))
+#              |> Changeset.put_change(:current_config_revision_id, id)
+#            end
+#          )
+#        end)
+#    end)
+#    |> Repo.transaction()
+#    |> handle_entity_multi_transaction_result(:update_stanza_failed)
   end
 
   def update_stanza(id, attrs) do
@@ -585,14 +593,14 @@ defmodule Ezstanza.Stanzas do
       join: s in assoc(s_r, :stanza), as: :stanza,
       join: s_u in assoc(s, :user), as: :stanza_user,
       join: s_r_u in assoc(s_r, :user), as: :user,
-      preload: [:current_configs, current_deployments: ^Deployments.base_query(), user: s_r_u, stanza: {s, user: s_u}],
-      #select_merge: %{is_current_revision: fragment("CASE WHEN ? = ? THEN TRUE ELSE FALSE END", s_r.id, s.current_stanza_revision_id)}
+      preload: [current_deployments: ^Deployments.base_query(), user: s_r_u, stanza: {s, user: s_u}],
       select_merge: %{is_current_revision: fragment("? = ?", s_r.id, s.current_stanza_revision_id)}
   end
 
   #defp stanza_revision_list_query(%{"stanza_id" => stanza_id}) do
   defp stanza_revision_list_query(%{} = params) do
     stanza_revision_base_query()
+    |> process_stanza_revision_list_query(params)
     |> order_by(^stanza_revision_dynamic_order_by(params["order_by"]))
     |> where(^stanza_revision_dynamic_where(params))
   end
@@ -605,6 +613,28 @@ defmodule Ezstanza.Stanzas do
     paginate_entries(stanza_revision_list_query(params), params)
   end
 
+  defp process_stanza_revision_list_query(query, %{} = params) do
+    Enum.reduce(params, query, fn
+      {"deployment_id", deployment_id}, query ->
+        from s in query,
+          join: s_c_c in assoc(s, :deployments),
+          where: s_c_c.id == ^deployment_id
+      {"deployment_id_not_equal", deployment_id}, query ->
+        stanza_ids_in_deployment = from sr in StanzaRevision,
+          join: d_sr in "deployment_stanza_revision",
+          on: sr.id == d_sr.stanza_revision_id,
+          where: d_sr.deployment_id == ^deployment_id,
+          select: %{
+            stanza_id: sr.stanza_id
+          }
+        from sr in query,
+          where: sr.stanza_id not in subquery(stanza_ids_in_deployment)
+      _, query ->
+        query
+    end)
+  end
+
+
   defp stanza_revision_dynamic_where(params) do
     Enum.reduce(params, dynamic(true), fn
       {"name", value}, dynamic ->
@@ -615,6 +645,8 @@ defmodule Ezstanza.Stanzas do
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
         dynamic([user: u], ^dynamic and ilike(u.name, ^"%#{filter_like(value)}%"))
+      {"id_not_in", value}, dynamic ->
+        dynamic([s_r], ^dynamic and s_r.id not in ^String.split(value, ","))
       {"stanza_id_not_in", value}, dynamic ->
         dynamic([s_r], ^dynamic and s_r.stanza_id not in ^String.split(value, ","))
       {"stanza_id", value}, dynamic ->
@@ -639,5 +671,13 @@ defmodule Ezstanza.Stanzas do
   defp stanza_revision_dynamic_order_by("updated_at"), do: [asc: dynamic([s_r], s_r.updated_at)]
   defp stanza_revision_dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s_r], s_r.updated_at)]
   defp stanza_revision_dynamic_order_by(_), do: []
+
+  def stanza_revisions_to_string(stanza_revisions) do
+    # TODO: Better separator between stanzas etc
+    Enum.map_join(stanza_revisions, "\n\n", fn stanza_revision ->
+        # TODO: Edited by user, date comment?
+        stanza_revision.body
+    end)
+  end
 
 end

@@ -3,6 +3,7 @@ import { toRef, toRaw, ref, unref, watch, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
+import Chip from 'primevue/chip'
 import { FilterMatchMode } from 'primevue/api'
 
 export default {
@@ -16,19 +17,23 @@ export default {
       required: true
     },
     filterColumns: {
-      type: Array
+      type: Array,
+      default: []
     },
     filters: {
-      type: Object
+      type: Object,
+      default: {}
     },
     entities: {
       type: Array
+      // default??
     },
     totalEntities: {
       type: Number
     },
     selectedEntities: {
-      type: Array
+      type: Array,
+      default: [], //???
     },
     pageSize: {
       type: Number
@@ -67,6 +72,7 @@ export default {
 
     const expandableRows = context.slots.expansion !== undefined
 
+    /*
     // Hack of the century
     let filtersChanged = false
 
@@ -74,10 +80,10 @@ export default {
     // Watch entities and possibly remove
     // from selection on filtering
     // TODO: paginering ballar ur
-    watch(entities, (newValue) => {
+    watch(entities, (newEntities) => {
       if (filtersChanged) {
         let ids = []
-        for (const entity of newValue) {
+        for (const entity of newEntities) {
           ids[entity.id] = true
         }
 
@@ -89,6 +95,7 @@ export default {
         filtersChanged = false
       }
     })
+    */
     const totalEntitiesLength = computed(() => {
       return props.totalEntities ? props.totalEntities : props.entities.length
     })
@@ -101,18 +108,51 @@ export default {
       selectAll.value = props.selectedEntities.length === totalEntitiesLength.value
     })
 
-    const onUpdateSelection = (value) => {
+    const onUpdateSelection = (newSelectedEntities) => {
       if (props.selectable) {
-        context.emit('update:selectedEntities', value)
+        //@FIXME map toRaw, to get rid of proxy objects, wtf why does datatable do this??
+        context.emit(
+          'update:selectedEntities',
+          newSelectedEntities.map(entity => toRaw(entity))
+        )
       }
     }
 
-    const filters = ref(toRaw(props.filters) || {})
-    if (props.filterColumns) {
+    // Hack, toRef(props, 'filters') is readonly
+    // not sure why works in EntityList though
+    // perhaps assigning properties is allowed,
+    // but really should get a better grip of this
+    const filters = ref({})
+    watch(() => props.filters, (newFilters, oldFilters) => {
+      if (oldFilters) {
+        newFilters.keys().forEach(key => {
+          if (!key in oldFilters) {
+            delete filters.value[key]
+          }
+        })
+      }
+      Object.assign(
+        filters.value,
+        newFilters
+      )
+    }, {immediate: true })
+
+    watch(() => props.filterColumns, (newFilterColumns, oldFilterColumns) => {
+      if (oldFilterColumns) {
+        // Delete possibly removed filter columns
+        // FIXME: Currently untested
+        const oldFilterFieldNames = oldFilterColums.map(filterColumn => filterColumn.filterFieldName)
+        newfilterColumns.forEach(filterColumn => {
+          if (!oldFilterFieldNames.includes(filterColumn.filterFieldName)) {
+            delete filters.value[filterColumn.filterFieldName]
+          }
+        })
+      }
+      //Add new filter columns
       Object.assign(
         filters.value,
         Object.fromEntries(
-          props.filterColumns.map(
+          newFilterColumns.map(
             filterColumn => [
               filterColumn.filterFieldName,
               { value: '', matchMode: filterColumn.defaultFilterMatchMode || FilterMatchMode.CONTAINS }
@@ -120,8 +160,8 @@ export default {
           )
         )
       )
-    }
-    // ref?
+    }, {immediate: true })
+
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
       { label: 'Equals', value: FilterMatchMode.EQUALS },
@@ -137,7 +177,7 @@ export default {
     }
 
     const onFilter = (event) => {
-      filtersChanged = true
+      //filtersChanged = true
       context.emit('filter', event)
     }
 
@@ -153,7 +193,7 @@ export default {
         }
         else {
           selectAll.value = true
-          onUpdateSelection(entities.value)
+          onUpdateSelection(toRaw(entities.value))
         }
       }
       else {
@@ -171,9 +211,13 @@ export default {
       return totalEntitiesLength.value > props.pageSize
     })
 
+    const selectedHeaderText = computed(() => {
+      return `${props.selectedEntities.length}`
+    })
+
     return {
       entities,
-      totalEntities,
+      totalEntitiesLength,
       expandedRows,
       filters,
       defaultSortField,
@@ -187,17 +231,20 @@ export default {
       filterMatchModeOptions,
       dt,
       expandableRows,
-      showPaginator
+      showPaginator,
+      selectedHeaderText
     }
   },
   components: {
     InputText,
     DataTable,
-    Column
+    Column,
+    Chip
   }
 }
 </script>
 <template>
+  <!-- TODO: rowsPerPageOptions need adjusting for initial pageSize, computed? -->
   <DataTable
     :value="entities"
     :lazy="lazy"
@@ -214,19 +261,22 @@ export default {
     v-model:filters="filters"
     :selection="selectedEntities"
     @update:selection="onUpdateSelection"
-    compareSelectionBy="id"
     v-model:expandedRows="expandedRows"
     :selectAll="selectAll"
     @select-all-change="onSelectAllChange"
     resonsiveLayout="scroll"
-    :totalRecords="totalEntities"
+    :totalRecords="totalEntitiesLength"
     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :rowsPerPageOptions="[10,25,50]"
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
     :loading="loading"
   >
-    <Column v-if="selectable" selectionMode="multiple" headerStyle="width: 3em"/>
-    <Column v-if="expandableRows" :expander="true" headerStyle="width: 3em"/>
+    <Column v-if="selectable" selectionMode="multiple" style="width: 3em">
+      <template v-if="selectedEntities.length" #header>
+        <Chip class="bg-primary" icon="pi pi-file" :label="selectedHeaderText"/>
+      </template>
+    </Column>
+    <Column v-if="expandableRows" :expander="true"/>
     <template v-for="column in filterColumns">
       <Column
         :field="column.fieldName"

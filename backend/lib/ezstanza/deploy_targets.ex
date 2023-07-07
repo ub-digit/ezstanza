@@ -8,15 +8,51 @@ defmodule Ezstanza.DeployTargets do
 
   alias Ezstanza.DeployTargets.DeployTarget
   alias Ezstanza.Deployments
+  #alias Ezstanza.Stanzas
+
   alias Ecto.Multi
 
+#  defp process_includes(query, includes) when is_list(includes) do
+#    stanza_revisions_preloader = fn deployment_ids ->
+#      Repo.all(from s_r in Stanzas.stanza_revision_base_query,
+#        join: s_r_c_r in assoc(s_r, :deployments),
+#        where: s_r_c_r.id in ^deployment_ids,
+#        preload: [deployments: s_r_c_r]
+#        #select: {s_r_c_r.id, s_r} #TODO: Test this instead of flat_map below
+#      )
+#      |> Enum.flat_map(fn stanza_revision -> #TODO: Review this
+#        Enum.map(stanza_revision.deployments, fn deployment ->
+#          {deployment.id, stanza_revision}
+#        end)
+#      end)
+#    end
+#
+#    Enum.reduce(includes, query, fn
+#      "stanza_revisions", query ->
+#        query
+#        |> preload([current_revision: c_r], [current_revision: {c_r, stanza_revisions: ^stanza_revisions_preloader}]) # Bit confused, can first preload be removed???
+#      _, query ->
+#        query
+#    end)
+#  end
+#  defp process_includes(query, _), do: query
+#
+#  def base_query(%{} = params) do
+#    Enum.reduce(params, base_query(), fn
+#      {"includes", includes}, query ->
+#        process_includes(query, includes)
+#      _, query ->
+#        query
+#    end)
+#  end
 
   def base_query() do
     from s in DeployTarget,
-      join: c in assoc(s, :default_config), as: :default_config,
-      preload: [default_config: c, current_deployment: ^Deployments.base_query()]
+      preload: [
+        current_deployment: ^Deployments.base_query(%{"includes": ["stanza_revisions"]})
+        #current_deployment_excluded_stanzas: ^Stanzas.stanza_base_query()
+      ]
   end
-
 
   @doc """
   Returns the list of deploy_target.

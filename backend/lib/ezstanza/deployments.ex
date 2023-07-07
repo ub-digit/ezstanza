@@ -8,18 +8,52 @@ defmodule Ezstanza.Deployments do
 
   import Ezstanza.Pagination
 
+
+  alias Ezstanza.Stanzas
+
   alias Ezstanza.Deployments.Deployment
   alias Ezstanza.DeployTargets.DeployServer
-  alias Ezstanza.Configs
+
+
+  defp process_includes(query, includes) when is_list(includes) do
+    stanza_revisions_preloader = fn deployment_ids ->
+      Repo.all(from s_r in Stanzas.stanza_revision_base_query,
+        join: s_r_c_r in assoc(s_r, :deployments),
+        where: s_r_c_r.id in ^deployment_ids,
+        preload: [deployments: s_r_c_r]
+        #select: {s_r_c_r.id, s_r} #TODO: Test this instead of flat_map below
+      )
+      |> Enum.flat_map(fn stanza_revision -> #TODO: Review this
+        Enum.map(stanza_revision.deployments, fn deployment ->
+          {deployment.id, stanza_revision}
+        end)
+      end)
+    end
+
+    Enum.reduce(includes, query, fn
+      "stanza_revisions", query ->
+        query
+        |> preload([stanza_revisions: ^Stanzas.stanza_revision_base_query()])
+      _, query ->
+        query
+    end)
+  end
+  defp process_includes(query, _), do: query
+
+  def base_query(%{} = params) do
+    Enum.reduce(params, base_query(), fn
+      {"includes", includes}, query ->
+        process_includes(query, includes)
+      _, query ->
+        query
+    end)
+  end
 
   def base_query() do
     from d in Deployment,
-      #join: c_r in assoc(d, :config_revision), as: :config_revision,
       join: d_t in assoc(d, :deploy_target), as: :deploy_target,
       join: u in assoc(d, :user), as: :user,
-      join: c_r in assoc(d, :config_revision), as: :config_revision,
       preload: [
-        config_revision: ^Configs.config_revision_base_query(),
         deploy_target: d_t,
         user: u
       ]
@@ -72,8 +106,6 @@ defmodule Ezstanza.Deployments do
         dynamic([user: u], ^dynamic and u.id == ^value)
       {"user_ids", value}, dynamic ->
         dynamic([user: u], ^dynamic and u.id in ^value)
-      {"config_id", value}, dynamic ->
-        dynamic([config_revision: c_r], ^dynamic and c_r.config_id == ^value)
       {_, _}, dynamic ->
         dynamic
     end)

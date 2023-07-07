@@ -41,7 +41,6 @@ export default {
     :lazy="false"
   >
     <Column field="name" header="Name" :sortable="true"/>
-    <Column field="current_deployment.config_revision.name" header="Deployed config" :sortable="false"/>
     <Column field="current_deployment.inserted_at" header="Deployed" :sortable="false"/>
     <Column field="current_deployment.status" header="Status" :sortable="false"/>
   </EntityList>

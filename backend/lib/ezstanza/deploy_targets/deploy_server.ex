@@ -47,11 +47,11 @@ defmodule Ezstanza.DeployTargets.DeployServer do
       id: deployment_id,
       deploy_target: deploy_target,
       user: user,
-      config_revision: config_revision
+      stanza_revisions: stanza_revisions
     } = deployment
   }, state) do
     provider = Application.fetch_env!(:ezstanza, :deployment_provider)
-    config = Configs.config_revision_to_string(config_revision)
+    config = Stanzas.stanza_revisions_to_string(stanza_revisions)
     broadcast_status_change(deployment_id, :deploying)
     case provider.deploy(
       deploy_target.name,

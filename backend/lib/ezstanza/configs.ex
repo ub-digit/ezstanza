@@ -52,7 +52,7 @@ defmodule Ezstanza.Configs do
         query
     end)
   end
-  defp process_stanza_includes(query, _), do: query
+  defp process_config_includes(query, _), do: query
 
   def config_base_query(%{} = params) do
     Enum.reduce(params, config_base_query(), fn

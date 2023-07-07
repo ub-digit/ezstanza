@@ -1,5 +1,5 @@
 <script>
-import { computed, inject, toRef, ref, unref, toRaw, watch, onMounted } from 'vue'
+import { computed, inject, toRef, ref, unref, toRaw, watch, onMounted } from 'vue' //watch currently unused
 import { FilterMatchMode } from 'primevue/api'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -7,7 +7,8 @@ import Toolbar from 'primevue/toolbar'
 import MultiSelect from 'primevue/multiselect'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
-import UseLazyDataTable from '@/components/UseLazyDataTable.js'
+import UseEntityDataTable from '@/components/UseEntityDataTable.js'
+import UseUserColumn from '@/components/UseUserColumn.js'
 import CreateEntityButton from '@/components/CreateEntityButton.vue'
 
 export default {
@@ -40,7 +41,8 @@ export default {
       type: Array
     },
     filters: {
-      type: Object
+      type: Object,
+      default: {}
     },
     revisioned: {
       type: Boolean,
@@ -58,6 +60,10 @@ export default {
       type: String,
       default: "row"
     },
+    params: {
+      type: Object,
+      default: {}
+    },
     lazy: {
       type: Boolean,
       default: true
@@ -68,93 +74,36 @@ export default {
     const dayjs = inject('dayjs')
     const api = inject('api')
     const defaultSortField = toRef(props, 'defaultSortField')
-    const defaultSortOrder = ref(-1)
+    const defaultSortOrder = ref(-1) //TODO: Use prop?
     const loading = ref(false)
-    const entities = ref([])
-    const totalEntities = ref()
+    //const entities = ref([])
+    //const totalEntities = ref()
     const selectedEntities = ref([])
     const pageSize = ref(10)
 
-    const { lazyParams, dataTableEvents } = props.lazy ? UseLazyDataTable({
+    const params = toRef(props, 'params') // TODO: WTF?
+    const { entities, totalEntities, loadEntitiesUnpaginated, dataTableEvents } = UseEntityDataTable({
+      lazy: props.lazy,
+      loading: loading,
+      params: params,
+      entityNamePluralized: props.entityNamePluralized,
       pageSize: pageSize.value,
       defaultSortField: defaultSortField.value,
       defaultSortOrder: defaultSortOrder.value
-    }) : { lazyParams: ref({}), dataTableEvents: {} }
-
-    const expandableRows = context.slots.expansion !== undefined
-
-    const userOptions = ref([])
-    api.users.list().then(result => {
-      userOptions.value = result.data.map(
-        user => {
-          return {
-            name: user.name,
-            id: user.id
-          }
-        }
-      )
     })
 
-    const userField = computed(() => {
-      return props.revisioned ? 'revision_user.name' : 'user.name';
-    })
-    const userFilterField = computed(() => {
-      return props.revisioned ? 'revision_user_ids' : 'user_ids';
-    })
-    const userSortField = computed(() => {
-      return props.revisioned ? 'revision_user_name' : 'user_name';
-    })
+    const expandableRows = computed(() => context.slots.expansion !== undefined)
 
-    // TODO: Ugly, breaks reactivity, solve by settable computed?
-    const filters = ref(toRaw(props.filters) || {})
-    Object.assign(filters.value, {
-      [toRaw(userFilterField.value)]: {
-        matchMode: FilterMatchMode.EQUALS,
-        value: ''
-      }
-    })
+    const filters = toRef(props, 'filters')
+    const { userColumnAttributes, userMultiSelectAttributes } = props.userColumn ?
+      UseUserColumn({ filters, revisioned: props.revisioned }) :
+      { userColumnAttributes: {}, userMultiSelectAttributes: {}, userOptions: null }
 
-    // @todo: ugly, how to use defined standard breakpoints?
+    // @todo: useBreakpoints?
     const dialogBreakpoints = ref({
       '960px': '75vw',
       '640px': '90vw'
     })
-
-    const loadEntities = (params) => {
-      loading.value = true
-      params = Object.assign({}, unref(params))
-      // Load ahead some entities so don't have to refetch
-      // on every deletion
-      // @todo: better name. ahead, ahead_size?
-      if (props.lazy) {
-        params.extra = 5
-      }
-      // TODO: Error handling/toast
-      api[props.entityNamePluralized].list(params).then(result => {
-        entities.value = result.data
-        totalEntities.value = 'total' in result? result.total : result.data.length
-        loading.value = false
-      })
-    }
-
-    const loadEntitiesUnpaginated = async () => {
-      // @todo: alternatively { ...lazyParams.value } ?
-      let params = Object.assign({}, unref(lazyParams))
-      delete params.page
-      delete params.size
-      let result = await api[props.entityNamePluralized].list(params)
-      return result.data
-    }
-
-    const maybeLoadEntities = () => {
-      if (
-        props.lazy &&
-          (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
-          entities.value.length < lazyParams.value.size
-      ) {
-        loadEntities(lazyParams)
-      }
-    }
 
     // Event handler with closure on entity
     const onDeleteEntity = (entity, close) => {
@@ -163,8 +112,7 @@ export default {
         entities.value = entities.value.filter((s) => s.id !== entity.id)
         selectedEntities.value = selectedEntities.value.filter((s) => s.id !== entity.id)
         // TODO: Skip if not lazy?
-        totalEntities.value = totalEntities.value - 1
-        maybeLoadEntities()
+        totalEntities.value = totalEntities.value - 1 //Maybe need to place this first
     }).catch((error) => {
         //TODO: toast with error
       })
@@ -177,46 +125,18 @@ export default {
       Promise.all(selectedEntityIds.map((id) => api[props.entityNamePluralized].delete(id))).then(() => {
         entities.value = entities.value.filter((s) => !selectedEntityIds.includes(s.id))
         selectedEntities.value = selectedEntities.value.filter((s) => !selectedEntityIds.includes(s.id))
-        totalEntities.value = totalEntities.value - selectedEntityIds.length
-
-        maybeLoadEntities()
+        totalEntities.value = totalEntities.value - selectedEntityIds.length // maybe need to place first
         close()
       }).catch((error) => {
         // @todo: toast with error
       })
     }
 
-    if (props.lazy) {
-      watch(
-        () => lazyParams,
-        async newParams => {
-          await loadEntities(newParams)
-        },
-        { deep: true }
-      )
-    }
-    else {
-      loadEntities(lazyParams)
-    }
-
-    /*
-    watch(
-      () => route.query.page,
-      async newPage => {
-        newPage = newPage || 1
-        const result = await api[props.entityNamePluralized].list({ page: newPage, size: pageSize.value })
-        entities.value = result.data
-        totalEntities.value = result.total
-      },
-      { immediate: true }
-    )
-     */
     const entityLabel = computed(() => props.entityName.replace('_', ' '))
     const entityLabelPluralized = computed(() => props.entityNamePluralized.replace('_', ' '))
 
     return {
       dayjs,
-      userOptions,
       entities,
       totalEntities,
       pageSize,
@@ -231,9 +151,11 @@ export default {
       loadEntitiesUnpaginated,
       expandableRows,
       filters,
-      userField,
-      userFilterField,
-      userSortField,
+      //userField,
+      //userFilterField,
+      //userSortField,
+      userColumnAttributes,
+      userMultiSelectAttributes,
       entityLabel,
       entityLabelPluralized
     }
@@ -263,10 +185,10 @@ export default {
         :disabled="!selectedEntities || !selectedEntities.length"
       >
         <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
-        <template #header>
-          Confirm deletion
-        </template>
-        <span class="p-confirm-dialog-message">Are you sure you want to delete selected {{ entityLabelPluralized }}?</span>
+        <template #header>Confirm deletion</template>
+        <span class="p-confirm-dialog-message">
+          Are you sure you want to delete selected {{ entityLabelPluralized }}?
+        </span>
       </ConfirmDialogButton>
     </template>
   </Toolbar>
@@ -288,7 +210,6 @@ export default {
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
     <template #reserved>
-      <!-- TODO: format date -->
       <Column field="updated_at" header="Updated" :sortable="true">
         <template #body="{ data }">
           {{ dayjs(data.updated_at).format('L LT') }}
@@ -296,23 +217,14 @@ export default {
       </Column>
       <Column
         v-if="userColumn"
-        :field="userField"
         header="Updated by"
-        :sortable="true"
-        :sortField="userSortField"
-        :filterField="userFilterField"
-        :showFilterMenu="false"
+        v-bind="userColumnAttributes"
       >
         <template #filter="{filterModel, filterCallback}">
           <MultiSelect
             v-model="filterModel.value"
             @change="filterCallback()"
-            :options="userOptions"
-            optionLabel="name"
-            optionValue="id"
-            placeholder="Any"
-            display="chip"
-            class="p-column-filter"
+            v-bind="userMultiSelectAttributes"
           />
         </template>
       </Column>

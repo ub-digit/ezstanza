@@ -16,7 +16,7 @@ defmodule EzstanzaWeb.DeploymentController do
   end
 
   def index(conn, params) do
-    deployments = Deployments.list_deployment(params)
+    deployments = Deployments.list_deployments(params)
     render(conn, "index.json", deployments: deployments)
   end
 

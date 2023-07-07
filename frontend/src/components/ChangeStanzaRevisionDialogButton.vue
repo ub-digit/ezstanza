@@ -76,7 +76,7 @@ export default {
 </script>
 <template>
   <Button v-bind="$attrs" @click="onOpen"/>
-  <Dialog v-model:visible="visible" :modal="true" class="p-confirm-dialog" :closeOnEscape="true" :breakpoints="breakpoints">
+  <Dialog v-model:visible="visible" modal class="p-confirm-dialog" :closeOnEscape="true" :breakpoints="breakpoints">
     <template #header>
       Select stanza revision
     </template>

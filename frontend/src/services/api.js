@@ -60,7 +60,7 @@ class ResourceApiService extends BaseApiService {
   }
 
   delete(id) {
-    return axios.delete(`${this.endpointUrl()}/${id}`)
+    return axios.get(`${this.endpointUrl()}/${id}`)
       .then(response => response.data)
       .catch(this.handleErrors)
   }

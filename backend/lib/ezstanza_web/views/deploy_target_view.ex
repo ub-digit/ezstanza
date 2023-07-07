@@ -3,7 +3,7 @@ defmodule EzstanzaWeb.DeployTargetView do
   import EzstanzaWeb.ViewRelationshipHelpers
 
   alias EzstanzaWeb.DeployTargetView
-  alias EzstanzaWeb.ConfigView
+  #alias EzstanzaWeb.StanzaView
   alias EzstanzaWeb.DeploymentView
 
   def render("index.json", %{deploy_targets: deploy_targets}) do
@@ -18,19 +18,20 @@ defmodule EzstanzaWeb.DeployTargetView do
     %{
       id: deploy_target.id,
       name: deploy_target.name,
-      default_config_id: deploy_target.default_config_id,
+      color: deploy_target.color,
       inserted_at: deploy_target.inserted_at,
       updated_at: deploy_target.updated_at,
       options: deploy_target.options
     }
     |> Map.merge(maybe_render_relationship(deploy_target, :current_deployment, DeploymentView, "deployment.json"))
+    #|> Map.merge(maybe_render_relationship(deploy_target, :current_deployment_excluded_stanzas, StanzaView, "stanza.json"))
   end
 
   def render("deploy_target_snippet.json", %{deploy_target: deploy_target}) do
     %{
       id: deploy_target.id,
-      name: deploy_target.name,
-      default_config_id: deploy_target.default_config_id
+      color: deploy_target.color,
+      name: deploy_target.name
     }
   end
 

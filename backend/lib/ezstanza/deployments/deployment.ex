@@ -9,8 +9,12 @@ defmodule Ezstanza.Deployments.Deployment do
   schema "deployment" do
     # TODO: Enums stored in table?,
     field :status, Ecto.Enum, values: [:pending, :deploying, :completed, :failed], default: :pending
-    belongs_to :config_revision, ConfigRevision
+    field :is_current_deployment, :boolean, virtual: true
     belongs_to :deploy_target, DeployTarget
+
+    many_to_many :stanza_revisions, StanzaRevision,
+      join_through: "deployment_stanza_revision",
+      on_replace: :delete
 
     #has_one :current_deploy_target, DeployTarget,
     #  foreign_key: :current_deployment_id

@@ -12,7 +12,7 @@ import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import ChangeStanzaRevisionDialogButton from '@/components/ChangeStanzaRevisionDialogButton.vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import UseLazyDataTable from '@/components/UseLazyDataTable.js'
+import UseEntityDataTable from '@/components/UseEntityDataTable.js'
 
 export default {
   emits: ['submit'],
@@ -76,7 +76,7 @@ export default {
     const defaultSortField = ref('updated_at')
     const defaultSortOrder = ref(-1)
 
-    const { lazyParams, dataTableEvents } = UseLazyDataTable({
+    const { lazyParams, dataTableEvents } = UseEntityDataTable({
       pageSize: pageSize.value,
       defaultSortField: defaultSortField.value,
       defaultSortOrder: defaultSortOrder.value

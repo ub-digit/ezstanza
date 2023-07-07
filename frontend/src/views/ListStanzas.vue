@@ -4,42 +4,30 @@ import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
-import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
-import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
+//import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
+import DeployTargetsDropDown from '@/components/DeployTargetsDropDown.vue'
 import DropDown from 'primevue/dropdown'
 import { FilterMatchMode } from 'primevue/api'
 
+import Button from 'primevue/button'
+
 export default {
   setup() {
-    // @todo: format date
-    // const route = useRoute()
-    /*
-    watch(
-      () => route.query.page,
-      async newPage => {
-        newPage = newPage || 1
-        const result = await api.stanzas.list({ page: newPage, size: pageSize.value })
-        stanzas.value = result.data
-        totalStanzas.value = result.total
-      },
-      { immediate: true }
-    )
-    */
 
-    const filterColumns = [
+    const filterColumns = ref([
       {
         fieldName: 'name',
         filterFieldName: 'name',
         header: 'Name'
       }
-    ]
+    ])
 
-    const filters = {
-      config_id: {
+    const filters = ref({
+      deployment_ids: {
         matchMode: FilterMatchMode.EQUALS,
         value: null
       }
-    }
+    })
 
     return {
       filterColumns,
@@ -49,10 +37,10 @@ export default {
   components: {
     EntityList,
     Column,
-    StanzaCurrentConfigChip,
     StanzaCurrentDeployment,
-    ConfigsDropDown, //TODO: UsersDropDown?
-    DropDown
+    DeployTargetsDropDown, //TODO: UsersDropDown?
+    DropDown,
+    Button
   }
 }
 </script>
@@ -75,14 +63,14 @@ export default {
     >
     </Column>
     <Column
-      field="current_configs"
-      header="Configs"
-      :sortable="false"
-      filterField="config_id"
+      header="Deployments"
+      field="current_deployments"
+      filterField="deployment_ids"
       :showFilterMenu="false"
+      :sortable="false"
     >
       <template #filter="{filterModel, filterCallback}">
-        <ConfigsDropDown
+        <DeployTargetsDropDown
           placeholder="Any"
           class="p-column-filter"
           v-model="filterModel.value"
@@ -90,21 +78,6 @@ export default {
           @change="filterCallback()"
         />
       </template>
-      <template #body="{ data }">
-        <div class="flex flex-column align-items-start gap-2">
-          <StanzaCurrentConfigChip
-            v-for ="config in data.current_configs"
-            :currentConfig="config"
-            :currentStanzaRevisionId="data.revision_id"
-          />
-        </div>
-      </template>
-    </Column>
-    <Column
-      field="current_deployments"
-      header="Deployments"
-      :sortable="false"
-    >
       <template #body="{ data }">
         <div class="flex flex-column align-items-start gap-2">
           <StanzaCurrentDeployment

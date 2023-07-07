@@ -31,11 +31,11 @@ defmodule EzstanzaWeb.StanzaRevisionController do
   def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = params
              |> normalize_index_params()
-             |>Stanzas.paginate_stanza_revisions()
+             |> Stanzas.paginate_stanza_revisions()
     render(conn, "index.json", stanza_revisions: result.entries, pages: result.pages, total: result.total)
   end
 
-  def index(conn, %{"stanza_id" => _stanza_id} = params) do
+  def index(conn, params) do
     stanza_revisions = params
                        |> normalize_index_params()
                        |> Stanzas.list_stanza_revisions()
@@ -43,13 +43,11 @@ defmodule EzstanzaWeb.StanzaRevisionController do
   end
 
   def show(conn, %{"id" => _id}) do
-    stanza_revision = conn.assigns[:stanza_revision]
-    render(conn, "show.json", stanza_revision: stanza_revision)
+    render(conn, "show.json", stanza_revision: conn.assigns[:stanza_revision])
   end
 
   def delete(conn, %{"id" => _id}) do
-    stanza_revision = conn.assigns[:stanza_revision]
-    with {:ok, %StanzaRevision{}} <- Stanzas.delete_stanza_revision(stanza_revision) do
+    with {:ok, %StanzaRevision{}} <- Stanzas.delete_stanza_revision(conn.assigns[:stanza_revision]) do
       send_resp(conn, :no_content, "")
     end
   end
