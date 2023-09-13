@@ -32,6 +32,6 @@ defmodule EzstanzaWeb.DeploymentView do
       inserted_at: deployment.inserted_at,
       status: deployment.status
     }
-    |> Map.merge(maybe_render_relationship(deployment, :stanza_revisions, StanzaRevisionView, "stanza_revision.json"))
+    # |> Map.merge(maybe_render_relationship(deployment, :stanza_revisions, StanzaRevisionView, "stanza_revision.json"))
   end
 end

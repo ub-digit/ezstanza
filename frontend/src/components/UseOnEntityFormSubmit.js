@@ -26,7 +26,7 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
   }[op]
   const toastTimeout = 3000
 
-  return function(entity, { setErrors, resetForm }) {
+  return function(entity, { setErrors, resetForm }, options = {}) {
     let args = op === 'update' ? [entity.id] : []
     args.push({ [entityName]: entity })
 
@@ -42,8 +42,10 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
           life: toastTimeout
         })
         resetForm() //TODO: This should only be run on creation right??
-        if ('destination' in route.query) {
-          router.push(route.query.destination)
+
+        const destination = options.destination || route.query.destination
+        if (destination) {
+          router.push(destination)
         }
         return result.data
       }).catch((error) => {

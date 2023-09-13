@@ -15,10 +15,6 @@ export default {
             icon: 'pi pi-fw pi-file',
             to: '/stanzas'
           }, {
-            label: 'Configs',
-            icon: 'pi pi-fw pi-book',
-            to: '/configs'
-          }, {
             label: 'Deployments',
             icon: 'pi pi-fw pi-cloud-upload',
             to: '/deployments'

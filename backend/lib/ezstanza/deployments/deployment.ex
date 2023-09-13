@@ -5,6 +5,7 @@ defmodule Ezstanza.Deployments.Deployment do
   alias Ezstanza.Configs.ConfigRevision
   alias Ezstanza.DeployTargets.DeployTarget
   alias Ezstanza.Accounts.User
+  alias Ezstanza.Stanzas.StanzaRevision
 
   schema "deployment" do
     # TODO: Enums stored in table?,
@@ -27,7 +28,7 @@ defmodule Ezstanza.Deployments.Deployment do
   @doc false
   def changeset(deployment, attrs) do
     deployment
-    |> cast(attrs, [:config_revision_id, :deploy_target_id, :user_id])
-    |> validate_required([:config_revision_id, :deploy_target_id, :user_id])
+    |> cast(attrs, [:deploy_target_id, :user_id])
+    |> validate_required([:deploy_target_id, :user_id])
   end
 end

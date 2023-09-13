@@ -23,7 +23,7 @@ defmodule Ezstanza.DeployTargets.DeployTarget do
   def changeset(deploy_target, attrs) do
     deploy_target
     # TODO: unique constraint for name
-    |> cast(attrs, [:name, :color]) # Why does color validation fail if embed validation fails?
+    |> cast(attrs, [:name, :color, :current_deployment_id]) # Why does color validation fail if embed validation fails?
     |> validate_required([:name, :color])
     |> cast_embed(:options)
   end

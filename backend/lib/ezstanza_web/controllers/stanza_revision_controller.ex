@@ -11,11 +11,19 @@ defmodule EzstanzaWeb.StanzaRevisionController do
     assigns_key: :stanza_revision
   } when action in [:show, :delete]
 
-
-  # TODO: split ids, convert string to integers etc?
+  # Perhaps should also validate first?
   def normalize_index_params(params) do
+    # Or map then filter empty?
+    to_int = fn value ->
+      Integer.parse(value)
+      |> elem(0)
+    end
     Enum.reduce(params, %{}, fn {key, value}, normalized_params ->
       case {key, value} do
+        {"deployment_id_not_equal", value} ->
+          Map.put(normalized_params, key, to_int.(value))
+        {"deployment_id", value} ->
+          Map.put(normalized_params, key, to_int.(value))
         {"is_current_revision", "true"} ->
           Map.put(normalized_params, key, true)
         {"is_current_revision", "false"} ->

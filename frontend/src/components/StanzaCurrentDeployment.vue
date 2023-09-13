@@ -1,6 +1,7 @@
 <script>
 import { ref, computed, inject } from 'vue'
 import Chip from 'primevue/chip'
+import ColorChip from '@/components/ColorChip.vue'
 import useTextClassForBackground from '@/components/UseTextClassForBackground.js'
 
 //import Button from 'primevue/button'
@@ -27,7 +28,7 @@ export default {
     const toggleDeploymentStanzaInfo = (event) => {
       deploymentStanzaInfo.value.toggle(event)
     }
-
+    /*
     const deploymentConfigInfo = ref(null)
     const toggleDeploymentConfigInfo = (event) => {
       deploymentConfigInfo.value.toggle(event)
@@ -39,6 +40,7 @@ export default {
     }
     const deployedConfigTextColorClass = useTextClassForBackground(deployment.config_revision.color, 'text-black', 'text-white')
     //TODO: TextClass prefix also when used in ColorChip
+    */
 
     const isDeploymentInfoVisible = ref(false)
 
@@ -46,16 +48,16 @@ export default {
       dayjs,
       deploymentStanzaInfo,
       toggleDeploymentStanzaInfo,
-      deploymentConfigInfo,
-      toggleDeploymentConfigInfo,
-      deploymentInfo,
-      toggleDeploymentInfo,
-      deployedConfigTextColorClass,
+      //deploymentConfigInfo,
+      //toggleDeploymentConfigInfo,
+      //deploymentInfo,
+      //toggleDeploymentInfo,
+      //deployedConfigTextColorClass,
       isDeploymentInfoVisible
     }
   },
   components: {
-    Chip,
+    ColorChip,
     Tag,
     OverlayPanel,
     SideBar
@@ -63,7 +65,7 @@ export default {
 }
 </script>
 <template>
-  <Chip>
+  <ColorChip :color="deployment.deploy_target.color">
     <i
       :class="['p-chip-icon', 'pi', stanzaRevision.is_current_revision ? 'pi-check' : 'pi-info-circle', 'stanza-current-deployment-icon']"
       @click="isDeploymentInfoVisible = true"
@@ -77,7 +79,7 @@ export default {
       ...
     </SideBar>
     <span class="p-chip-text">{{ deployment.deploy_target.name }}</span>
-  </Chip>
+  </ColorChip>
   <OverlayPanel ref="deploymentStanzaInfo">
     <div class="flex flex-column align-items-start gap-2">
       <template v-if="stanzaRevision.is_current_revision">
@@ -97,6 +99,7 @@ export default {
           {{ dayjs(stanzaRevision.updated_at).format('L LT') }}
         </span>
       </template>
+      <!--
       <span class="text-xs">
         <Tag
           v-if="deployment.config_revision.is_current_revision"
@@ -120,6 +123,7 @@ export default {
         Deployed by: {{ deployment.user.name }}<br/>
         {{ dayjs(deployment.inserted_at).format('L LT') }}
       </span>
+      -->
     </div>
   </OverlayPanel>
 </template>

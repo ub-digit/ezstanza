@@ -7,6 +7,7 @@ defmodule Ezstanza.DeployTargets.DeployServer do
   alias Ezstanza.Deployments.Deployment
   alias Ezstanza.Deployments
   alias Ezstanza.Configs
+  alias Ezstanza.Stanzas
 
   @impl true
   def init(state) do

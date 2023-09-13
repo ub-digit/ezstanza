@@ -1,5 +1,5 @@
 <script>
-import { ref, computed } from 'vue'
+import { ref, toRef, computed } from 'vue'
 import OverlayPanel from 'primevue/overlaypanel';
 export default {
   props: {
@@ -8,21 +8,23 @@ export default {
       required: true
     }
   },
-  setup({ status }) {
+  setup( props ) {
     const tooltip = ref(null)
     const toggleTooltip = (event) => {
       tooltip.value.toggle(event)
     }
+
+    const status = toRef(props, 'status')
+
     const tooltipText = computed(() => {
       //TODO: i18n
-      console.dir(status)
       const textMapping = {
         pending: 'Pending',
         deploying: 'Deploying',
         completed: 'Completed',
         failed: 'Failed'
       }
-      return textMapping[status];
+      return textMapping[status.value];
     })
     return {
       tooltip,

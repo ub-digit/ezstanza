@@ -62,12 +62,18 @@ defmodule EzstanzaWeb.Plug.Auth do
   def renew(conn) do
     with {:ok, token} <- extract_access_token(conn),
          user when not is_nil(user) <- AccessTokens.get_access_token_user(token) do
+      AccessTokens.update_access_token(
+        AccessTokens.get_access_token!(token),
+        %{"valid_to" => AccessTokens.token_expiration_date()}
+      )
       conn = conn
-        |> create(user)
-        |> Conn.register_before_send(fn conn ->
-          AccessTokens.delete_access_token(token)
-          conn
-        end)
+        |> Conn.put_private(:api_access_token, token)
+      #conn = conn
+        #|> create(user)
+        #|> Conn.register_before_send(fn conn ->
+        #  AccessTokens.delete_access_token(token)
+        #  conn
+        #end)
       {conn, user}
     else
       _any -> {conn, nil}

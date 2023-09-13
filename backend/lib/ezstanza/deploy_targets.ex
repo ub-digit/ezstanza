@@ -49,7 +49,7 @@ defmodule Ezstanza.DeployTargets do
   def base_query() do
     from s in DeployTarget,
       preload: [
-        current_deployment: ^Deployments.base_query(%{"includes": ["stanza_revisions"]})
+        current_deployment: ^Deployments.base_query(%{"includes": ["stanza_revisions"]}) #TODO: Why stanza revisions loaded here?
         #current_deployment_excluded_stanzas: ^Stanzas.stanza_base_query()
       ]
   end

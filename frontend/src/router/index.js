@@ -6,10 +6,6 @@ import EditStanza from '../views/EditStanza.vue'
 import CreateStanza from '../views/CreateStanza.vue'
 import ListStanzas from '../views/ListStanzas.vue'
 
-import EditConfig from '../views/EditConfig.vue'
-import CreateConfig from '../views/CreateConfig.vue'
-import ListConfigs from '../views/ListConfigs.vue'
-
 import ListDeployments from '../views/ListDeployments.vue'
 
 import EditDeployTarget from '../views/EditDeployTarget.vue'
@@ -47,21 +43,6 @@ const router = createRouter({
       path: '/stanzas/:id(\\d+)',
       name: 'EditStanza',
       component: EditStanza,
-      meta: { auth: true }
-    }, {
-      path: '/configs',
-      name: 'ListConfigs',
-      component: ListConfigs,
-      meta: { auth: true }
-    }, {
-      path: '/configs/new',
-      name: 'CreateConfig',
-      component: CreateConfig,
-      meta: { auth: true }
-    }, {
-      path: '/configs/:id(\\d+)',
-      name: 'EditConfig',
-      component: EditConfig,
       meta: { auth: true }
     }, {
       path: '/deployments',

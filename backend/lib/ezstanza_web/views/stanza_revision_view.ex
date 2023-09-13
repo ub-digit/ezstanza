@@ -24,10 +24,11 @@ defmodule EzstanzaWeb.StanzaRevisionView do
   def render("stanza_revision.json", %{stanza_revision: stanza_revision}) do
     %{
       id: stanza_revision.id,
+      current_revision_id: stanza_revision.stanza.current_stanza_revision_id,
+      is_current_revision: stanza_revision.is_current_revision,
       stanza_id: stanza_revision.stanza_id,
       name: stanza_revision.stanza.name,
       body: stanza_revision.body,
-      is_current_revision: stanza_revision.is_current_revision,
       log_message: stanza_revision.log_message,
       inserted_at: stanza_revision.inserted_at,
       updated_at: stanza_revision.updated_at,

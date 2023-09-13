@@ -12,7 +12,9 @@ import VTextField from '@/components/VTextField.vue'
 import VTextareaField from '@/components/VTextareaField.vue'
 import Checkbox from 'primevue/checkbox'
 import Fieldset from 'primevue/fieldset'
-import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
+//import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
+
+import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 
 /*
 import {parser} from '../lezer/dist/index.es.js'
@@ -155,119 +157,86 @@ export default {
       //validationSchema: schema,
       initialValues: {
         ...stanzaValues,
-        include_in_configs: [],
-        publish_in_configs: []
+        deploy_to_deploy_targets: []
       }
     })
 
     const onSubmit = handleSubmit((values, context) => {
+      /*
       values.configs = values.include_in_configs.map(includeInConfig => {
         return {
           id: includeInConfig.id,
           publish: values.publish_in_configs.some(publishInConfig => {
             return publishInConfig.id === includeInConfig.id
           })
-        }
+          }
+        })
+       */
+      values.deploy_to_deploy_targets = values.deploy_to_deploy_targets.map((deploy_target) => {
+        return deploy_target.id
       })
       // Better way of handling this, cast model module?
       // Are these bound?
-      delete values.publish_in_configs
-      delete values.include_in_configs
-      delete values.current_configs
+      delete values.current_deployments
+      //delete values.publish_in_configs
+      //delete values.include_in_configs
+      //delete values.current_configs
       delete values.revision_user // Unset here or elsewhere?
       delete values.user // Unset here or elsewhere?
-      emit('submit', values, context)
+      const options = {
+        destination: values.deploy_to_deploy_targets.length ? '/deployments' : null
+      }
+      emit('submit', values, context, options)
     })
 
     const api = inject('api')
-    const configOptions = ref([])
     const deployTargets = ref([])
 
     const body = useFieldModel('body')
     const logMessage = useFieldModel('log_message')
-
-    const includeInConfigs = useFieldModel('include_in_configs')
-    const publishInConfigs = useFieldModel('publish_in_configs')
-
-    const publishInConfigOptions = computed(() => {
-      // Use includeInConfigs order
-      return configOptions.value.reduce((options, configOption) => {
-        let option = includeInConfigs.value.find(c => c.id === configOption.id)
-        if (option) {
-          options.push(option)
-        }
-        return options
-      }, [])
-    })
-
-    const currentConfigsById = Object.fromEntries(
-      stanzaValues.current_configs.map(config => [config.id, config])
-    )
-
-    api.deploy_targets.list().then(result => {
-      deployTargets.value = result.data
-    })
-
-    api.configs.list().then(result => {
-      configOptions.value = result.data.map(
-        config => {
-          return {
-            name: config.name,
-            id: config.id,
-            has_stanza_revision: config.id in currentConfigsById,
-            has_current_stanza_revision: config.id in currentConfigsById && currentConfigsById[config.id].has_current_stanza_revision
-          }
-        }
-      )
-      // Set initial config values
-      includeInConfigs.value = configOptions.value.filter(
-        configOption => configOption.has_stanza_revision
-      )
-      publishInConfigs.value = configOptions.value.filter(
-        configOption => configOption.has_current_stanza_revision
-      )
-    })
-
-    const forcePublishInConfigs = computed(
-      () => includeInConfigs.value.filter(config => !config.has_stanza_revision)
-    )
-
-    watch(forcePublishInConfigs, () => {
-      forcePublishInConfigs.value.forEach((forcePublishConfig) => {
-        if (!publishInConfigs.value.find(config => config.id === forcePublishConfig.id)) {
-          publishInConfigs.value.push(forcePublishConfig)
-        }
-      })
-    })
-
-    const configDeployments = ref([]);
-
-    watch(publishInConfigs, () => {
-
-
-    })
 
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, () => {
       // Enforce unchanged current revision state
       if(!stanzaRevisionChanged.value) {
         logMessage.value = stanza.log_message
-        publishInConfigs.value = configOptions.value.filter((configOption) => {
-          return configOption.has_current_stanza_revision ||
-            forcePublishInConfigs.value.some(c => c.id === configOption.id) ||
-            publishInConfigs.value.some(c => c.id === configOption.id)
+      }
+    })
+
+    api.deploy_targets.list().then(result => {
+      deployTargets.value = result.data
+    })
+
+    const deployToDeployTargets = useFieldModel('deploy_to_deploy_targets')
+    const deployTargetOptions = computed(() => {
+      return deployTargets.value.filter((deployTarget) => {
+        return stanzaRevisionChanged.value || !stanza.current_deployments
+          .filter(deployment => deployment.stanza_revision.is_current_revision)
+          .map((deployment) => {
+            return deployment.deployment.deploy_target.id
+          }).includes(deployTarget.id)
+      })
+    })
+
+    // Is there a less hacky way of achieving this?
+    watch(deployTargetOptions, (newOptions) => {
+      // Checking length perhaps overzealous micro optimization
+      if (deployToDeployTargets.value.length) {
+        deployToDeployTargets.value = deployToDeployTargets.value.filter((deployTarget) => {
+          return newOptions.map(option => option.id).includes(deployTarget.id)
         })
       }
     })
 
     // TODO: break out to computed property includeInConfigsRemoved?
+    /*
     const stanzaRemovedFromConfig = computed(() => {
       return configOptions.value.some(configOption => {
         return configOption.has_stanza_revision
           && !includeInConfigs.value.some(config => config.id === configOption.id)
       })
     })
-
+    */
 
     /*
     watch(stanzaRemovedFromConfig, () => {
@@ -275,16 +244,17 @@ export default {
 
       }
     })
-    */
+     */
 
     return {
       //debouncedChange,
       //invalidLineGutter,
-      publishInConfigs,
-      includeInConfigs,
-      publishInConfigOptions,
-      configOptions,
-      deployTargets,
+      //publishInConfigs,
+      //includeInConfigs,
+      //publishInConfigOptions,
+      //configOptions,
+      deployTargetOptions,
+      deployToDeployTargets,
       extensions,
       onSubmit,
       isSubmitting,
@@ -298,7 +268,8 @@ export default {
     VTextareaField,
     Checkbox,
     Fieldset,
-    StanzaCurrentConfigChip
+    StanzaCurrentDeployment
+    //StanzaCurrentConfigChip
   }
 }
 </script>
@@ -322,14 +293,26 @@ export default {
       :disabled="!stanzaRevisionChanged"
     />
 
-    <h5 class="mb-2">Include in</h5>
-    <div class="flex flex-column align-items-start gap-2">
-      <!--
-      <StanzaCurrentConfigChip
-        v-for ="config in stanza.current_configs"
-        :currentConfig="config"
+    <h5 class="mb-2">Deployments</h5>
+    <div class="mb-2 flex flex-column align-items-start gap-2">
+      <StanzaCurrentDeployment
+        v-for="deployment in stanza.current_deployments"
+        :deployment="deployment.deployment"
+        :stanzaRevision="deployment.stanza_revision"
       />
-      -->
+    </div>
+
+
+    <template v-if="deployTargetOptions.length">
+      <h5 class="mb-2">Deploy to</h5>
+      <div v-for="deployTarget in deployTargetOptions" :key="deployTarget.id" class="field-checkbox">
+        <Checkbox :inputId="`deploy-target-${deployTarget.id}`" name="deployTarget" :value="deployTarget" v-model="deployToDeployTargets"/>
+        <label :for="`deploy-target-${deployTarget.id}`">{{ deployTarget.name }}</label>
+      </div>
+    </template>
+
+    <!--
+    <div class="flex flex-column align-items-start gap-2">
     </div>
 
     <div v-for="config in configOptions" :key="config.id" class="field-checkbox">
@@ -358,7 +341,8 @@ export default {
         </template>
       </Fieldset>
     </template>
+    -->
 
-    <Button type="submit" :disabled="isSubmitting" label="Save"></Button>
+    <Button class="mt-4" type="submit" :disabled="isSubmitting" label="Save"></Button>
   </form>
 </template>

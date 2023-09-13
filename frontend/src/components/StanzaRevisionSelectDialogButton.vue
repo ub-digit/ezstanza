@@ -4,7 +4,6 @@ import Button from 'primevue/button'
 import { ref, toRaw, reactive, inject } from 'vue'
 
 import StanzaRevisionSelect from '@/components/StanzaRevisionSelect.vue'
-import UseEntityDataTable from '@/components/UseEntityDataTable.js'
 
 export default {
   emits: ['update:modelValue', 'update:selected'],

@@ -1,5 +1,5 @@
 <script>
-import { ref, unref, toRaw, inject, watch, computed, onUnmounted } from 'vue'
+import { ref, unref, toRaw, inject, watch, computed, onUnmounted, onMounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
 import DeploymentStatus from '@/components/DeploymentStatus.vue'
 import Toolbar from 'primevue/toolbar'
@@ -10,6 +10,7 @@ import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import { FilterMatchMode } from 'primevue/api'
 import UseEntityDataTable from '@/components/UseEntityDataTable.js'
+//import StanzaRevisionSelect from '@/components/StanzaRevisionSelect.vue'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 import { useForm } from 'vee-validate'
 
@@ -28,14 +29,15 @@ export default {
   setup() {
 
     const loading = ref(false)
+    const deploying = ref(false) // Bit of a hack
     const dayjs = inject('dayjs')
     const api = inject('api')
-    const socket = inject('socket')
+    const { deployment: deploymentChannel } = inject('channels')
     const dt = ref() //TODO: Unused, remove?
 
     //const deployments = ref([])
     //const totalDeployments = ref(0)
-    const pageSize = ref(25)
+    const pageSize = ref(10)
     const defaultSortField = ref('inserted_at')
     const defaultSortOrder = ref(-1)
 
@@ -43,58 +45,93 @@ export default {
       '960px': '75vw',
       '640px': '90vw'
     })
-    const {handleSubmit, isSubmitting, setFieldValue} = useForm({
+
+    //TODO: VDropDown?
+    const {handleSubmit, isSubmitting, setFieldValue, useFieldModel} = useForm({
       //validationSchema: schema,
       initialValues: {
-        deploy_target_id: null,
-        config_revision_id: null,
+        deploy_target: null
       }
     })
 
-    const createDeploymentFormVisible = ref(false)
-    const openCreateDeploymentDialog = () => {
-      createDeploymentFormVisible.value = true
-    }
-    const closeCreateDeploymentDialog = () => {
-      createDeploymentFormVisible.value = false
-      deployTarget.value = null
-    }
+    const deployTarget = useFieldModel('deploy_target')
+    var channelRef = null
 
-    const afterHideCreateDeploymentDialog = () => {
-      deployTarget.value = null
-    }
+    onMounted(() => {
+      console.log('on mounted')
+      channelRef = deploymentChannel.on("deployment_status_change", payload => {
+        console.log('status change', payload)
+        const deployment = deployments.value.find(deployment => deployment.id === payload.id)
+        if (deployment) {
+          deployment.status = payload.status
+          if (["completed", "failed"].includes(payload.status)) {
+            deploying.value = false
+          }
+          // Avoid race condition, ugly temporary? fix
+          if (payload.status === "completed") {
+            //TODO: Disable deploy target selection before completed
+            fetchDeployTargets()
+          }
+        }
+      })
 
-    //const auth = useAuth()
-    //TODO process.env.VUE_APP_SOCKET_URL
-    //TODO: useSocket, takes token, returning singleton?
-    //const socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: auth.token()}})
-    //console.log('connecting')
-    //console.dir({params: {token: auth.token()}})
-    //socket.connect()
-    const channel = socket.channel("deployment", {})
-    channel.on("deployment_status_change", payload => {
-      const deployment = deployments.value.find(deployment => deployment.id === payload.id)
-      deployment.status = payload.status
+      /*
+      channel.join()
+        .receive("ok", resp => { console.log("Joined successfully", resp) })
+        .receive("error", resp => { console.log("Unable to join", resp) })
+      */
     })
-    channel.join()
-      .receive("ok", resp => { console.log("Joined successfully", resp) })
-      .receive("error", resp => { console.log("Unable to join", resp) })
-
     onUnmounted(() => {
+      console.log('on unmounted')
+      deploymentChannel.off("deployment_status_change", channelRef)
+      /*
       channel.leave()
         .receive("ok", resp => { console.log("Left successfully", resp) })
         .receive("error", resp => { console.log("Unable to leae", resp) }) // Does this even exists?
+      */
     })
 
     //const onDeploymentSubmit = useOnSubmit('deployment', 'deployments', 'create')
-    const onSubmit = handleSubmit((deployment, { setErrors, resetForm }) => {
+    const onSubmit = handleSubmit((values, { setErrors, resetForm }) => {
+      deploying.value = true
       /* create:deployment? */
-      channel.push("create_deployment", deployment)
+
+      const deployment = {
+        stanza_revision_changes:  [],
+        stanza_deletions:  [],
+        deploy_target_id: values.deploy_target.id,
+        current_deployment_id: values.deploy_target.current_deployment.id
+      }
+
+      const revisionChange = (stanzaRevision) => {
+          return { id: stanzaRevision.current_revision_id, stanza_id: stanzaRevision.stanza_id }
+      }
+
+      if (addStanzaRevisions.value.length) {
+        deployment.stanza_revision_changes = toRaw(addStanzaRevisions.value).map(revisionChange)
+      }
+
+      if (editStanzaRevisions.value.length) {
+        deployment.stanza_revision_changes = deployment.stanza_revision_changes.concat(
+          toRaw(editStanzaRevisions.value).map(revisionChange)
+        )
+      }
+
+      if (deleteStanzaRevisions.value.length) {
+        deployment.stanza_deletions = toRaw(deleteStanzaRevisions.value).map(
+          stanzaRevision => stanzaRevision.stanza_id
+        )
+      }
+
+      console.log('channel request', deployment)
+
+      deploymentChannel.push("create_deployment", deployment)
         .receive("ok", payload => {
-          console.log("create deployment reply", payload)
+          addStanzaRevisions.value = []
+          editStanzaRevisions.value = []
+          deleteStanzaRevisions.value = []
           resetForm()
           deployments.value.unshift(payload) //Or reload all?
-          closeCreateDeploymentDialog()
         })
         .receive("error", err => {
           if (err.data && err.data.errors) {
@@ -106,16 +143,10 @@ export default {
           }
         })
         .receive("timeout", () => console.log('timeout pushing, toast?'))
-      /*
-      onDeploymentSubmit(deployment, context).then((deployment) => {
-        deployments.value.unshift(deployment) //Or reload all?
-        closeCreateDeploymentDialog()
-      })
-      */
     })
 
     const { entities: deployments, totalEntities: totalDeployments, dataTableEvents } = UseEntityDataTable({
-      lazy: false,
+      lazy: true,
       loading: loading,
       entityNamePluralized: 'deployments',
       pageSize: pageSize.value,
@@ -134,38 +165,42 @@ export default {
     ]
 
     //TODO deployTargetId?
-    const deployTarget = ref()
     const deployTargets = ref([])
     // TODO: error handling
-    api.deploy_targets.list().then(results => {
-      deployTargets.value = results.data // convert to options? TODO: skip convert to options in other places?
-    })
 
-    const addedStanzaRevisions = ref([])
+    const fetchDeployTargets = () => {
+      api.deploy_targets.list().then(results => {
+        deployTargets.value = results.data // convert to options? TODO: skip convert to options in other places?
+      })
+    }
+    fetchDeployTargets()
+
+    const addStanzaRevisions = ref([])
     const addStanzaRevisionsParams = ref({
       is_current_revision: true
     })
 
-    watch(addedStanzaRevisions, (newValue) => {
+    const editStanzaRevisions = ref([])
+    const editStanzaRevisionsParams = ref({
+      is_current_revision: false
+    })
+
+    const deleteStanzaRevisions = ref([])
+    const deleteStanzaRevisionsParams = ref({})
+
+    watch(addStanzaRevisions, (newValue) => {
       console.log('selection changed', newValue)
-      console.log('after change', addedStanzaRevisions)
+      console.log('after change', addStanzaRevisions)
     })
 
     //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
-      setFieldValue('deploy_target_id', newDeployTarget ? newDeployTarget.id : null)
-
-      if (newDeployTarget.current_deployment_id) {
-        addStanzaRevisionsParams.value.deployment_id_not_equal = newDeployTarget.current_deployment_id
+      console.log('new deploy target', newDeployTarget)
+      if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
+        addStanzaRevisionsParams.value.deployment_id_not_equal = newDeployTarget.current_deployment.id
+        editStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
+        deleteStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
       }
-
-      //Stage add new stanza revisions
-      //When staging stanza, exclude by filter in lazy query
-
-      //Stage modify stanza revision (add latest)
-
-      //Stage delete stanza revisions
-      // When staging stanza, exclude by filter in lazy query
     })
 
     // Hide paginator if all entities are currently displayed
@@ -197,13 +232,14 @@ export default {
       dayjs,
       onSubmit,
       isSubmitting,
-      openCreateDeploymentDialog,
-      closeCreateDeploymentDialog,
-      createDeploymentFormVisible,
       dialogBreakpoints,
-      afterHideCreateDeploymentDialog,
       addStanzaRevisionsParams,
-      addedStanzaRevisions,
+      addStanzaRevisions,
+      editStanzaRevisionsParams,
+      editStanzaRevisions,
+      deleteStanzaRevisionsParams,
+      deleteStanzaRevisions,
+      deploying,
       loading
     }
     /* TODO:
@@ -221,7 +257,7 @@ export default {
     Dialog,
     DeploymentStatus,
     Panel,
-    //StanzaRevisionSelectDialogButton,
+    //StanzaRevisionSelect,
     StanzaRevisionPickList
   }
 }
@@ -232,6 +268,7 @@ export default {
       <div class="field">
         <label for="deploy-target" class="block text-900 font-medium mb-2">Deploy target</label>
         <DropDown
+          :disabled="deploying"
           id="deploy-target"
           v-model="deployTarget"
           :options="deployTargets"
@@ -243,8 +280,14 @@ export default {
       </div>
       <template v-if="deployTarget">
         <div class="field">
-          <label for="stage-new-stanza-revisions" class="block text-900 font-medium mb-2">New stanzas</label>
-          <StanzaRevisionPickList addLabel="Add" v-model="addedStanzaRevisions" :params="addStanzaRevisionsParams"/>
+          <label for="add-stanza-revisions" class="block text-900 font-medium mb-2">Add stanzas</label>
+          <StanzaRevisionPickList addLabel="Add new" v-model="addStanzaRevisions" :params="addStanzaRevisionsParams"/>
+          <template v-if="deployTarget.current_deployment.id">
+            <label for="edit-stanza-revisions" class="block text-900 font-medium mb-2">Update stanzas</label>
+            <StanzaRevisionPickList addLabel="Add modified" v-model="editStanzaRevisions" :params="editStanzaRevisionsParams"/>
+            <label for="delete-stanza-revisions" class="block text-900 font-medium mb-2">Delete stanzas</label>
+            <StanzaRevisionPickList addLabel="Delete" v-model="deleteStanzaRevisions" :params="deleteStanzaRevisionsParams"/>
+          </template>
         </div>
         <Button type="submit" :disabled="isSubmitting" label="Deploy"></Button>
       </template>

@@ -50,58 +50,6 @@ export default (app) => {
       }
     }
   })
-
+  app.auth = auth
   app.use(auth)
-
-  const setupSocket = (token) => {
-    console.log('setting up socket')
-    let socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: token }})
-    socket.connect()
-    app.provide('socket', socket)
-  }
-
-  if (auth.token()) {
-    console.log('token exists')
-    setupSocket(auth.token())
-  }
-  else {
-    console.log('watching')
-    watch(auth.$vm.state.authenticated, () => {
-      if (auth.$vm.state.authenticated) {
-        setupSocket(auth.token())
-      }
-      /*
-      let token = auth.token()
-      if (token) {
-        if (!socket) {
-          // Token changed, need to disconnect and connect with new token
-          socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: token}})
-
-          // TODO: handle case where new token, need to close down current connection
-          // and reconnect?
-          console.log(token)
-          //TODO process.env.VUE_APP_SOCKET_URL
-          let socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: token}})
-          socket.connect()
-
-          let channel = socket.channel("deployment", {})
-          ;[
-            "deployment_status_change"
-          ].forEach(event => {
-            channel.on(event, payload => {
-              emitter.emit(payload)
-            })
-          })
-          channel.join()
-            .receive("ok", resp => { console.log("Joined successfully", resp) })
-            .receive("error", resp => { console.log("Unable to join", resp) })
-        }
-      }
-      else if(socket) {
-        socket.disconnect()
-      }
-      */
-    })
-  }
-
 }

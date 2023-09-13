@@ -35,9 +35,7 @@ export default {
     const defaultSortOrder = ref(-1)
 
     const selectedStanzaRevisions = ref([])
-
     const addedStanzaRevisions = ref([])
-
     const selectedPickedStanzaRevisions = ref([])
 
 

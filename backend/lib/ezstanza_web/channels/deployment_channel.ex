@@ -14,9 +14,11 @@ defmodule EzstanzaWeb.DeploymentChannel do
   @impl true
   def handle_in("create_deployment", deployment_params, socket) do
     deployment_params = Map.merge(deployment_params, %{"user_id" => socket.assigns[:user_id]})
-    with {:ok, %Deployment{id: deployment_id}} <- Deployments.create_deployment(deployment_params) do
+    with {:ok, deployment} <- Deployments.create_deployment(deployment_params) do
       # Testing broadcast
-      deployment = Deployments.get_deployment(deployment_id)
+
+      # performing preloads in create_deployments instead
+      # deployment = Deployments.get_deployment(deployment_id)
       deployment_data = Phoenix.View.render(
         EzstanzaWeb.DeploymentView,
         "deployment.json",

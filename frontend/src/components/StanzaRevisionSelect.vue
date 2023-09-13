@@ -1,6 +1,4 @@
 <script>
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
 import { ref, toRef, inject, watch } from 'vue'
 
 import Column from 'primevue/column'
@@ -78,9 +76,7 @@ export default {
   components: {
     EntitySelect,
     MultiSelect,
-    Column,
-    Button,
-    Dialog
+    Column
   }
 }
 
