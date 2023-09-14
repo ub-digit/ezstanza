@@ -1,9 +1,18 @@
 defmodule Ezstanza.StanzaParser do
 
-  @directives_exact [
+  alias Ezstanza.StanzaParser.StanzaLine
+
+  # TODO: Structs/data types for stanza file etc!
+
+  @directives_allow_bare [
     "AddUserHeader",
     "Referer"
   ]
+
+  @directives_allow_bare_lowercase_map Enum.map(
+    @directives_allow_bare,
+    &({String.downcase(&1), &1})
+  ) |> Enum.into(%{})
 
   @option_directive_options [
     "AcceptX-Forwarded-For",
@@ -24,15 +33,23 @@ defmodule Ezstanza.StanzaParser do
     "X-Forwarded-For"
   ]
 
+  @option_directive_options_lowercase_map Enum.map(
+    @option_directive_options,
+    &({String.downcase(&1), &1})
+  ) |> Enum.into(%{})
+
   @directives_normalize %{
-    "H" => "Host",
-    "D" => "Domain",
-    "HJ" => "HostJavaScript",
-    "T" => "Title",
-    "U" => "URL"
+    "h" => "host",
+    "d" => "domain",
+    "dj" => "domainjavascript",
+    "hj" => "hostjavascript",
+    "t" => "title",
+    "u" => "url",
+    "phe" => "proxyhostnameedit"
   }
 
-  @directives_starts_with [
+  # TODO: Merge in keys from normalize instead of repeating?
+  @directives [
     "AddUserHeader",
     "AllowVars",
     "AnonymousURL",
@@ -52,9 +69,7 @@ defmodule Ezstanza.StanzaParser do
     "DbVar8",
     "DbVar9",
     "Description",
-    "D",
     "Domain",
-    "DJ",
     "DomainJavaScript",
     "EBLSecret",
     "EncryptVar",
@@ -63,69 +78,120 @@ defmodule Ezstanza.StanzaParser do
     "FormSelect",
     "FormSubmit",
     "FormVariable",
-    "H",
     "Host",
-    "HJ",
     "HostJavaScript",
     "HTTPHeader",
     "HTTPMethod",
     "MimeFilter",
     "NeverProxy",
     "ProxyHostnameEdit",
-    "PHE",
     "RedirectSafe",
     "Referer",
     "RemoteTimeout",
-    "T",
     "Title",
     "TokenKey",
     "TokenSignatureKey",
-    "U",
     "URL",
     "UsageLimit"
-  ]
+  ] ++ Map.keys(@directives_normalize)
+
+  @directives_lowercase_map Enum.map(
+    @directives,
+    &({String.downcase(&1), &1})
+  ) |> Enum.into(%{})
 
   def parse_directory(dirname) do
     Path.wildcard(Path.join(dirname, "*.txt"))
-    |> Enum.reduce(%{}, fn filename, acc ->
-      Map.put(acc, filename, parse_file(filename))
-    end)
+    |> parse_files()
   end
 
-  # This sucks
-  def invalid_stanza_files(dirname) do
-    Enum.each(parse_directory(dirname), fn {filename, stanzas} ->
-      case Keyword.get_values(stanzas, :error) do
-        [] -> IO.puts("#{filename}: ok")
-        errors ->
-          IO.puts("#{filename}:")
-          Enum.map(errors, fn {_stanza, reason} ->
-            IO.puts(reason)
-          end)
+  def parse_files(filenames) do
+    Enum.map(filenames, fn filename ->
+      {filename, parse_file(filename)}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def validate_stanza_files(stanza_files) do
+    Enum.reduce(stanza_files, %{}, fn {filename, stanzas}, acc ->
+      case validate_stanzas(stanzas) do
+        {:error, errors} ->
+          Map.put(acc, filename, errors)
+        :ok -> acc
       end
     end)
+    |> case do
+      %{} -> :ok
+      errors -> {:error, errors}
+    end
+  end
+
+  # remove?
+  def validate_stanza_file({filename, stanzas}) do
+    case validate_stanzas(stanzas) do
+      {:error, errors} ->
+        {:error, {filename, errors}}
+      :ok ->
+        {:ok, filename}
+    end
+  end
+
+  def validate_stanzas(stanzas) do
+    line_errors = Enum.map(stanzas, &line_errors/1)
+                  |> Enum.concat()
+    structure_errors = Enum.reduce(stanzas, [], fn [ %{line: line} | _lines ] = stanza, acc ->
+      case structure_errors(stanza) do
+        [] -> acc
+        errors -> [%{line: line, errors: errors} | acc]
+      end
+    end)
+    |> Enum.reverse()
+
+    if length(line_errors) > 0 or length(structure_errors) > 0 do
+      {:error, %{structure_errors: structure_errors, line_errors: line_errors}}
+    else
+      :ok
+    end
+  end
+
+  def validate_directory(dirname) do
+    parse_directory(dirname)
+    |> validate_stanza_files()
   end
 
   def parse_file(filename) do
     File.stream!(filename)
     |> parse_stanza_lines()
-    |> Enum.reject(fn %{status: status} -> status == :error end) #TODO: Do not include status?
+    #|> Enum.reject(fn %{status: status} -> status == :error end) #TODO: Do not include status?
     |> chunk_by_stanza()
-    # TODO: Break out validation? Now inconsistent behavior between parse_string and parse_file
-    |> Enum.map(fn stanza ->
-      case stanza_errors(stanza) do
-        [] ->
-          {:ok, stanza}
-        errors ->
-          {:error, {stanza, errors}} #TODO: This format sucks?
-      end
-    end)
+  end
+
+  def validate_file(filename) do
+    parse_file(filename)
+    |> validate_stanzas()
+  end
+
+  #TODO: No longer used?
+  def validate_stanza(stanza) do
+    validate_stanzas([stanza])
   end
 
   def parse_string(stanza_string) do
     stanza_string
     |> String.split("\n")
     |> parse_stanza_lines()
+  end
+
+  def normalize_string(stanza_string) do
+    stanza_string
+    |> parse_string()
+    |> stanza_to_string()
+  end
+
+  def stanza_to_string(stanza) do
+    stanza
+    |> Enum.map(&to_string/1)
+    |> Enum.join("\n")
   end
 
   def stanza_errors(stanza) do
@@ -136,7 +202,9 @@ defmodule Ezstanza.StanzaParser do
     stanza_lines
     |> Enum.map(&parse_line/1)
     |> Enum.with_index()
-    |> Enum.map(fn {{status, cmd, value}, idx} -> %{status: status, cmd: cmd, value: value, line: idx + 1} end)
+    |> Enum.map(fn {{status, cmd, value}, idx} ->
+      %StanzaLine{status: status, cmd: cmd, value: value, line: idx + 1}
+    end)
   end
 
   def chunk_by_stanza(lines) do
@@ -161,27 +229,28 @@ defmodule Ezstanza.StanzaParser do
     lines
     |> Enum.chunk_while([], chunk_blocks, add_last_block)
     |> Enum.map(&Enum.reverse/1)
-    |> IO.inspect()
     |> Enum.reduce({[], []}, fn
       block_lines, {acc, prev_comment_lines} ->
         if lines_contain_directive(block_lines) do
-          # Pass next previous_comment_lines as empty list
-          # so don't waste time looking for comments next time
-          case filter_lines_by_cmd("#", prev_comment_lines) do
-            [_comment_line] ->
+          case get_lines(prev_comment_lines, :cmd, "#") do
+            [comment_line] ->
               # Prepend comment block if single-line comment
-              {[prev_comment_lines ++ block_lines | acc], []}
+              {[[comment_line | block_lines] | acc], []}
             _ ->
               {[ block_lines | acc], []}
           end
         else
           # Don't include comment blocks
+          # but stash in accumulator so possibly
+          # can prepend to next block if single
+          # line comment
           {acc, block_lines}
         end
     end)
     |> case do
       {stanzas, _prev_comment_lines} -> stanzas
     end
+    |> Enum.reverse()
   end
 
   def structure_errors(stanza) do
@@ -197,7 +266,8 @@ defmodule Ezstanza.StanzaParser do
 
   def line_errors(stanza) do
     Enum.reduce(stanza, [], fn
-      %{status: :error, cmd: cmd, value: value, line: line}, errors ->
+      # TODO: Include value?
+      %StanzaLine{status: :error, cmd: cmd, value: _value, line: line}, errors ->
         [{cmd, line} | errors]
       _, errors ->
         errors
@@ -224,9 +294,9 @@ defmodule Ezstanza.StanzaParser do
     Enum.any?(lines, fn %{cmd: cmd} -> cmd != "" && cmd != "#" end)
   end
 
-  def filter_lines_by_cmd(cmd, lines) do
+  def get_lines(lines, field, value) do
     Enum.filter(lines, fn
-      %{cmd: ^cmd} -> true
+      %{^field => ^value} -> true
       _ -> false
     end)
   end
@@ -235,60 +305,80 @@ defmodule Ezstanza.StanzaParser do
     Map.get(@directives_normalize, directive, directive)
   end
 
+  def parse_line(line) do
+    # Normalize directives to lowercase
+    # Allow space before directive or not?
+    Regex.replace(~r/^(\s*[a-zA-Z0-9]+)/, line,  fn _, cmd -> cmd |> String.trim() |> String.downcase() end)
+    |> do_parse_line(line)
+  end
+
   # Newline
-  def parse_line("") do
+  def do_parse_line("", _orig) do
     {:ok, "", nil}
   end
   # utf-8/binary lenght?
-  def parse_line("\n") do
+  def do_parse_line("\n", _orig) do
     {:ok, "", nil}
   end
 
-  for directive_starts_with <- @directives_starts_with do
-    def parse_line(<<unquote(directive_starts_with), " ", rest::binary>> = line) do
-      directive = unquote(directive_starts_with)
+  for directive <- Map.keys(@directives_lowercase_map) do
+    def do_parse_line(<<unquote(directive), " ", rest::binary>>, orig) do
+      directive = unquote(directive)
       value = String.trim(rest)
       if value != "" do
-        {:ok, normalize_directive(directive), value}
+        directive = Map.get(@directives_lowercase_map, normalize_directive(directive))
+        {:ok, directive, value}
       else
-        if Enum.member?(@directives_exact, directive) do
-          parse_line(directive)
-        else
-          {:error, line, nil}
-        end
+        {:error, orig, nil}
+
+        # WTF??
+        #if Enum.member?(@directives_allow_bare, directive) do
+        #  do_parse_line(directive)
+        #else
+        #  {:error, orig, nil}
+        #end
       end
     end
   end
 
-  def parse_line(<<"Option ", rest::binary>>) do
+  def do_parse_line(<<"option ", rest::binary>>, orig) do
     # Allow permit more whitespace before and after option
-    option = String.trim(rest)
-    if Enum.member?(@option_directive_options, option) do
+    option = Map.get(
+      @option_directive_options_lowercase_map,
+      rest |> String.trim() |> String.downcase(),
+      false
+    )
+    if option do
       {:ok, "Option", option}
     else
-      {:error, "Option " <> rest, nil}
+      {:error, orig, nil}
     end
   end
 
   # special case for comments
-  def parse_line(<<"#", comment::binary>>) do
-    {:ok, "#", comment}
+  def do_parse_line(<<"#", comment::binary>>, _orig) do
+    {:ok, "#", String.trim(comment)}
   end
 
   # Important this is placed last else directives with same names that
   # have values will be caught here also (and result in error)
-  for directive_exact <- @directives_exact do
-    def parse_line(<< unquote(directive_exact), rest::binary>> = line) do
-      if String.trim(rest) == "" do
-        {:ok, unquote(directive_exact), nil}
-      else
-        {:error, line, nil}
-      end
+  for directive <- Map.keys(@directives_allow_bare_lowercase_map) do
+    def do_parse_line(<<unquote(directive), rest::binary>>, _orig) do
+      value = String.trim(rest)
+      {
+        :ok,
+        Map.get(@directives_allow_bare_lowercase_map, unquote(directive)),
+        (if value == "", do: nil, else: value)
+      }
     end
   end
 
-  def parse_line(invalid_line) do
-    {:error, invalid_line, nil}
+  def do_parse_line(line, orig) do
+    if String.trim(line) == "" do
+      do_parse_line("", orig)
+    else
+      {:error, line, nil}
+    end
   end
 
 end
