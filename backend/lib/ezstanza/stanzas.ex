@@ -52,12 +52,14 @@ defmodule Ezstanza.Stanzas do
 
   def stanza_base_query() do
     from s in Stanza,
+      left_join: t in assoc(s, :tags), as: :tags,
       join: u in assoc(s, :user), as: :user,
       join: c_r in assoc(s, :current_revision), as: :current_revision, # Preload through base query?
       join: c_r_u in assoc(c_r, :user), as: :current_revision_user,
       preload: [
         #:current_revision_current_configs,
         #:current_configs,
+        tags: t,
         user: u,
         current_revision: {c_r, user: c_r_u},
         current_deployments_stanza_revisions: ^stanza_revision_base_query()

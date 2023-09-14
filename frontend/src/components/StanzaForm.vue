@@ -10,6 +10,7 @@ import {linter, lintGutter} from '@codemirror/lint'
 import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
 import VTextareaField from '@/components/VTextareaField.vue'
+import VAutoCompleteField from '@/components/VAutoCompleteField.vue'
 import Checkbox from 'primevue/checkbox'
 import Fieldset from 'primevue/fieldset'
 //import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
@@ -207,6 +208,35 @@ export default {
       deployTargets.value = result.data
     })
 
+    const tags = ref([])
+
+    const tagSuggestions = ref([])
+
+    const searchTags = (event) => {
+      const query = event.query.trim()
+      if (!query) {
+        tagSuggestions.value = [...tags.value]
+      } else {
+        tagSuggestions.value = tags.value.filter((tag) => {
+          return tag.name.toLowerCase().startsWith(query.toLowerCase())
+        })
+        if (!tagSuggestions.value.length) {
+          tagSuggestions.value.push({
+            name: query
+          })
+        }
+      }
+    }
+
+    api.tags.list().then(result => {
+      tags.value = result.data.map(tag => {
+        return {
+          id: tag.id,
+          name: tag.name
+        }
+      })
+    })
+
     const deployToDeployTargets = useFieldModel('deploy_to_deploy_targets')
     const deployTargetOptions = computed(() => {
       return deployTargets.value.filter((deployTarget) => {
@@ -255,6 +285,9 @@ export default {
       //configOptions,
       deployTargetOptions,
       deployToDeployTargets,
+      tags,
+      tagSuggestions,
+      searchTags,
       extensions,
       onSubmit,
       isSubmitting,
@@ -266,6 +299,7 @@ export default {
     VCodemirrorField,
     VTextField,
     VTextareaField,
+    VAutoCompleteField,
     Checkbox,
     Fieldset,
     StanzaCurrentDeployment
@@ -279,6 +313,23 @@ export default {
     <label for="name" class="block text-900 font-medium mb-2">Name</label>
     <VTextField id="name" name="name"/>
 
+    <label for="tags" class="block text-900 font-medium mb-2">Tags</label>
+    <VAutoCompleteField
+      multiple
+      :forceSelection="false"
+      id="tags"
+      name="tags"
+      :suggestions="tagSuggestions"
+      optionLabel="name"
+      @complete="searchTags"
+    >
+      <template #option="{ option }">
+        <template v-if="!option.id">
+          <i class="pi pi-plus-circle" style="font-size: 0.9rem"></i>
+        </template>
+        {{ option.name }}
+      </template>
+    </VAutoCompleteField>
     <label for="body" class="block text-900 font-medium mb-2">Stanza</label>
     <!-- <VCodemirrorField id="body" name="body" :extensions="invalidLineGutter" @change="debouncedChange"/> -->
     <VCodemirrorField id="body" name="body" :extensions="extensions"/>
@@ -301,7 +352,6 @@ export default {
         :stanzaRevision="deployment.stanza_revision"
       />
     </div>
-
 
     <template v-if="deployTargetOptions.length">
       <h5 class="mb-2">Deploy to</h5>

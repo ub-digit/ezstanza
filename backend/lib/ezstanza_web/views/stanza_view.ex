@@ -4,6 +4,7 @@ defmodule EzstanzaWeb.StanzaView do
 
   alias EzstanzaWeb.StanzaView
   alias EzstanzaWeb.StanzaRevisionView
+  alias EzstanzaWeb.TagView
   alias EzstanzaWeb.UserView
   alias EzstanzaWeb.ConfigView
   alias EzstanzaWeb.DeploymentView
@@ -32,6 +33,7 @@ defmodule EzstanzaWeb.StanzaView do
       id: stanza.id,
       revision_id: stanza.current_stanza_revision_id,
       name: stanza.name,
+      tags: render_many(stanza.tags, TagView, "tag_snippet.json"),
       body: stanza.current_revision.body,
       log_message: stanza.current_revision.log_message,
       inserted_at: stanza.inserted_at,
@@ -66,6 +68,4 @@ defmodule EzstanzaWeb.StanzaView do
       |> Enum.concat(deployments)
     end)
   end
-
-
 end
