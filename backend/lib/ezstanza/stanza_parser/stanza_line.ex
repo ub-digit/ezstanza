@@ -8,6 +8,7 @@ defmodule Ezstanza.StanzaParser.StanzaLine do
       stanza_line
       |> Map.take([:cmd, :value])
       |> Map.values()
+      |> Enum.reject(&is_nil/1)
       |> Enum.join(" ")
     end
   end
