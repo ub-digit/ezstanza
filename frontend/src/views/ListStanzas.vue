@@ -17,8 +17,10 @@ export default {
     const filterColumns = ref([
       {
         fieldName: 'name',
-        filterFieldName: 'name',
-        header: 'Name'
+        filterFieldName: 'search_query',
+        header: 'Name',
+        showFilterMenu: false,
+        filterMatchModes: []
       }
     ])
 

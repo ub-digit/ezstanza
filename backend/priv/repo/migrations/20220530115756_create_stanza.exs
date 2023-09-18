@@ -3,7 +3,7 @@ defmodule Ezstanza.Repo.Migrations.Stanza do
 
   def change do
     create table(:stanza) do
-      add :name, :string
+      add :name, :string, null: false
       add :user_id, references(:user, on_delete: :nilify_all) # nilify or nothing?
       timestamps()
     end
@@ -12,7 +12,7 @@ defmodule Ezstanza.Repo.Migrations.Stanza do
     create index(:stanza, [:user_id]) #??
 
     create table(:stanza_revision) do
-      add :body, :text
+      add :body, :text, null: false
       add :stanza_id, references(:stanza, on_delete: :delete_all)
       add :user_id, references(:user, on_delete: :nilify_all)
       timestamps()
