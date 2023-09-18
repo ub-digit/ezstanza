@@ -77,6 +77,21 @@ defmodule Ezstanza.Stanzas do
 
   defp process_stanza_list_query(query, %{} = params) do
     Enum.reduce(params, query, fn
+      {"search_query", search_query}, query ->
+        from s in query,
+          where: fragment(
+            "searchable @@ websearch_to_tsquery(?)",
+            ^search_query
+          )
+          or ilike(s.name, ^"%#{filter_like(search_query)}%")
+          or ilike(s.current_stanza_revision_body, ^"%#{filter_like(search_query)}%"),
+          order_by: {
+            :desc,
+            fragment(
+              "ts_rank_cd(searchable, websearch_to_tsquery(?), 1)",
+              ^search_query
+            )
+          }
       {"deployment_ids", deployment_ids}, query -> #Remove?
         from s in query,
           join: s_c_c in assoc(s, :deployments),
@@ -115,6 +130,7 @@ defmodule Ezstanza.Stanzas do
   defp dynamic_order_by(_), do: []
 
   # TODO: put in helper module
+  # why do we filter out _?
   defp filter_like(string), do: String.replace(string, ~r"[%_]", "")
 
   defp dynamic_where(params) do
@@ -304,13 +320,17 @@ defmodule Ezstanza.Stanzas do
         persisted_stanza: stanza,
         stanza_revision: %StanzaRevision{
           id: stanza_revision_id,
+          body: stanza_revision_body
         } = stanza_revision
       } ->
         with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
           change_stanza(
             repo.preload(stanza, :tags),
+
             Map.merge(attrs, %{
-              "current_stanza_revision_id" => stanza_revision_id
+              "current_stanza_revision_id" => stanza_revision_id,
+              # Set field used for search index
+              "current_stanza_revision_body" => stanza_revision_body,
             })
           )
           |> Changeset.put_assoc(:tags, tags)
@@ -508,6 +528,8 @@ defmodule Ezstanza.Stanzas do
         dynamic([stanza: s], ^dynamic and s.name == ^value)
       {"name_like", value}, dynamic ->
         dynamic([stanza: s], ^dynamic and ilike(s.name, ^"%#{filter_like(value)}%"))
+      {"body", value}, dynamic ->
+        dynamic([s_r], ^dynamic and s_r.body == ^value)
       {"user_name", value}, dynamic ->
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->

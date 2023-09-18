@@ -155,7 +155,10 @@ export default {
           newFilterColumns.map(
             filterColumn => [
               filterColumn.filterFieldName,
-              { value: '', matchMode: filterColumn.defaultFilterMatchMode || FilterMatchMode.CONTAINS }
+              {
+                value: '',
+                matchMode: filterColumn.defaultFilterMatchMode || FilterMatchMode.EQUALS
+              }
             ]
           )
         )
@@ -284,6 +287,7 @@ export default {
         :sortField="column.filterFieldName"
         :header="column.header"
         :ref="column.fieldName"
+        :showFilterMenu="column.showFilterMenu"
         :filterMatchModeOptions="filterMatchModeOptions"
         :sortable="true"
       >
