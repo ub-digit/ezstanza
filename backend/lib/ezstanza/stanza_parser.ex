@@ -113,16 +113,17 @@ defmodule Ezstanza.StanzaParser do
   end
 
   def validate_stanza_files(stanza_files) do
-    Enum.reduce(stanza_files, %{}, fn {filename, stanzas}, acc ->
+    errors = Enum.reduce(stanza_files, %{}, fn {filename, stanzas}, acc ->
       case validate_stanzas(stanzas) do
         {:error, errors} ->
           Map.put(acc, filename, errors)
         :ok -> acc
       end
     end)
-    |> case do
-      %{} -> :ok
-      errors -> {:error, errors}
+    if errors == %{} do
+      :ok
+    else
+      {:error, errors}
     end
   end
 
@@ -275,10 +276,12 @@ defmodule Ezstanza.StanzaParser do
   end
 
   def validate_title(stanza) do
-    case Enum.count(stanza, fn %{cmd: cmd} -> cmd == "Title" end) do
-      1 -> :ok
-      0 -> {:error, :missing_title}
-      _ -> {:error, :multiple_titles}
+    case get_lines(stanza, :cmd, "Title") do
+      [_line] ->
+        :ok
+      [] -> {:error, :missing_title}
+      _ ->
+        {:error, :multiple_titles}
     end
   end
 
@@ -329,14 +332,11 @@ defmodule Ezstanza.StanzaParser do
         directive = Map.get(@directives_lowercase_map, normalize_directive(directive))
         {:ok, directive, value}
       else
-        {:error, orig, nil}
-
-        # WTF??
-        #if Enum.member?(@directives_allow_bare, directive) do
-        #  do_parse_line(directive)
-        #else
-        #  {:error, orig, nil}
-        #end
+        if Enum.member?(@directives_allow_bare, directive) do
+          do_parse_line(directive, orig)
+        else
+          {:error, orig, nil}
+        end
       end
     end
   end
