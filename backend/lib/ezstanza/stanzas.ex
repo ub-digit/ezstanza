@@ -23,6 +23,8 @@ defmodule Ezstanza.Stanzas do
 
   alias Ezstanza.Deployments
 
+  alias Ezstanza.StanzaParser
+
   defp process_stanza_includes(query, includes) when is_list(includes) do
     # TODO: Replace with preloader query?
     stanza_revisions_preloader = fn stanza_ids ->
@@ -304,6 +306,8 @@ defmodule Ezstanza.Stanzas do
           # re-use current revision, else create new
           %Stanza{current_stanza_revision_id: revision_id} ->
             current_stanza_revision = Repo.get(StanzaRevision, revision_id)
+            # Normalize stanza, or leave as is, option?
+            attrs = Map.update(attrs, "body", "", &StanzaParser.normalize_string/1)
             case StanzaRevision.changeset(current_stanza_revision, attrs) do
               %Changeset{changes: %{body: _}} ->
                 # Stanza body has changed, create new revision
