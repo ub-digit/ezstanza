@@ -22,7 +22,8 @@ defmodule Ezstanza.Pagination do
                   |> exclude(:limit)
                   |> exclude(:offset)
 
-    count = Repo.one(from t in count_query, select: count("*"))
+    # TODO: Option for id field?
+    count = Repo.one(from t in count_query, select: count(fragment("DISTINCT ?", t.id)))
     entries = Repo.all query
     %{
       pages: div(count, size) + 1,
