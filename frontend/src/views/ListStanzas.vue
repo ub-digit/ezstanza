@@ -1,13 +1,15 @@
 <script>
-import {ref} from 'vue'
+import { ref, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 //import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
 import DeployTargetsDropDown from '@/components/DeployTargetsDropDown.vue'
-import DropDown from 'primevue/dropdown'
+import AutoComplete from 'primevue/autocomplete'
+import CustomAutoComplete from '@/components/CustomAutoComplete.vue'
 import { FilterMatchMode } from 'primevue/api'
+import Tag from 'primevue/tag'
 
 import Button from 'primevue/button'
 
@@ -28,12 +30,44 @@ export default {
       deployment_ids: {
         matchMode: FilterMatchMode.EQUALS,
         value: null
+      },
+      tag_ids: {
+        matchMode: FilterMatchMode.EQUALS,
+        value: []
       }
     })
 
+    // More or less duplicate code, use-module for this?
+    const api = inject('api')
+    const tags = ref([])
+    // TODO: Fetch only tags currently used for stanzas
+    api.tags.list().then(result => {
+      tags.value = result.data.map(tag => {
+        return {
+          id: tag.id,
+          name: tag.name
+        }
+      })
+    })
+
+    const tagSuggestions = ref([])
+    const searchTags = (event) => {
+      const query = event.query.trim()
+      if (!query) {
+        tagSuggestions.value = [...tags.value]
+      } else {
+        tagSuggestions.value = tags.value.filter((tag) => {
+          return tag.name.toLowerCase().startsWith(query.toLowerCase())
+        })
+      }
+    }
+
     return {
       filterColumns,
-      filters
+      filters,
+      tags,
+      tagSuggestions,
+      searchTags
     }
   },
   components: {
@@ -41,8 +75,9 @@ export default {
     Column,
     StanzaCurrentDeployment,
     DeployTargetsDropDown, //TODO: UsersDropDown?
-    DropDown,
-    Button
+    CustomAutoComplete,
+    Button,
+    Tag
   }
 }
 </script>
@@ -87,6 +122,31 @@ export default {
             :deployment="deployment.deployment"
             :stanzaRevision="deployment.stanza_revision"
           />
+        </div>
+      </template>
+    </Column>
+    <Column
+      header="Tags"
+      field="tags"
+      filterField="tag_ids"
+      :showFilterMenu="false"
+      :sortable="false"
+    >
+      <template #filter="{filterModel, filterCallback}">
+        <CustomAutoComplete
+          dropdown
+          v-model="filterModel.value"
+          :options="tags"
+          :suggestions="tagSuggestions"
+          optionLabel="name"
+          optionValue="id"
+          @change="filterCallback()"
+          @complete="searchTags"
+        />
+      </template>
+      <template #body="{ data }">
+        <div class="flex flex-column align-items-start gap-2">
+          <Tag  v-for="tag in data.tags" :value="tag.name"/>
         </div>
       </template>
     </Column>

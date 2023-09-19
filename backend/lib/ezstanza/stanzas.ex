@@ -94,6 +94,13 @@ defmodule Ezstanza.Stanzas do
               ^search_query
             )
           }
+      {"tag_ids", tag_ids}, query ->
+        # Hack because of frontend reaons
+        # (AutoCompleteCompoennt quirks)
+        tag_ids = if is_list(tag_ids), do: tag_ids, else: [tag_ids]
+        from s in query,
+          join: s_t in assoc(s, :tags),
+          where: s_t.id in ^tag_ids
       {"deployment_ids", deployment_ids}, query -> #Remove?
         from s in query,
           join: s_c_c in assoc(s, :deployments),
@@ -328,18 +335,32 @@ defmodule Ezstanza.Stanzas do
         } = stanza_revision
       } ->
         with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
+          stanza = repo.preload(stanza, :tags)
           change_stanza(
-            repo.preload(stanza, :tags),
-
+            stanza,
             Map.merge(attrs, %{
               "current_stanza_revision_id" => stanza_revision_id,
               # Set field used for search index
               "current_stanza_revision_body" => stanza_revision_body,
             })
           )
+          |> then(fn changeset ->
+            # Superhack, force update if tags changed
+            current_tag_ids = Enum.map(stanza.tags, &(&1.id)) |> Enum.sort()
+            new_tag_ids = Enum.map(tags, &(&1.id)) |> Enum.sort()
+            if current_tag_ids != new_tag_ids do
+              # TODO: How get ecto type default value?
+              Changeset.change(
+                changeset,
+                updated_at: %{NaiveDateTime.utc_now() | microsecond: {0, 0}}
+              )
+            else
+              changeset
+            end
+          end)
           |> Changeset.put_assoc(:tags, tags)
+          |> repo.update()
         end
-        |> repo.update()
       end
     )
   end
