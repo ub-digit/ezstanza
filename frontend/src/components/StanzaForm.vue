@@ -209,9 +209,16 @@ export default {
     })
 
     const tags = ref([])
+    api.tags.list().then(result => {
+      tags.value = result.data.map(tag => {
+        return {
+          id: tag.id,
+          name: tag.name
+        }
+      })
+    })
 
     const tagSuggestions = ref([])
-
     const searchTags = (event) => {
       const query = event.query.trim()
       if (!query) {
@@ -227,15 +234,6 @@ export default {
         }
       }
     }
-
-    api.tags.list().then(result => {
-      tags.value = result.data.map(tag => {
-        return {
-          id: tag.id,
-          name: tag.name
-        }
-      })
-    })
 
     const deployToDeployTargets = useFieldModel('deploy_to_deploy_targets')
     const deployTargetOptions = computed(() => {
