@@ -1,8 +1,7 @@
 import axios from 'axios'
 
 class BaseApiService {
-  // Note: you may want to store this info in .env file
-  #baseUrl = 'http://127.0.0.1:4000/api' //process.env.VUE_APP_API_URL
+  #baseUrl = APP_CONFIG['backend_url']
   #resource
 
   constructor(resource) {
