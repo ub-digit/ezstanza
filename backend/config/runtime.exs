@@ -21,6 +21,9 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+
+  config :ezstanza, origins: System.get_env("CORS_ORIGIN")
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

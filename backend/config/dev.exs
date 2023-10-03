@@ -1,5 +1,7 @@
 import Config
 
+config :ezstanza, origins: "*"
+
 # Configure your database
 config :ezstanza, Ezstanza.Repo,
   username: "ezstanza_dev",
