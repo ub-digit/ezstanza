@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useLoaderStore } from '@/stores/loader'
 
-axios.defaults.baseURL = 'http://127.0.0.1:4000/api' //process.env.VUE_APP_API_URL
+axios.defaults.baseURL = APP_CONFIG['backend_url']
 axios.defaults.showLoader = true
 
 export default (app) => {
