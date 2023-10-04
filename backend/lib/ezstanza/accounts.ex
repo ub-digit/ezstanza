@@ -136,11 +136,4 @@ defmodule Ezstanza.Accounts do
         Argon2.check_pass(user, password)
     end
   end
-
-
-
-
-
-
-
 end

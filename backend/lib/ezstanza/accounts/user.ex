@@ -44,6 +44,16 @@ defmodule Ezstanza.Accounts.User do
   end
 
   @doc false
+  def change_password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password, :password_confirmation])
+    |> validate_required([:password, :password_confirmation])
+    |> validate_password()
+    |> validate_confirmation(:password, message: "does not match password")
+    |> put_password_hash()
+  end
+
+  @doc false
   defp validate_email(changeset) do
     changeset
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
