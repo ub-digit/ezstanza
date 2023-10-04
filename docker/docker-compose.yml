@@ -1,0 +1,39 @@
+version: '3.7'
+services:
+  frontend:
+    image: docker.ub.gu.se/ezstanza-frontend:${GIT_REVISION}
+    restart: always
+    environment:
+      - EZSTANZA_BACKEND_URL=${BACKEND_URL}
+    # Keep the stdin open, so we can attach to our app container's process
+    # and do things such as debugging, etc
+    stdin_open: true
+    # Enable sending signals (CTRL+C, CTRL+P + CTRL+Q) into the container
+    tty: true
+    ports:
+      - ${FRONTEND_HOST_PORT}:80
+  backend:
+    #entrypoint: /bin/bash
+    image: docker.ub.gu.se/ezstanza-backend:${GIT_REVISION}
+    restart: always
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DATABASE_URL=ecto://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
+      - SECRET_KEY_BASE=${BACKEND_SECRET_KEY_BASE}
+      - DEPLOYMENT_SSH_USER_DIR=${DEPLOYMENT_SSH_USER_DIR}
+    volumes:
+      - ${DEPLOYMENT_SSH_USER_HOST_DIR}:${DEPLOYMENT_SSH_USER_DIR}
+    depends_on:
+      - db
+    ports:
+      - ${BACKEND_HOST_PORT}:4000
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - ./postgres-initdb.d:/docker-entrypoint-initdb.d
