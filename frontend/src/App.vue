@@ -48,6 +48,9 @@ export default {
 
 <style>
 @import '@/assets/base.css';
+/* purgecss start ignore */
+@import '@/assets/theme.css';
+/* purgecss end ignore */
 </style>
 <style lang="scss">
 @import '@/assets/main.scss';
