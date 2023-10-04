@@ -1,6 +1,6 @@
 import Config
 
-config :ezstanza, origins: "*"
+config :ezstanza, origins: [~r{^http://localhost:\d+$}]
 
 # Configure your database
 config :ezstanza, Ezstanza.Repo,

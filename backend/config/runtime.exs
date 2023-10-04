@@ -22,7 +22,7 @@ end
 
 if config_env() == :prod do
 
-  config :ezstanza, origins: System.get_env("CORS_ORIGIN")
+  config :ezstanza, origins: [System.get_env("CORS_ORIGIN") || ~r{^http://localhost:\d+$}]
 
   database_url =
     System.get_env("DATABASE_URL") ||
