@@ -27,16 +27,25 @@ defmodule EzstanzaWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  plug Corsica,
-    origins: Application.get_env(:ezstanza, :origins),
-    log: [rejected: :warn, invalid: :debug, accepted: :debug],
-    allow_methods: :all,
-    allow_headers: :all
-
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
+
+
+  # Since plugs evaluated at compile time we cannot
+  # immediately get origin from runtime configuration
+  def check_corsica_origins(origin) do
+    origin in Application.get_env(:ezstanza, :origins)
+  end
+
+  plug Corsica,
+    origins: {__MODULE__, :check_corsica_origins},
+    log: [rejected: :warn, invalid: :debug, accepted: :debug],
+    allow_methods: :all,
+    allow_headers: :all,
+    allow_credentials: true
+    #allow_headers: ["content-type", "accept"]
 
   plug Plug.MethodOverride
   plug Plug.Head

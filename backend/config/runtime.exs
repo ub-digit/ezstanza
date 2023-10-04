@@ -51,11 +51,13 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  url_host = System.get_env("PHX_HOST") || "example.com"
+  url_port = System.get_env("PHX_PORT") || 443
+  url_scheme = if url_port == 443, do: "https", else: "http"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :ezstanza, EzstanzaWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: url_host, port: url_port, scheme: url_scheme],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
