@@ -36,8 +36,15 @@ defmodule EzstanzaWeb.Endpoint do
   # Since plugs evaluated at compile time we cannot
   # immediately get origin from runtime configuration
   def check_corsica_origins(origin) do
-    origin in Application.get_env(:ezstanza, :origins)
+    case Application.get_env(:ezstanza, :origins) do
+      "*" -> true
+      origins -> Enum.any?(List.wrap(origins), &matching_origin?(&1, origin))
+    end
   end
+
+  defp matching_origin?(origin, origin), do: true
+  defp matching_origin?(allowed, _actual) when is_binary(allowed), do: false
+  defp matching_origin?(%Regex{} = allowed, actual), do: Regex.match?(allowed, actual)
 
   plug Corsica,
     origins: {__MODULE__, :check_corsica_origins},
