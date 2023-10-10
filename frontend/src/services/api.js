@@ -20,10 +20,13 @@ class BaseApiService {
 }
 
 class ResourceApiService extends BaseApiService {
+  #entity
 
   // Can remove this?
-  constructor(resource) {
+  constructor(resource, entity) {
     super(resource)
+    if (!resource) throw new Error("Resource is not provided")
+    this.#entity = entity
   }
   //get?
   fetch(id, params) {
@@ -47,13 +50,13 @@ class ResourceApiService extends BaseApiService {
   }
 
   create(data) {
-    return axios.post(`${this.endpointUrl()}`, data)
+    return axios.post(`${this.endpointUrl()}`, {[this.#entity]: data})
       .then(response => response.data)
       .catch(this.handleErrors)
   }
 
   update(id, data) {
-    return axios.put(`${this.endpointUrl()}/${id}`, data)
+    return axios.put(`${this.endpointUrl()}/${id}`, {[this.#entity]: data})
       .then(response => response.data)
       .catch(this.handleErrors)
   }
@@ -67,37 +70,37 @@ class ResourceApiService extends BaseApiService {
 
 class StanzasApiService extends ResourceApiService {
   constructor() {
-    super('stanzas')
+    super('stanzas', 'stanza')
   }
 }
 
 class StanzaRevisoinsApiService extends ResourceApiService {
   constructor() {
-    super('stanza_revisions')
+    super('stanza_revisions', 'stanza_revision')
   }
 }
 
 class TagsApiService extends ResourceApiService {
   constructor() {
-    super('tags')
+    super('tags', 'tag')
   }
 }
 
 class ConfigsApiService extends ResourceApiService {
   constructor() {
-    super('configs')
+    super('configs', 'config')
   }
 }
 
 class UsersApiService extends ResourceApiService {
   constructor() {
-    super('users')
+    super('users', 'user')
   }
 }
 
 class DeployTargetsApiService extends ResourceApiService {
   constructor() {
-    super('deploy_targets')
+    super('deploy_targets', 'deploy_target')
   }
 }
 
@@ -116,7 +119,7 @@ class DeployTargetApiService extends BaseApiService {
 
 class DeploymentsApiService extends ResourceApiService {
   constructor() {
-    super('deployments')
+    super('deployments', 'deployment')
   }
 }
 

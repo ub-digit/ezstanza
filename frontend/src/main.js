@@ -11,7 +11,9 @@ import userSocket from './plugins/user_socket'
 import api_service from './plugins/api_service'
 import ToastService from 'primevue/toastservice'
 import DialogService from 'primevue/dialogservice'
-import { Diff } from 'diff'
+import VueDiff from 'vue-diff'
+
+//import { Diff } from 'diff'
 
 //import 'primevue/resources/themes/bootstrap4-light-blue/theme.css';
 /* purgecss start ignore */
@@ -19,6 +21,7 @@ import { Diff } from 'diff'
 /* purgecss end ignore */
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
+import 'vue-diff/dist/index.css'
 
 import Button from 'primevue/button' //TODO: Import locally instead?
 
@@ -43,6 +46,9 @@ const app = createApp(App)
   .use(auth)
   .use(userSocket)
   .use(dayjs)
-  .use(app => app.provide('diff', Diff))
+  .use(VueDiff, {
+    componentName: 'VueDiff'
+  })
+  //.use(app => app.provide('diff', Diff))
   .component('Button', Button)
   .mount('#app')

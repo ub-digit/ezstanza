@@ -1,12 +1,13 @@
 <script>
-import { watch, ref, inject } from 'vue'
-import { useRoute } from 'vue-router'
+import { watch, ref, inject, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 import StanzaForm from '@/components/StanzaForm.vue'
 
 export default {
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const stanza = ref()
     const onSubmit = useOnSubmit('stanza', 'stanzas', 'update')
     const api = inject('api')

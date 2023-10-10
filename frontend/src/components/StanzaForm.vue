@@ -330,7 +330,7 @@ export default {
     </VAutoCompleteField>
     <label for="body" class="block text-900 font-medium mb-2">Stanza</label>
     <!-- <VCodemirrorField id="body" name="body" :extensions="invalidLineGutter" @change="debouncedChange"/> -->
-    <VCodemirrorField id="body" name="body" :extensions="extensions"/>
+    <VCodemirrorField containerClass="stanza-editor" id="body" name="body" :extensions="extensions"/>
 
     <label for="log-message" class="block text-900 font-medium mb-2">Log</label>
     <VTextareaField
@@ -394,3 +394,8 @@ export default {
     <Button class="mt-4" type="submit" :disabled="isSubmitting" label="Save"></Button>
   </form>
 </template>
+<style>
+.stanza-editor {
+  max-width: 900px;
+}
+</style>

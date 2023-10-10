@@ -2,7 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
 
+import Stanza from '../views/Stanza.vue'
 import EditStanza from '../views/EditStanza.vue'
+import EditStanzaStanzaRevisions from '../views/EditStanzaStanzaRevisions.vue'
 import CreateStanza from '../views/CreateStanza.vue'
 import ListStanzas from '../views/ListStanzas.vue'
 
@@ -41,9 +43,20 @@ const router = createRouter({
       meta: { auth: true }
     }, {
       path: '/stanzas/:id(\\d+)',
-      name: 'EditStanza',
-      component: EditStanza,
-      meta: { auth: true }
+      name: 'Stanza',
+      component: Stanza,
+      meta: { auth: true },
+      children: [
+        {
+          path: '',
+          name: 'EditStanza',
+          component: EditStanza
+        }, {
+          path: 'revisions',
+          name: 'EditStanzaStanzaRevisions',
+          component: EditStanzaStanzaRevisions
+        }
+      ]
     }, {
       path: '/deployments',
       name: 'ListDeployments',

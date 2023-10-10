@@ -28,7 +28,7 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
 
   return function(entity, { setErrors, resetForm }, options = {}) {
     let args = op === 'update' ? [entity.id] : []
-    args.push({ [entityName]: entity })
+    args.push(entity)
 
     return api[entityNamePluralized][op](...args)
       .then((result) => {
