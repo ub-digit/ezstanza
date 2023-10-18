@@ -313,7 +313,12 @@ export default {
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
     :loading="loading"
   >
-    <Column field="inserted_at" header="Deploy date" :sortable="true"/>
+    <Column field="inserted_at" header="Deploy date" :sortable="true">
+      <template #body="{ data }">
+        {{ dayjs(data.inserted_at).format('L LT') }}
+      </template>
+    </Column>
+
     <Column field="status" header="Status" :sortable="true">
       <template #body="{ data: {status: status} }">
         <div class="text-center">

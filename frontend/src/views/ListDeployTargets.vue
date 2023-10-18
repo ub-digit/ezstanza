@@ -1,20 +1,15 @@
 <script>
+import { inject } from 'vue'
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 
 export default {
   setup() {
-    const filterColumns = [
-      /*
-      {
-        fieldName: 'name',
-        filterFieldName: 'name',
-        header: 'Name'
-        }
-        */  
-    ]
+    const filterColumns = []
+    const dayjs = inject('dayjs')
     return {
+      dayjs,
       filterColumns
     }
   },
@@ -41,7 +36,11 @@ export default {
     :lazy="false"
   >
     <Column field="name" header="Name" :sortable="true"/>
-    <Column field="current_deployment.inserted_at" header="Deployed" :sortable="false"/>
+    <Column field="current_deployment.inserted_at" header="Last deployment" :sortable="false">
+      <template #body="{ data }">
+        {{ dayjs(data.current_deployment.inserted_at).format('L LT') }}
+      </template>
+    </Column>
     <Column field="current_deployment.status" header="Status" :sortable="false"/>
   </EntityList>
 </template>
