@@ -50,6 +50,7 @@ export default {
 @import '@/assets/base.css';
 /* purgecss start ignore */
 @import '@/assets/theme.css';
+@import '@/assets/vue-diff.css';
 /* purgecss end ignore */
 </style>
 <style lang="scss">

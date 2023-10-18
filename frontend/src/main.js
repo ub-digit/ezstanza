@@ -21,7 +21,7 @@ import VueDiff from 'vue-diff'
 /* purgecss end ignore */
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
-import 'vue-diff/dist/index.css'
+// import 'vue-diff/dist/index.css'
 
 import Button from 'primevue/button' //TODO: Import locally instead?
 
