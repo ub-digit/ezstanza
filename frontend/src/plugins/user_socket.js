@@ -21,7 +21,7 @@ export default (app) => {
   const setupSocket = (token) => {
     if (!socket) {
       console.log('setting up socket')
-      socket = new Socket('ws://127.0.0.1:4000/socket', {params: {token: token }})
+      socket = new Socket(APP_CONFIG['backend_socket_url'], {params: {token: token }})
       socket.connect()
       deploymentChannel = socket.channel('deployment', {})
       deploymentChannel.join()
