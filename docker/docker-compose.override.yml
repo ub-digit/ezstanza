@@ -1,8 +1,13 @@
 version: '3.7'
 services:
   frontend:
-     volumes:
-      - ${EZSTANZA_REPO}/frontend/dist:/usr/share/nginx/html
+    environment:
+    - BACKEND_URL=http://${BACKEND_DOMAIN}:${BACKEND_HOST_PORT}/api
+    - BACKEND_SOCKET_URL=ws://${BACKEND_DOMAIN}:${BACKEND_HOST_PORT}/socket
+#     volumes:
+#      - ${EZSTANZA_REPO}/frontend/dist:/usr/share/nginx/html
   backend:
     environment:
-    - CORS_ORIGIN=http://localhost:${FRONTEND_HOST_PORT}
+    - CORS_ORIGIN=http://${FRONTEND_DOMAIN}:${FRONTEND_HOST_PORT}
+    - PHX_HOST=${FRONTEND_DOMAIN}
+    - PHX_PORT=${FRONTEND_HOST_PORT}
