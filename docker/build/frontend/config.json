@@ -1,1 +1,1 @@
-{ backend_url: "$EZSTANZA_BACKEND_URL" }
+{ backend_url: "$BACKEND_URL", backend_socket_url: "$BACKEND_SOCKET_URL" }

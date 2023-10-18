@@ -4,7 +4,8 @@ services:
     image: docker.ub.gu.se/ezstanza-frontend:${GIT_REVISION}
     restart: always
     environment:
-      - EZSTANZA_BACKEND_URL=${BACKEND_URL}
+      - BACKEND_URL=https://${BACKEND_DOMAIN}/api
+      - BACKEND_SOCKET_URL=ws://${BACKEND_DOMAIN}/socket
     # Keep the stdin open, so we can attach to our app container's process
     # and do things such as debugging, etc
     stdin_open: true
@@ -22,6 +23,7 @@ services:
       - DATABASE_URL=ecto://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
       - SECRET_KEY_BASE=${BACKEND_SECRET_KEY_BASE}
       - DEPLOYMENT_SSH_USER_DIR=${DEPLOYMENT_SSH_USER_DIR}
+      - CORS_ORIGIN=https://${FRONTEND_DOMAIN}
     volumes:
       - ${DEPLOYMENT_SSH_USER_HOST_DIR}:${DEPLOYMENT_SSH_USER_DIR}
     depends_on:
