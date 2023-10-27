@@ -76,7 +76,7 @@ defmodule Ezstanza.DeploymentProvider.SSH do
   end
 
   defp sshkit_context(user, hostname, port) do
-    hosts = [{hostname, port: port}]
+    hosts = [{hostname, port: port, silently_accept_hosts: true}]
     # TODO: Only use key_cb if relevant options are defined
     # otherwise fallback on defaults
     #
