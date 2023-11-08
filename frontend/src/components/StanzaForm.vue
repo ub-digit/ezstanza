@@ -309,10 +309,11 @@ export default {
   <form @submit="onSubmit">
     <!-- TODO: Lots of repition, add component for label -->
     <label for="name" class="block text-900 font-medium mb-2">Name</label>
-    <VTextField id="name" name="name"/>
+    <VTextField id="name" name="name" class="w-full"/>
 
     <label for="tags" class="block text-900 font-medium mb-2">Tags</label>
     <VAutoCompleteField
+      class="w-full"
       multiple
       :forceSelection="false"
       id="tags"
@@ -395,7 +396,4 @@ export default {
   </form>
 </template>
 <style>
-.stanza-editor {
-  max-width: 900px;
-}
 </style>
