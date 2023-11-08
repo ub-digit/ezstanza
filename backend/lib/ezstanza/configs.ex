@@ -192,7 +192,7 @@ defmodule Ezstanza.Configs do
       |> repo.insert()
     end)
     |> Multi.run(:config, fn repo, %{persisted_config: config, config_revision: %ConfigRevision{id: config_revision_id}} ->
-      with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do # TODO: Remove tags?
+      with {:ok, tags} = find_or_create_tags(repo, attrs["tags"], attrs["user_id"]) do # TODO: Remove tags?
         change_config(
           repo.preload(config, :tags),
           Map.merge(attrs, %{

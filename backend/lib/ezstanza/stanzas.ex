@@ -334,7 +334,7 @@ defmodule Ezstanza.Stanzas do
           body: stanza_revision_body
         } = stanza_revision
       } ->
-        with {:ok, tags} = find_or_create_tags(repo, attrs["tags"]) do
+        with {:ok, tags} = find_or_create_tags(repo, attrs["tags"], attrs["user_id"]) do
           stanza = repo.preload(stanza, :tags)
           change_stanza(
             stanza,
