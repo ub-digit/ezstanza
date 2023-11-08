@@ -41,7 +41,24 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
           detail: detail,
           life: toastTimeout
         })
-        resetForm() //TODO: This should only be run on creation right??
+
+        // @TODO: this is horrible, should instead propagate data through event
+        // in component for two way binding, but lots of issues with that as well,
+        // not even sure possible witout using watchers and probably lots of other
+        // hacks
+        if (op === 'update') {
+          const formState = {
+            values: {
+              ...result.data,
+              deploy_to_deploy_targets: []
+            }
+          }
+          console.log('form state', formState)
+          resetForm(formState)
+        }
+        else {
+          resetForm()
+        }
 
         const destination = options.destination || route.query.destination
         if (destination) {
