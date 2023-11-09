@@ -197,10 +197,13 @@ export default {
     const logMessage = useFieldModel('log_message')
 
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
-    watch(stanzaRevisionChanged, () => {
+    watch(stanzaRevisionChanged, (changed) => {
       // Enforce unchanged current revision state
-      if(!stanzaRevisionChanged.value) {
+      if(!changed) {
         logMessage.value = stanza.log_message
+      }
+      else {
+        logMessage.value = ''
       }
     })
 
