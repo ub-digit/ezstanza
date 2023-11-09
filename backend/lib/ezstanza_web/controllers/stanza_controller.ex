@@ -22,13 +22,40 @@ defmodule EzstanzaWeb.StanzaController do
   } when action in [:show]
 
 
+  # Perhaps should also validate first?
+  def normalize_index_params(params) do
+    Enum.reduce(params, %{}, fn {key, value}, normalized_params ->
+      case {key, value} do
+        {"deployment_ids_not_equals", ids} -> # When is_list, validate before?
+          Map.put(
+            normalized_params,
+            key,
+            Enum.map(ids, &String.to_integer/1)
+          )
+        {"deployment_id_not_equals", id} ->
+          Map.put(
+            normalized_params,
+            "deployment_ids_not_equal",
+            [String.to_integer(id)])
+        _ ->
+          Map.put(normalized_params, key, value)
+      end
+    end)
+  end
+
+
+
   def index(conn, %{"page" => _page, "size" => _size} = params) do
-    result = Stanzas.paginate_stanzas(params)
+    result = params
+             |> normalize_index_params()
+             |> Stanzas.paginate_stanzas()
     render(conn, "index.json", stanzas: result.entries, pages: result.pages, total: result.total)
   end
 
   def index(conn, params) do
-    stanzas = Stanzas.list_stanzas(params)
+    stanzas = params
+              |> normalize_index_params()
+              |> Stanzas.list_stanzas()
     render(conn, "index.json", stanzas: stanzas)
   end
 

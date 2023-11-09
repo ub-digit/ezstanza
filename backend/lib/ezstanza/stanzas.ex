@@ -109,16 +109,19 @@ defmodule Ezstanza.Stanzas do
         from s in query,
           join: s_c_c in assoc(s, :deployments),
           where: s_c_c.id == ^deployment_id
-      {"deployment_id_not_equal", deployment_id}, query ->
-        stanza_ids_in_deployment = from sr in StanzaRevision,
-          join: d_sr in "deployment_stanza_revision",
-          on: sr.id == d_sr.stanza_revision_id,
-          where: d_sr.deployment_id == ^deployment_id,
-          select: %{
-            stanza_id: sr.stanza_id
-          }
-        from s in query,
-          where: s.id not in subquery(stanza_ids_in_deployment)
+      {"deployment_ids_not_equals", deployment_ids}, query ->
+        Enum.reduce(deployment_ids, query, fn deployment_id, query ->
+          # @FIXME: Code duplication, worth breaking out?
+          stanza_ids_in_deployment = from sr in StanzaRevision,
+            join: d_sr in "deployment_stanza_revision",
+            on: sr.id == d_sr.stanza_revision_id,
+            where: d_sr.deployment_id == ^deployment_id,
+            select: %{
+              stanza_id: sr.stanza_id
+            }
+          from s in query,
+            where: s.id not in subquery(stanza_ids_in_deployment)
+        end)
       _, query ->
         query
     end)

@@ -37,6 +37,11 @@ export default {
       }
     })
 
+    const deploymentsfilterMatchModeOptions = [
+      { label: 'Equals', value: FilterMatchMode.EQUALS },
+      { label: 'Not equals', value: FilterMatchMode.NOT_EQUALS }
+    ]
+
     // More or less duplicate code, use-module for this?
     const api = inject('api')
     const tags = ref([])
@@ -67,7 +72,9 @@ export default {
       filters,
       tags,
       tagSuggestions,
-      searchTags
+      searchTags,
+      FilterMatchMode,
+      deploymentsfilterMatchModeOptions
     }
   },
   components: {
@@ -103,8 +110,9 @@ export default {
       header="Deployments"
       field="current_deployments"
       filterField="deployment_ids"
-      :showFilterMenu="false"
+      :showFilterMenu="true"
       :sortable="false"
+      :filterMatchModeOptions="deploymentsfilterMatchModeOptions"
     >
       <template #filter="{filterModel, filterCallback}">
         <DeployTargetsDropDown

@@ -31,17 +31,20 @@ export default function useEntityDataTable({ lazy, loading, params, entityNamePl
 
   const filterSuffix = {
     [FilterMatchMode.CONTAINS]: '_like',
+    [FilterMatchMode.NOT_EQUALS]: '_not_equals',
     [FilterMatchMode.EQUALS]: ''
   }
 
   const filter = (event) => {
     for (const [filter, data] of Object.entries(event.filters)) {
-      const filter_name = filter + filterSuffix[data.matchMode]
-      if (typeof data.value !== 'string' || data.value.length) {
-        lazyParams.value[filter_name] = data.value
-      }
-      else {
-        delete lazyParams.value[filter_name]
+      // Posslibly clear old filter value
+      Object.keys(lazyParams.value).forEach(param => {
+        if (param.startsWith(filter)) {
+          delete lazyParams.value[param]
+        }
+      })
+      if (data.value.length) {
+        lazyParams.value[filter + filterSuffix[data.matchMode]] = data.value
       }
     }
   }

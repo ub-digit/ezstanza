@@ -197,7 +197,7 @@ export default {
     watch(deployTarget, (newDeployTarget) => {
       console.log('new deploy target', newDeployTarget)
       if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
-        addStanzaRevisionsParams.value.deployment_id_not_equal = newDeployTarget.current_deployment.id
+        addStanzaRevisionsParams.value.deployment_id_not_equals = newDeployTarget.current_deployment.id
         editStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
         deleteStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
       }
