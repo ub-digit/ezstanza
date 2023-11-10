@@ -280,13 +280,13 @@ export default {
       </div>
       <template v-if="deployTarget">
         <div class="field">
-          <label for="add-stanza-revisions" class="block text-900 font-medium mb-2">Add stanzas</label>
+          <label for="add-stanza-revisions" class="block text-900 font-medium mb-2">Add new stanzas to deployment</label>
           <StanzaRevisionPickList addLabel="Add new" v-model="addStanzaRevisions" :params="addStanzaRevisionsParams"/>
           <template v-if="deployTarget.current_deployment.id">
-            <label for="edit-stanza-revisions" class="block text-900 font-medium mb-2">Update stanzas</label>
+            <label for="edit-stanza-revisions" class="block text-900 font-medium mb-2">Add modified stanzas to deployment</label>
             <StanzaRevisionPickList addLabel="Add modified" v-model="editStanzaRevisions" :params="editStanzaRevisionsParams"/>
-            <label for="delete-stanza-revisions" class="block text-900 font-medium mb-2">Delete stanzas</label>
-            <StanzaRevisionPickList addLabel="Delete" v-model="deleteStanzaRevisions" :params="deleteStanzaRevisionsParams"/>
+            <label for="delete-stanza-revisions" class="block text-900 font-medium mb-2">Remove stanzas from deployment</label>
+            <StanzaRevisionPickList addLabel="Remove" v-model="deleteStanzaRevisions" :params="deleteStanzaRevisionsParams"/>
           </template>
         </div>
         <Button type="submit" :disabled="isSubmitting" label="Deploy"></Button>
