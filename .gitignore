@@ -3,5 +3,6 @@ todo
 # Ignore temporary files
 tmp
 tmp.*
+ssh
 
 *.sql
