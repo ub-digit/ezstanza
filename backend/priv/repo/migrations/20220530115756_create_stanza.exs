@@ -29,7 +29,7 @@ defmodule Ezstanza.Repo.Migrations.Stanza do
     # TODO: Define composite primary key and indices
     create table(:stanza_tag, primary_key: false) do
       add :stanza_id, references(:stanza, on_delete: :delete_all), primary_key: true
-      add :tag_id, references(:tag), primary_key: true
+      add :tag_id, references(:tag, on_delete: :delete_all), primary_key: true
     end
 
     create unique_index(:config_tag, [:config_id, :tag_id])
