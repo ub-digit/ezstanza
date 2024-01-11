@@ -32,7 +32,7 @@ export default function useUserColumn({ revisioned, filters }) {
   Object.assign(filters.value, {
     [toRaw(userFilterField.value)]: {
       matchMode: FilterMatchMode.EQUALS,
-      value: ''
+      value: null
     }
   })
 

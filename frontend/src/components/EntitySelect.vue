@@ -156,7 +156,7 @@ export default {
             filterColumn => [
               filterColumn.filterFieldName,
               {
-                value: '',
+                value: null,
                 matchMode: filterColumn.defaultFilterMatchMode || FilterMatchMode.EQUALS
               }
             ]

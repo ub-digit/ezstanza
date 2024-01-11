@@ -43,7 +43,14 @@ export default function useEntityDataTable({ lazy, loading, params, entityNamePl
           delete lazyParams.value[param]
         }
       })
-      if (data.value.length) {
+      if (
+        typeof data.value === "number" ||
+        typeof data.value === "boolean" ||
+        (
+          (typeof data.value === "string" || Array.isArray(data.value)) &&
+          data.value.length
+        )
+      ) {
         lazyParams.value[filter + filterSuffix[data.matchMode]] = data.value
       }
     }
@@ -80,7 +87,6 @@ export default function useEntityDataTable({ lazy, loading, params, entityNamePl
       entities.value = result.data
       totalEntities.value = 'total' in result? result.total : result.data.length
       loading.value = false
-      console.log('setting loading to false')
     })
   }
 
