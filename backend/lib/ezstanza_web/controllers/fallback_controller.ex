@@ -34,4 +34,12 @@ defmodule EzstanzaWeb.FallbackController do
     |> render(:"409")
   end
 
+  def call(conn, {:error, :disabled_with_current_deployments}) do
+    conn
+    |> put_status(:not_acceptable)
+    |> put_view(EzstanzaWeb.ErrorView)
+    |> render(:"406")
+  end
+
+
 end

@@ -24,6 +24,7 @@ import 'primeflex/primeflex.css'
 // import 'vue-diff/dist/index.css'
 
 import Button from 'primevue/button' //TODO: Import locally instead?
+import Tooltip from 'primevue/tooltip'
 
 //TODO: Put in import
 import { defineRule } from 'vee-validate'
@@ -51,4 +52,5 @@ const app = createApp(App)
   })
   //.use(app => app.provide('diff', Diff))
   .component('Button', Button)
+  .directive('tooltip', Tooltip)
   .mount('#app')

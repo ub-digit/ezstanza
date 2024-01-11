@@ -8,6 +8,7 @@ defmodule Ezstanza.Stanzas.Stanza do
 
   schema "stanza" do
     field :name, :string
+    field :disabled, :boolean
     many_to_many :tags, Tag,
       join_through: "stanza_tag",
       on_replace: :delete
@@ -32,7 +33,7 @@ defmodule Ezstanza.Stanzas.Stanza do
   @doc false
   def changeset(stanza, attrs) do
     stanza
-    |> cast(attrs, [:name, :user_id, :current_stanza_revision_id])
+    |> cast(attrs, [:name, :user_id, :disabled, :current_stanza_revision_id])
     |> validate_required([:name, :user_id])
     |> unique_constraint(:name)
   end

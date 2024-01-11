@@ -33,6 +33,7 @@ defmodule EzstanzaWeb.StanzaView do
       id: stanza.id,
       revision_id: stanza.current_stanza_revision_id,
       name: stanza.name,
+      disabled: stanza.disabled,
       tags: render_many(stanza.tags, TagView, "tag_snippet.json"),
       body: stanza.current_revision.body,
       log_message: stanza.current_revision.log_message,

@@ -25,6 +25,8 @@ defmodule Ezstanza.Stanzas do
 
   alias Ezstanza.StanzaParser
 
+  alias Ezstanza.EntityValidations
+
   defp process_stanza_includes(query, includes) when is_list(includes) do
     # TODO: Replace with preloader query?
     stanza_revisions_preloader = fn stanza_ids ->
@@ -303,7 +305,6 @@ defmodule Ezstanza.Stanzas do
   end
 
   defp update_persisted_stanza_multi(attrs) do
-
     Multi.new()
     |> Multi.run(:stanza_revision, fn
       repo, %{persisted_stanza: %Stanza{id: stanza_id} = stanza} ->
@@ -382,31 +383,37 @@ defmodule Ezstanza.Stanzas do
   """
   # TODO: Macro for stale checking
   def update_stanza(id, %{"revision_id" => revision_id} = attrs) do
-#    # TODO: Validate attrs, user input, might crash?
-
-#    configs = Map.get(attrs, "configs", [])
-#    include_in_config_ids = configs
-#                            |> Enum.map(&Map.get(&1, "id"))
-#    publish_in_config_ids = configs
-#                            |> Enum.filter(&Map.get(&1, "publish"))
-#                            |> Enum.map(&Map.get(&1, "id"))
-#    remove_stanza_revision_by_stanza_id = fn stanza_revisions, stanza_id ->
-#      Enum.reject(stanza_revisions, fn stanza_revision ->
-#        stanza_revision.stanza_id == stanza_id
-#      end)
-#    end
-#
+    # TODO: Validate attrs, user input, might crash?
     with {:ok, stanza} <-
       Multi.new()
       |> Multi.run(:persisted_stanza, fn repo, _changes ->
-        case repo.get(Stanza, id) do
-          %Stanza{current_stanza_revision_id: ^revision_id} = stanza ->
-            {:ok, stanza}
-          %Stanza{} = stanza ->
-            {:error, :stale}
-          nil ->
-            {:error, :not_found}
+        validate_disabled = fn
+          %Stanza{disabled: true} = stanza ->
+            case stanza |> repo.preload(:current_deployments) do
+              %Stanza{current_deployments: []} ->
+                :ok
+              _ ->
+                {:error, :disabled_with_current_deployments}
+            end
+          _ -> :ok
         end
+
+        stanza = repo.get(Stanza, id)
+        with :ok <- EntityValidations.found(stanza),
+             :ok <- EntityValidations.not_stale(stanza, :current_stanza_revision_id, revision_id),
+             :ok <- validate_disabled.(stanza)
+        do
+          {:ok, stanza}
+        end
+
+        #case repo.get(Stanza, id) do
+        #  %Stanza{current_stanza_revision_id: ^revision_id} = stanza ->
+        #    {:ok, stanza}
+        #  %Stanza{} = stanza ->
+        #    {:error, :stale}
+        #  nil ->
+        #    {:error, :not_found}
+        #end
       end)
       |> Multi.append(update_persisted_stanza_multi(attrs))
       |> Repo.transaction()

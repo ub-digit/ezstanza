@@ -195,6 +195,7 @@ export default {
 
     const body = useFieldModel('body')
     const logMessage = useFieldModel('log_message')
+    const disabled = useFieldModel('disabled')
 
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, (changed) => {
@@ -293,6 +294,7 @@ export default {
       onSubmit,
       isSubmitting,
       stanzaRevisionChanged,
+      disabled,
       stanza
     }
   },
@@ -363,7 +365,30 @@ export default {
       </div>
     </template>
 
-    <!--
+
+    <h5 class="mb-2">Disable</h5>
+    <div class="field-checkbox">
+      <Checkbox
+        v-if="stanza.current_deployments.length"
+        v-tooltip.right="'Stanza must first be removed from current deployments.'"
+        :disabled="true"
+        :inputId="disabled"
+        name="disabled"
+        binary
+        v-model="disabled"
+      />
+      <Checkbox
+        v-else
+        :inputId="disabled"
+        name="disabled"
+        binary
+        v-model="disabled"
+      />
+      <label :for="disabled">Disabled</label>
+    </div>
+
+
+     <!--
     <div class="flex flex-column align-items-start gap-2">
     </div>
 
