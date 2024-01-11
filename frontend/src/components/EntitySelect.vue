@@ -273,6 +273,7 @@ export default {
     :rowsPerPageOptions="[10,25,50]"
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
     :loading="loading"
+    :rowClass="(data) => data.disabled ? 'text-500' : null"
   >
     <Column v-if="selectable" selectionMode="multiple" style="width: 3em">
       <template v-if="selectedEntities.length" #header>
@@ -293,6 +294,12 @@ export default {
       >
         <template #filter="{ filterModel, filterCallback }">
           <InputText type="text" v-model="filterModel.value" @keydown.enter="filterCallback()" placeholder="Search"/>
+        </template>
+        <template #body="{ field, data }">
+          {{ data[field] }}
+          <span v-if="data.disabled && field === 'name'">
+            (Disabled)
+          </span>
         </template>
       </Column>
     </template>

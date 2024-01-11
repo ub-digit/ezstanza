@@ -177,25 +177,21 @@ export default {
 
     const addStanzaRevisions = ref([])
     const addStanzaRevisionsParams = ref({
-      is_current_revision: true
+      is_current_revision: true,
+      disabled: false,
     })
 
     const editStanzaRevisions = ref([])
     const editStanzaRevisionsParams = ref({
-      is_current_revision: false
+      is_current_revision: false,
+      disabled: false,
     })
 
     const deleteStanzaRevisions = ref([])
     const deleteStanzaRevisionsParams = ref({})
 
-    watch(addStanzaRevisions, (newValue) => {
-      console.log('selection changed', newValue)
-      console.log('after change', addStanzaRevisions)
-    })
-
     //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
-      console.log('new deploy target', newDeployTarget)
       if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
         addStanzaRevisionsParams.value.deployment_id_not_equals = newDeployTarget.current_deployment.id
         editStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id

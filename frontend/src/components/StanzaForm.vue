@@ -368,18 +368,19 @@ export default {
 
     <h5 class="mb-2">Disable</h5>
     <div class="field-checkbox">
+      <!-- TODO: is inputId required? -->
       <Checkbox
         v-if="stanza.current_deployments.length"
         v-tooltip.right="'Stanza must first be removed from current deployments.'"
         :disabled="true"
-        :inputId="disabled"
+        inputId="disabled"
         name="disabled"
         binary
         v-model="disabled"
       />
       <Checkbox
         v-else
-        :inputId="disabled"
+        inputId="disabled"
         name="disabled"
         binary
         v-model="disabled"
@@ -387,8 +388,7 @@ export default {
       <label :for="disabled">Disabled</label>
     </div>
 
-
-     <!--
+    <!--
     <div class="flex flex-column align-items-start gap-2">
     </div>
 

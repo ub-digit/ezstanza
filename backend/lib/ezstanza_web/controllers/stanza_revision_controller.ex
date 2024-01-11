@@ -25,6 +25,12 @@ defmodule EzstanzaWeb.StanzaRevisionController do
           Map.put(normalized_params, key, false)
         {"is_current_revision", _} ->
           normalized_params
+        {"disabled", "true"} ->
+          Map.put(normalized_params, key, true)
+        {"disabled", "false"} ->
+          Map.put(normalized_params, key, false)
+        {"disabled", _} ->
+          normalized_params
         _ ->
           Map.put(normalized_params, key, value)
       end
