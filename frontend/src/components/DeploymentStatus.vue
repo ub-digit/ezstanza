@@ -1,6 +1,6 @@
 <script>
 import { ref, toRef, computed } from 'vue'
-import OverlayPanel from 'primevue/overlaypanel';
+import Tooltip from '@/components/Tooltip.vue';
 export default {
   props: {
     status: {
@@ -9,13 +9,7 @@ export default {
     }
   },
   setup( props ) {
-    const tooltip = ref(null)
-    const toggleTooltip = (event) => {
-      tooltip.value.toggle(event)
-    }
-
     const status = toRef(props, 'status')
-
     const tooltipText = computed(() => {
       //TODO: i18n
       const textMapping = {
@@ -27,23 +21,18 @@ export default {
       return textMapping[status.value];
     })
     return {
-      tooltip,
-      tooltipText,
-      toggleTooltip
+      tooltipText
     }
   },
   components: {
-    OverlayPanel
+    Tooltip
   }
-
 }
 </script>
 <template>
-  <span :class="['deployment-status', status]" @mouseover="toggleTooltip" @mouseleave="toggleTooltip"/>
-  <!-- <span :class="['deployment-status', status]" @click="toggleTooltip"/> -->
-  <OverlayPanel :pt="{ content: { class: 'deployment-status-tooltip' } }" ref="tooltip">
-    <span class="text-sm">{{ tooltipText }}</span>
-  </OverlayPanel>
+  <Tooltip :text="tooltipText" v-slot="events">
+    <span :class="['deployment-status', status]" v-on="events"/>
+  </Tooltip>
 </template>
 <style>
 .deployment-status {
@@ -66,8 +55,5 @@ export default {
 }
 .deployment-status.failed {
   background-color: var(--red-500);
-}
-.p-overlaypanel .p-overlaypanel-content.deployment-status-tooltip {
-  padding: .5rem .9rem;
 }
 </style>

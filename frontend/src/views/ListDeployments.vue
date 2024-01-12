@@ -2,9 +2,12 @@
 import { ref, unref, toRaw, inject, watch, computed, onUnmounted, onMounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
 import DeploymentStatus from '@/components/DeploymentStatus.vue'
+import Tooltip from '@/components/Tooltip.vue'
+import DialogButton from '@/components/DialogButton.vue'
 import Toolbar from 'primevue/toolbar'
 import Panel from 'primevue/panel'
 import DropDown from 'primevue/dropdown'
+import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
@@ -145,7 +148,12 @@ export default {
         .receive("timeout", () => console.log('timeout pushing, toast?'))
     })
 
-    const { entities: deployments, totalEntities: totalDeployments, dataTableEvents } = UseEntityDataTable({
+    const {
+      entities: deployments,
+      totalEntities: totalDeployments,
+      dataTableEvents: dataTableEvents,
+      lazyParams: lazyParams
+    } = UseEntityDataTable({
       lazy: true,
       loading: loading,
       entityNamePluralized: 'deployments',
@@ -154,14 +162,28 @@ export default {
       defaultSortOrder: defaultSortOrder.value
     })
 
+    // Hack:
+    //lazyParams.is_current_deployment = false;
+    const isCurrentDeployment = ref(true)
+    watch(isCurrentDeployment, (newValue) => {
+      console.log('current deployent set', newValue)
+      if (newValue) {
+        lazyParams.value.is_current_deployment = true
+      }
+      else {
+        delete lazyParams.value.is_current_deployment
+      }
+    }, { immediate: true })
+
     const filters = ref({
+      status: {value: null, matchMode: FilterMatchMode.EQUALS},
       deploy_target_id: {value: null, matchMode: FilterMatchMode.EQUALS},
       user_id: {value: null, matchMode: FilterMatchMode.EQUALS}
     })
 
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
-      { label: 'Equals', value: FilterMatchMode.EQUALS },
+      { label: 'Equals', value: FilterMatchMode.EQUALS }
     ]
 
     //TODO deployTargetId?
@@ -212,12 +234,28 @@ export default {
       resetForm()
     }
      */
+    const statuses = ref([
+      {
+        name: 'Pending',
+        value: 'pending'
+      }, {
+        name: 'Deploying',
+        value: 'deploying'
+      }, {
+        name: 'Completed',
+        value: 'completed'
+      }, {
+        name: 'Failed',
+        value: 'failed'
+      }
+    ])
 
     return {
       dt,
       deployTarget,
       deployTargets,
       deployments,
+      statuses,
       totalDeployments,
       pageSize,
       showPaginator,
@@ -236,6 +274,7 @@ export default {
       deleteStanzaRevisionsParams,
       deleteStanzaRevisions,
       deploying,
+      isCurrentDeployment,
       loading
     }
     /* TODO:
@@ -247,11 +286,14 @@ export default {
   components: {
     Toolbar,
     DropDown,
+    Checkbox,
     DataTable,
     Column,
     ColorChip,
     Dialog,
     DeploymentStatus,
+    Tooltip,
+    DialogButton,
     Panel,
     //StanzaRevisionSelect,
     StanzaRevisionPickList
@@ -307,18 +349,49 @@ export default {
     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :rowsPerPageOptions="[10,25,50]"
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
+    :rowClass="(data) => !data.is_current_deployment ? 'text-500' : null"
     :loading="loading"
   >
+    <template #header>
+      <div class="field-checkbox">
+        <Checkbox
+          inputId="is-current-deployment"
+          binary
+          v-model="isCurrentDeployment"
+        />
+        <label for="is-current-deployment">Show only current deployments</label>
+      </div>
+    </template>
     <Column field="inserted_at" header="Deploy date" :sortable="true">
       <template #body="{ data }">
         {{ dayjs(data.inserted_at).format('L LT') }}
       </template>
     </Column>
 
-    <Column field="status" header="Status" :sortable="true">
-      <template #body="{ data: {status: status} }">
+    <Column
+      field="status"
+      header="Status"
+      :sortable="true"
+      filterField="status"
+      :showFilterMenu="false"
+    >
+      <template #filter="{filterModel, filterCallback}">
+        <DropDown
+          placeholder="Any"
+          v-model="filterModel.value"
+          :options="statuses"
+          optionLabel="name"
+          optionValue="value"
+          @change="filterCallback()"
+          class="p-column-filter"
+        />
+      </template>
+      <template #body="{ data: {status: status, is_current_deployment: is_current} }">
         <div class="text-center">
           <DeploymentStatus :status="status"/>
+          <Tooltip text="Currently deployed" v-slot="events" v-if="is_current">
+            &nbsp;<i class="pi pi-cloud-upload" v-on="events"></i>
+          </Tooltip>
         </div>
       </template>
     </Column>

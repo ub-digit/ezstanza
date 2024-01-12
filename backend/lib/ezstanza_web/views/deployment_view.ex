@@ -30,7 +30,8 @@ defmodule EzstanzaWeb.DeploymentView do
       deploy_target: render_one(deployment.deploy_target, DeployTargetView, "deploy_target_snippet.json"),
       user: render_one(deployment.user, UserView, "user_snippet.json"),
       inserted_at: deployment.inserted_at,
-      status: deployment.status
+      status: deployment.status,
+      is_current_deployment: deployment.is_current_deployment
     }
     # |> Map.merge(maybe_render_relationship(deployment, :stanza_revisions, StanzaRevisionView, "stanza_revision.json"))
   end

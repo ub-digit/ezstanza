@@ -576,7 +576,7 @@ defmodule Ezstanza.Stanzas do
       {"stanza_id", value}, dynamic ->
         dynamic([s_r], ^dynamic and s_r.stanza_id == ^value)
       {"is_current_revision", true}, dynamic ->
-        dynamic([s_r, s], ^dynamic and s_r.id == s.current_stanza_revision_id)
+        dynamic([s_r, s], ^dynamic and s_r.id == s.current_stanza_revision_id) # TODO: use alias?
       {"is_current_revision", false}, dynamic ->
         dynamic([s_r, s], ^dynamic and s_r.id != s.current_stanza_revision_id)
       {"disabled", value}, dynamic ->

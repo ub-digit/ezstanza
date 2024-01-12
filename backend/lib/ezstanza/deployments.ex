@@ -60,7 +60,8 @@ defmodule Ezstanza.Deployments do
       preload: [
         deploy_target: d_t,
         user: u
-      ]
+      ],
+      select_merge: %{is_current_deployment: fragment("? = ?", d.id, d_t.current_deployment_id)}
   end
 
   @doc """
@@ -90,6 +91,8 @@ defmodule Ezstanza.Deployments do
   defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
   defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
   defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s], s.updated_at)]
+  defp dynamic_order_by("status"), do: [asc: dynamic([s], s.status)]
+  defp dynamic_order_by("status_desc"), do: [desc: dynamic([s], s.status)]
 
   defp dynamic_order_by(_), do: []
 
@@ -110,6 +113,12 @@ defmodule Ezstanza.Deployments do
         dynamic([user: u], ^dynamic and u.id == ^value)
       {"user_ids", value}, dynamic ->
         dynamic([user: u], ^dynamic and u.id in ^value)
+      {"status", value}, dynamic ->
+        dynamic([d], ^dynamic and d.status == ^value)
+      {"is_current_deployment", true}, dynamic ->
+        dynamic([d, deploy_target: d_t], ^dynamic and d.id == d_t.current_deployment_id)
+      #{"is_current_deployment", false}, dynamic ->
+      #  dynamic([deploy_target: d_t], ^dynamic and d.id != d_t.current_deployment_id)
       {_, _}, dynamic ->
         dynamic
     end)

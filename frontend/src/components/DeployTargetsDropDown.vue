@@ -1,6 +1,5 @@
 <script>
 import {toRaw, ref, inject} from 'vue'
-import DropDown from 'primevue/dropdown'
 import MultiSelect from 'primevue/multiselect'
 
 export default {
@@ -35,7 +34,6 @@ export default {
     }
   },
   components: {
-    DropDown,
     MultiSelect
   }
 }
