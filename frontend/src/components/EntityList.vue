@@ -92,8 +92,6 @@ export default {
       defaultSortOrder: defaultSortOrder.value
     })
 
-    const expandableRows = computed(() => context.slots.expansion !== undefined)
-
     const filters = toRef(props, 'filters')
     const { userColumnAttributes, userMultiSelectAttributes } = props.userColumn ?
       UseUserColumn({ filters, revisioned: props.revisioned }) :
@@ -149,7 +147,6 @@ export default {
       onDeleteSelectedEntities,
       dialogBreakpoints,
       loadEntitiesUnpaginated,
-      expandableRows,
       filters,
       //userField,
       //userFilterField,

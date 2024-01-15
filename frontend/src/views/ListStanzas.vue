@@ -4,8 +4,7 @@ import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
 import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
-//import ConfigsDropDown from '@/components/ConfigsDropDown.vue'
-import DeployTargetsDropDown from '@/components/DeployTargetsDropDown.vue'
+import MultiSelect from 'primevue/multiselect'
 import AutoComplete from 'primevue/autocomplete'
 import CustomAutoComplete from '@/components/CustomAutoComplete.vue'
 import { FilterMatchMode } from 'primevue/api'
@@ -67,6 +66,20 @@ export default {
       }
     }
 
+    const deployTargetOptions = ref([])
+    api.deploy_targets.list().then(result => {
+      deployTargetOptions.value = result.data.map(
+        deployTarget => {
+          let id = deployTarget.current_deployment ?
+            deployTarget.current_deployment.id : -1;
+          return {
+            name: deployTarget.name,
+            id: id
+          }
+        }
+      )
+    })
+
     return {
       filterColumns,
       filters,
@@ -74,15 +87,16 @@ export default {
       tagSuggestions,
       searchTags,
       FilterMatchMode,
-      deploymentsfilterMatchModeOptions
+      deploymentsfilterMatchModeOptions,
+      deployTargetOptions
     }
   },
   components: {
     EntityList,
     Column,
     StanzaCurrentDeployment,
-    DeployTargetsDropDown, //TODO: UsersDropDown?
     CustomAutoComplete,
+    MultiSelect,
     Button,
     Tag
   }
@@ -115,12 +129,14 @@ export default {
       :filterMatchModeOptions="deploymentsfilterMatchModeOptions"
     >
       <template #filter="{filterModel, filterCallback}">
-        <DeployTargetsDropDown
+        <MultiSelect
           placeholder="Any"
           class="p-column-filter"
           v-model="filterModel.value"
-          optionValue="id"
           @change="filterCallback()"
+          :options="deployTargetOptions"
+          optionLabel="name"
+          optionValue="id"
         />
       </template>
       <template #body="{ data }">

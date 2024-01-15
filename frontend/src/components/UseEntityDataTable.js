@@ -1,19 +1,32 @@
-import { ref, unref, watch, onMounted, inject } from 'vue'
+import { computed, ref, unref, watch, onMounted, inject, reactive } from 'vue'
 import { FilterMatchMode } from 'primevue/api'
 
 // TODO: Check if pageSize need to be reactive
 // TODO: return prop with bindlable attributes, defaultSortField, pageSize etc?
-export default function useEntityDataTable({ lazy, loading, params, entityNamePluralized, pageSize, defaultSortField, defaultSortOrder }) {
+export default function useEntityDataTable({
+  lazy,
+  params,
+  entityNamePluralized,
+  entityLabelPluralized,
+  defaultPageSize,
+  defaultSortField,
+  defaultSortOrder
+}) {
   const lazyParams = ref({}) //TODO: Try replace with reactive
 
   const api = inject('api')
+
+  const loading = ref(false)
+  const sortField = ref(defaultSortField)
+  const sortOrder = ref(defaultSortOrder)
+  const pageSize = ref(defaultPageSize)
 
   // TODO: Not quite sure why using onMounted here
   onMounted(() => {
     // TODO: rename lazyParams
     // Need to put these in watcher?
     lazyParams.value.page = 1
-    lazyParams.value.size = pageSize
+    lazyParams.value.size = defaultPageSize
     lazyParams.value.order_by = getOrderBy(defaultSortField, defaultSortOrder)
     if (params) {
       watch(params, (newParams) => {
@@ -90,6 +103,7 @@ export default function useEntityDataTable({ lazy, loading, params, entityNamePl
     })
   }
 
+  // TODO: loading???
   const loadEntitiesUnpaginated = async () => {
     // @todo: alternatively { ...lazyParams.value } ?
     let params = Object.assign({}, unref(lazyParams))
@@ -127,13 +141,38 @@ export default function useEntityDataTable({ lazy, loading, params, entityNamePl
       maybeLoadEntities()
     }
   })
+
+  // Hide paginator if all entities are currently displayed
+  // TODO: should return from useEntityDataTable?
+  const paginator = computed(() => {
+    // Feature not a but that page size not reacative
+    // since don't want to hide pagination if first
+    // visiable even if increasing page size to fit all
+    // entities
+    return totalEntities.value && totalEntities.value > defaultPageSize
+  })
+
+  //TODO: works with reactive, but not plain object, the same does not apply for events, weird
+  const dataTableProperties = reactive({
+    sortField,
+    sortOrder,
+    paginator,
+    loading,
+    totalRecords: totalEntities,
+    lazy,
+    paginatorTemplate: "FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown",
+    currentPageReportTemplate: `Showing {first} to {last} of {totalRecords} ${entityLabelPluralized}`
+  })
+
   //TODO: Don't return lazyParams, probably never needed?
   return {
     entities,
     totalEntities,
     loadEntitiesUnpaginated,
     lazyParams,
-    dataTableEvents
+    pageSize, //TODO: Or rows??
+    dataTableEvents,
+    dataTableProperties
   }
 }
 

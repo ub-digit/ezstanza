@@ -2,17 +2,18 @@
 import { ref, unref, toRaw, inject, watch, computed, onUnmounted, onMounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
 import DeploymentStatus from '@/components/DeploymentStatus.vue'
+import DeploymentStanzaRevisions from '@/components/DeploymentStanzaRevisions.vue'
 import Tooltip from '@/components/Tooltip.vue'
 import DialogButton from '@/components/DialogButton.vue'
 import Toolbar from 'primevue/toolbar'
 import Panel from 'primevue/panel'
-import DropDown from 'primevue/dropdown'
+import Dropdown from 'primevue/dropdown'
 import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import { FilterMatchMode } from 'primevue/api'
-import UseEntityDataTable from '@/components/UseEntityDataTable.js'
+import useEntityDataTable from '@/components/UseEntityDataTable.js'
 //import StanzaRevisionSelect from '@/components/StanzaRevisionSelect.vue'
 import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 import { useForm } from 'vee-validate'
@@ -31,25 +32,19 @@ export default {
   },
   setup() {
 
-    const loading = ref(false)
+    //const loading = ref(false)
     const deploying = ref(false) // Bit of a hack
     const dayjs = inject('dayjs')
     const api = inject('api')
     const { deployment: deploymentChannel } = inject('channels')
     const dt = ref() //TODO: Unused, remove?
 
-    //const deployments = ref([])
-    //const totalDeployments = ref(0)
-    const pageSize = ref(10)
-    const defaultSortField = ref('inserted_at')
-    const defaultSortOrder = ref(-1)
-
     const dialogBreakpoints = ref({
       '960px': '75vw',
       '640px': '90vw'
     })
 
-    //TODO: VDropDown?
+    //TODO: VDropdown?
     const {handleSubmit, isSubmitting, setFieldValue, useFieldModel} = useForm({
       //validationSchema: schema,
       initialValues: {
@@ -150,16 +145,17 @@ export default {
 
     const {
       entities: deployments,
-      totalEntities: totalDeployments,
       dataTableEvents: dataTableEvents,
-      lazyParams: lazyParams
-    } = UseEntityDataTable({
+      dataTableProperties: dataTableProperties,
+      lazyParams: lazyParams,
+      pageSize: pageSize
+    } = useEntityDataTable({
       lazy: true,
-      loading: loading,
       entityNamePluralized: 'deployments',
-      pageSize: pageSize.value,
-      defaultSortField: defaultSortField.value,
-      defaultSortOrder: defaultSortOrder.value
+      entityLabelPluralized: 'deployments',
+      defaultPageSize: 10,
+      defaultSortField: 'inserted_at',
+      defaultSortOrder: -1
     })
 
     // Hack:
@@ -181,6 +177,8 @@ export default {
       user_id: {value: null, matchMode: FilterMatchMode.EQUALS}
     })
 
+
+    // TODO: This is unused, review and perhaps remove?
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
       { label: 'Equals', value: FilterMatchMode.EQUALS }
@@ -221,14 +219,6 @@ export default {
       }
     })
 
-    // Hide paginator if all entities are currently displayed
-    const showPaginator = computed(() => {
-      // Feature not a but that page size not reacative
-      // since don't want to hide pagination if first
-      // visiable even if increasing page size to fit all
-      // entities
-      return totalDeployments.value > pageSize.value
-    })
     /*
     const onCreateDeploymentDialogClose = () => {
       resetForm()
@@ -256,13 +246,10 @@ export default {
       deployTargets,
       deployments,
       statuses,
-      totalDeployments,
       pageSize,
-      showPaginator,
       filters,
       dataTableEvents,
-      defaultSortField,
-      defaultSortOrder,
+      dataTableProperties,
       dayjs,
       onSubmit,
       isSubmitting,
@@ -274,8 +261,7 @@ export default {
       deleteStanzaRevisionsParams,
       deleteStanzaRevisions,
       deploying,
-      isCurrentDeployment,
-      loading
+      isCurrentDeployment
     }
     /* TODO:
        - Get deploy targets
@@ -285,13 +271,14 @@ export default {
   },
   components: {
     Toolbar,
-    DropDown,
+    Dropdown,
     Checkbox,
     DataTable,
     Column,
     ColorChip,
     Dialog,
     DeploymentStatus,
+    DeploymentStanzaRevisions,
     Tooltip,
     DialogButton,
     Panel,
@@ -305,7 +292,7 @@ export default {
     <form @submit="onSubmit">
       <div class="field">
         <label for="deploy-target" class="block text-900 font-medium mb-2">Deploy target</label>
-        <DropDown
+        <Dropdown
           :disabled="deploying"
           id="deploy-target"
           v-model="deployTarget"
@@ -334,23 +321,16 @@ export default {
   <!-- TODO: Make deployed config revision viewable in UI? and/or difference from current? -->
   <DataTable
     :value="deployments"
-    :lazy="true"
-    :paginator="showPaginator"
-    :rows="pageSize"
     ref="dt"
     dataKey="id"
-    :sortField="defaultSortField"
-    :sortOrder="defaultSortOrder"
     v-on="dataTableEvents"
-    filterDisplay="row"
+    v-bind="dataTableProperties"
+    v-model:rows="pageSize"
     v-model:filters="filters"
+    filterDisplay="row"
     resonsiveLayout="scroll"
-    :totalRecords="totalDeployments"
-    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    :rowsPerPageOptions="[10,25,50]"
-    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
+    :rowsPerPageOptions="[10,25,50,100]"
     :rowClass="(data) => !data.is_current_deployment ? 'text-500' : null"
-    :loading="loading"
   >
     <template #header>
       <div class="field-checkbox">
@@ -376,7 +356,7 @@ export default {
       :showFilterMenu="false"
     >
       <template #filter="{filterModel, filterCallback}">
-        <DropDown
+        <Dropdown
           placeholder="Any"
           v-model="filterModel.value"
           :options="statuses"
@@ -405,7 +385,7 @@ export default {
       :sortable="false"
     >
       <template #filter="{filterModel, filterCallback}">
-        <DropDown
+        <Dropdown
           placeholder="Any"
           v-model="filterModel.value"
           :options="deployTargets"
@@ -414,6 +394,23 @@ export default {
           @change="filterCallback()"
           class="p-column-filter"
         />
+      </template>
+    </Column>
+    <Column style="min-with: 8rem">
+      <template #body="{ data }">
+        <Tooltip text="View stanzas" v-slot="events">
+          <DialogButton
+            v-on="events"
+            icon="pi pi-file"
+            class="p-button-text"
+            :breakpoints="dialogBreakpoints"
+          >
+            <template #header>
+              Deployment stanzas
+            </template>
+            <DeploymentStanzaRevisions :deployment="data"/>
+          </DialogButton>
+        </Tooltip>
       </template>
     </Column>
   </DataTable>

@@ -42,10 +42,11 @@ export default {
   <Button v-bind="$attrs" @click="onOpen"/>
   <Dialog
     v-model:visible="visible"
-    :modal="true"
     class="p-confirm-dialog"
-    :closeOnEscape="true"
     :breakpoints="breakpoints"
+    modal
+    closeOnEscape
+    maximizable
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotProps">
       <slot v-if="slotProps" :name="name" v-bind="slotProps" />
