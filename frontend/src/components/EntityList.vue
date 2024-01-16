@@ -7,11 +7,12 @@ import Toolbar from 'primevue/toolbar'
 import MultiSelect from 'primevue/multiselect'
 import ConfirmDialogButton from '@/components/ConfirmDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
-import UseEntityDataTable from '@/components/UseEntityDataTable.js'
+import useEntityDataTable from '@/components/UseEntityDataTable.js'
 import UseUserColumn from '@/components/UseUserColumn.js'
 import CreateEntityButton from '@/components/CreateEntityButton.vue'
 
 export default {
+  //inhertiAttrs: false, // for v-bind="$attrs", multiple v-bind https://github.com/vuejs/rfcs/issues/550
   props: {
     createRouteName: {
       type: String,
@@ -73,24 +74,30 @@ export default {
 
     const dayjs = inject('dayjs')
     const api = inject('api')
-    const defaultSortField = toRef(props, 'defaultSortField')
-    const defaultSortOrder = ref(-1) //TODO: Use prop?
-    const loading = ref(false)
-    //const entities = ref([])
-    //const totalEntities = ref()
-    const selectedEntities = ref([])
-    const pageSize = ref(10)
+    const selection = ref([])
 
+    const entityLabel = computed(() => props.entityName.replace('_', ' '))
+    const entityLabelPluralized = computed(() => props.entityNamePluralized.replace('_', ' '))
     const params = toRef(props, 'params') // TODO: WTF?
-    const { entities, totalEntities, loadEntitiesUnpaginated, dataTableEvents } = UseEntityDataTable({
+
+    const {
+      entities,
+      dataTableEvents,
+      dataTableProperties,
+      pageSize,
+      totalRecords,
+      loadEntitiesUnpaginated,
+    } = useEntityDataTable({
       lazy: props.lazy,
-      loading: loading,
       params: params,
       entityNamePluralized: props.entityNamePluralized,
-      pageSize: pageSize.value,
-      defaultSortField: defaultSortField.value,
-      defaultSortOrder: defaultSortOrder.value
+      entityNamePluralized: entityLabelPluralized.value, //TODO ??
+      defaultPageSize: 10, //@TODO: prop with default value?
+      defaultSortField: props.defaultSortField,
+      defaultSortOrder: -1 //@TODO: prop with default value?
     })
+
+    console.log('default sort field', props.defaultSortField)
 
     const filters = toRef(props, 'filters')
     const { userColumnAttributes, userMultiSelectAttributes } = props.userColumn ?
@@ -108,9 +115,9 @@ export default {
       // TODO: Delete from selected entities
       api[props.entityNamePluralized].delete(entity.id).then(() => {
         entities.value = entities.value.filter((s) => s.id !== entity.id)
-        selectedEntities.value = selectedEntities.value.filter((s) => s.id !== entity.id)
+        selection.value = selection.value.filter((s) => s.id !== entity.id)
         // TODO: Skip if not lazy?
-        totalEntities.value = totalEntities.value - 1 //Maybe need to place this first
+        totalRecords.value = totalRecords.value - 1 //Maybe need to place this first
     }).catch((error) => {
         //TODO: toast with error
       })
@@ -119,38 +126,29 @@ export default {
 
     // @todo: add backend patch operation for bulk deletion?
     const onDeleteSelectedEntities = (close) => {
-      const selectedEntityIds = selectedEntities.value.map((s) => s.id)
+      const selectedEntityIds = selection.value.map((s) => s.id)
       Promise.all(selectedEntityIds.map((id) => api[props.entityNamePluralized].delete(id))).then(() => {
         entities.value = entities.value.filter((s) => !selectedEntityIds.includes(s.id))
-        selectedEntities.value = selectedEntities.value.filter((s) => !selectedEntityIds.includes(s.id))
-        totalEntities.value = totalEntities.value - selectedEntityIds.length // maybe need to place first
+        selection.value = selection.value.filter((s) => !selectedEntityIds.includes(s.id))
+        totalRecords.value = totalRecords.value - selectedEntityIds.length // maybe need to place first
         close()
       }).catch((error) => {
         // @todo: toast with error
       })
     }
 
-    const entityLabel = computed(() => props.entityName.replace('_', ' '))
-    const entityLabelPluralized = computed(() => props.entityNamePluralized.replace('_', ' '))
-
     return {
       dayjs,
       entities,
-      totalEntities,
       pageSize,
-      loading,
-      selectedEntities,
-      defaultSortField,
-      defaultSortOrder,
+      selection,
       dataTableEvents,
+      dataTableProperties,
       onDeleteEntity,
       onDeleteSelectedEntities,
       dialogBreakpoints,
       loadEntitiesUnpaginated,
       filters,
-      //userField,
-      //userFilterField,
-      //userSortField,
       userColumnAttributes,
       userMultiSelectAttributes,
       entityLabel,
@@ -179,7 +177,7 @@ export default {
         class="p-button-danger"
         :breakpoints="dialogBreakpoints"
         @accept="onDeleteSelectedEntities"
-        :disabled="!selectedEntities || !selectedEntities.length"
+        :disabled="!selection || !selection.length"
       >
         <i class="pi pi-exclamation-triangle mr-3 p-confirm-dialog-icon" />
         <template #header>Confirm deletion</template>
@@ -189,21 +187,19 @@ export default {
       </ConfirmDialogButton>
     </template>
   </Toolbar>
+
+  <!-- TODO: v-bind $attrs? -->
   <EntitySelect
     :entities="entities"
-    v-model:selectedEntities="selectedEntities"
-    :pageSize="pageSize"
-    :totalEntities="totalEntities"
-    :loading="loading"
-    :defaultSortField="defaultSortField"
-    :defaultSortOrder="defaultSortOrder"
+    v-model:selection="selection"
+    v-model:pageSize="pageSize"
     v-on="dataTableEvents"
+    v-bind="dataTableProperties"
     :filterDisplay="filterDisplay"
     :filterColumns="filterColumns"
     :filters="filters"
     :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
     :selectable="selectable"
-    :lazy="lazy"
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
     <template #reserved>

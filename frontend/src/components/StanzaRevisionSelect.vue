@@ -27,21 +27,25 @@ export default {
   setup(props, { emit }) {
 
     const dayjs = inject('dayjs')
-    const loading = ref(true)
-    const pageSize = ref(5)
-    const defaultSortField = ref('updated_at')
-    const defaultSortOrder = ref(-1)
-    const { entities, totalEntities, loadEntitiesUnpaginated, dataTableEvents } = UseEntityDataTable({
+
+    const {
+      entities,
+      dataTableEvents,
+      dataTableProperties,
+      loadEntitiesUnpaginated,
+      pageSize
+    } = UseEntityDataTable({
       lazy: true,
-      loading: loading,
       params: props.params,
       entityNamePluralized: 'stanza_revisions',
-      pageSize: pageSize.value,
-      defaultSortField: defaultSortField.value,
-      defaultSortOrder: defaultSortOrder.value
+      entityLabelPluralized: 'stanzas',
+      defaultPageSize: 10,
+      defaultSortField: 'updated_at',
+      defaultSortOrder: -1,
     })
 
-    watch(loading, (newLoading) => {
+    watch(() => dataTableProperties.loading, (newLoading) => {
+      //TODO: This is a little bit fucked since passed in property loading is ignored
       emit('update:loading', newLoading)
     })
 
@@ -60,13 +64,10 @@ export default {
     return {
       dayjs,
       entities,
-      loading,
       pageSize, //?
-      defaultSortField,
-      defaultSortOrder,
-      totalEntities,
       loadEntitiesUnpaginated,
       dataTableEvents,
+      dataTableProperties,
       filters,
       filterColumns,
       userColumnAttributes,
@@ -82,23 +83,19 @@ export default {
 
 </script>
 <template>
-  <!-- v-model instead of v-model:selectedEntities? -->
+  <!-- v-model instead of v-model:selection? -->
   <EntitySelect
     :entities="entities"
-    :selectedEntities="modelValue"
-    @update:selectedEntities="$emit('update:modelValue', $event)"
+    :selection="modelValue"
+    @update:selection="$emit('update:modelValue', $event)"
     :pageSize="pageSize"
-    :totalEntities="totalEntities"
-    :loading="loading"
-    :defaultSortField="defaultSortField"
-    :defaultSortOrder="defaultSortOrder"
     v-on="dataTableEvents"
+    v-bind="dataTableProperties"
     filterDisplay="row"
     :filterColumns="filterColumns"
     :filters="filters"
     :loadEntitiesUnpaginated="loadEntitiesUnpaginated"
     :selectable="true"
-    :lazy="true"
   >
     <template v-for="(_, name) in $slots" v-slot:[name]="slotData"><slot :name="name" v-bind="slotData" /></template>
     <template #reserved>
@@ -122,6 +119,5 @@ export default {
     </template>
   </EntitySelect>
 </template>
-
 <style>
 </style>

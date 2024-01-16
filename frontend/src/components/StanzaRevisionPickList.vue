@@ -5,7 +5,6 @@ import { ref, toRef, inject, watch } from 'vue'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import MultiSelect from 'primevue/multiselect'
-import UseEntityDataTable from '@/components/UseEntityDataTable.js'
 import UseUserColumn from '@/components/UseUserColumn.js'
 import StanzaRevisionSelectDialogButton from '@/components/StanzaRevisionSelectDialogButton.vue'
 import EntitySelect from '@/components/EntitySelect.vue'
@@ -18,8 +17,17 @@ export default {
       type: Array,
       required: true
     },
-    addLabel: {
+    openLabel: {
       type: String
+    },
+    dialogHeader: {
+      type: String
+    },
+    addLabel: {
+      type: String,
+    },
+    removeLabel: {
+      type: String,
     },
     params: {
       tupe: Object,
@@ -29,10 +37,9 @@ export default {
   setup(props, { emit }) {
 
     const dayjs = inject('dayjs')
-    const loading = ref(false)
     const pageSize = ref(5)
-    const defaultSortField = ref('updated_at')
-    const defaultSortOrder = ref(-1)
+    const sortField = ref('updated_at')
+    const sortOrder = ref(-1)
 
     const selectedStanzaRevisions = ref([])
     const addedStanzaRevisions = ref([])
@@ -62,8 +69,6 @@ export default {
       emit('update:modelValue', pickedStanzaRevisions.value)
       */
     }
-
-
     // TODO: Use composable for stanza revisions entity select properties??
 
     const filters = ref({})
@@ -78,7 +83,12 @@ export default {
     }
 
     watch(pickedStanzaRevisions, (newPickedStanzaRevisions) => {
-      params.value['id_not_in'] = pickedStanzaRevisions.value.map(
+      emit('update:modelValue', pickedStanzaRevisions.value)
+    })
+
+    // TODO: This is fucked
+    watch(() => props.modelValue, (newValue) => {
+      params.value['id_not_in'] = newValue.map(
         stanzaRevision => stanzaRevision.id
       ).join(',')
 
@@ -86,15 +96,13 @@ export default {
         delete params.value['id_not_in']
       }
       selectedStanzaRevisions.value = []
-      emit('update:modelValue', pickedStanzaRevisions.value)
     })
 
     return {
       dayjs,
-      loading,
       pageSize,
-      defaultSortField,
-      defaultSortOrder,
+      sortField,
+      sortOrder,
       selectedStanzaRevisions,
       addedStanzaRevisions,
       onAddStanzaRevisions,
@@ -115,16 +123,24 @@ export default {
 
 </script>
 <template>
-  <StanzaRevisionSelectDialogButton class="mb-2" :label="addLabel" :modelValue="addedStanzaRevisions"  @update:modelValue="onAddStanzaRevisions" v-model:selected="selectedStanzaRevisions" :params="params"/>
+  <StanzaRevisionSelectDialogButton
+    class="mb-2"
+    :label="openLabel"
+    :dialogHeader="dialogHeader"
+    :addLabel="addLabel"
+    :modelValue="addedStanzaRevisions"
+    @update:modelValue="onAddStanzaRevisions"
+    v-model:selected="selectedStanzaRevisions"
+    :params="params"
+  />
 
   <template v-if="pickedStanzaRevisions.length">
     <EntitySelect
       :entities="pickedStanzaRevisions"
-      v-model:selectedEntities="selectedPickedStanzaRevisions"
+      v-model:selection="selectedPickedStanzaRevisions"
       :pageSize="pageSize"
-      :loading="loading"
-      :defaultSortField="defaultSortField"
-      :defaultSortOrder="defaultSortOrder"
+      :sortField="sortField"
+      :sortOrder="sortOrder"
       filterDisplay="row"
       :filters="filters"
       :selectable="true"
@@ -147,7 +163,7 @@ export default {
         />
       </template>
     </EntitySelect>
-    <Button class="mt-3 mb-2" severity="secondary" @click="removePickedStanzaRevisions" label="Remove"/>
+    <Button class="mt-3 mb-2" severity="secondary" @click="removePickedStanzaRevisions" :label="removeLabel"/>
   </template>
 </template>
 

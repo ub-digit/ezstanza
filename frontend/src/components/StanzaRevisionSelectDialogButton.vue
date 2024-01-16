@@ -5,6 +5,7 @@ import { ref, toRaw, reactive, inject } from 'vue'
 
 import StanzaRevisionSelect from '@/components/StanzaRevisionSelect.vue'
 
+//TODO: or selection for consistency?
 export default {
   emits: ['update:modelValue', 'update:selected'],
   inheritAttrs: false,
@@ -18,7 +19,15 @@ export default {
     },
     label: {
       type: String,
-      default: "Add stanza revisions"
+      default: "Select stanzas"
+    },
+    addLabel: {
+      type: String,
+      default: "Add"
+    },
+    dialogHeader: {
+      type: String,
+      default: "Select stanzas"
     },
     modelValue: {
       type: Array,
@@ -68,7 +77,7 @@ export default {
   <Button @click="openDialog" v-bind="$attrs" :label="label"/>
   <Dialog modal closable closeOnEscape v-model:visible="dialogVisible" class="p-confirm-dialog" :breakpoints="breakpoints">
     <template #header>
-      Select stanza revisions
+      {{ dialogHeader }}
     </template>
 
     <template #default>
@@ -77,10 +86,16 @@ export default {
         :modelValue="selected"
         @update:modelValue="$emit('update:selected', $event)"
         v-model:loading="loading"
-      />
+      >
+        <template #expansion="{ data }">
+          <div class="grid">
+            <pre class="col-12">{{ data.body }}</pre>
+          </div>
+        </template>
+      </StanzaRevisionSelect>
     </template>
    <template #footer>
-      <Button label="Add" @click="onAddStanzaRevisions" :autofocus="true" :disabled="loading"/>
+      <Button :label="addLabel" @click="onAddStanzaRevisions" :autofocus="true" :disabled="loading || !selected.length"/>
     </template>
   </Dialog>
 </template>

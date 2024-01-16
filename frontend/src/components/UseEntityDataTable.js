@@ -84,7 +84,7 @@ export default function useEntityDataTable({
   }
 
   const entities = ref([])
-  const totalEntities = ref(null)
+  const totalRecords = ref(null)
 
   const loadEntities = (params) => {
     loading.value = true
@@ -98,7 +98,7 @@ export default function useEntityDataTable({
     // TODO: Error handling/toast
     api[entityNamePluralized].list(params).then(result => {
       entities.value = result.data
-      totalEntities.value = 'total' in result? result.total : result.data.length
+      totalRecords.value = 'total' in result? result.total : result.data.length
       loading.value = false
     })
   }
@@ -116,7 +116,7 @@ export default function useEntityDataTable({
   const maybeLoadEntities = () => {
     if (
       lazy && //TODO: Maybe don't need this check?
-      (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalEntities.value &&
+      (lazyParams.value.size * (lazyParams.value.page - 1) + entities.value.length) < totalRecords.value &&
       entities.value.length < lazyParams.value.size
     ) {
       loadEntities(lazyParams)
@@ -149,7 +149,7 @@ export default function useEntityDataTable({
     // since don't want to hide pagination if first
     // visiable even if increasing page size to fit all
     // entities
-    return totalEntities.value && totalEntities.value > defaultPageSize
+    return totalRecords.value && totalRecords.value > defaultPageSize
   })
 
   //TODO: works with reactive, but not plain object, the same does not apply for events, weird
@@ -158,7 +158,7 @@ export default function useEntityDataTable({
     sortOrder,
     paginator,
     loading,
-    totalRecords: totalEntities,
+    totalRecords,
     lazy,
     paginatorTemplate: "FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown",
     currentPageReportTemplate: `Showing {first} to {last} of {totalRecords} ${entityLabelPluralized}`
@@ -167,7 +167,7 @@ export default function useEntityDataTable({
   //TODO: Don't return lazyParams, probably never needed?
   return {
     entities,
-    totalEntities,
+    totalRecords,
     loadEntitiesUnpaginated,
     lazyParams,
     pageSize, //TODO: Or rows??

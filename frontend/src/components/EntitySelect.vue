@@ -6,13 +6,15 @@ import InputText from 'primevue/inputtext'
 import Chip from 'primevue/chip'
 import { FilterMatchMode } from 'primevue/api'
 
+//TODO: When getting props from UseEntityDataTable, issues with v-bind etc
+// Duplication of showPaginator and other stuff
 export default {
   props: {
-    defaultSortField: {
+    sortField: {
       type: String,
       required: true
     },
-    defaultSortOrder: {
+    sortOrder: {
       type: Number,
       required: true
     },
@@ -28,15 +30,16 @@ export default {
       type: Array
       // default??
     },
-    totalEntities: {
+    totalRecords: {
       type: Number
     },
-    selectedEntities: {
+    selection: {
       type: Array,
       default: [], //???
     },
     pageSize: {
-      type: Number
+      type: Number,
+      default: 10
     },
     loading: {
       type: Boolean
@@ -57,62 +60,38 @@ export default {
       default: true
     }
   },
-  emits: ['update:selectedEntities', 'sort', 'page', 'filter'],
+  emits: ['update:selection', 'sort', 'page', 'filter'],
   setup(props, context) {
 
-    const defaultSortField = toRef(props, 'defaultSortField')
-    const defaultSortOrder = toRef(props, 'defaultSortOrder')
+    const sortField = toRef(props, 'sortField')
+    const sortOrder = toRef(props, 'sortOrder')
 
     const dt = ref() //TODO: remove??
     const selectAll  = ref(false)
 
     const entities = toRef(props, 'entities')
-    const totalEntities = toRef(props, 'totalEntities')
+    const totalRecords = toRef(props, 'totalRecords')
     const expandedRows = ref([])
 
     const expandableRows = context.slots.expansion !== undefined
 
-    /*
-    // Hack of the century
-    let filtersChanged = false
-
-    // TODO: filtering when all selected?
-    // Watch entities and possibly remove
-    // from selection on filtering
-    // TODO: paginering ballar ur
-    watch(entities, (newEntities) => {
-      if (filtersChanged) {
-        let ids = []
-        for (const entity of newEntities) {
-          ids[entity.id] = true
-        }
-
-        onUpdateSelection(
-          props.selectedEntities.filter(
-            entity => ids[entity.id]
-          ).map(entity => toRaw(entity))
-        )
-        filtersChanged = false
-      }
-    })
-    */
-    const totalEntitiesLength = computed(() => {
-      return props.totalEntities ? props.totalEntities : props.entities.length
+    const totalRecordsLength = computed(() => {
+      return props.totalRecords ? props.totalRecords : props.entities.length
     })
 
-    watch(() => props.selectedEntities, () => {
+    watch(() => props.selection, () => {
       // TODO: Since total entities set depending on lazy in parent component
       // perhaps don't need to use computed property in dt
       // or duplicate computed property here
-      //selectAll.value = props.selectedEntities.length === dt.value.totalRecordsLength
-      selectAll.value = props.selectedEntities.length === totalEntitiesLength.value
+      //selectAll.value = props.selection.length === dt.value.totalRecordsLength
+      selectAll.value = props.selection.length === totalRecordsLength.value
     })
 
     const onUpdateSelection = (newSelectedEntities) => {
       if (props.selectable) {
         //@FIXME map toRaw, to get rid of proxy objects, wtf why does datatable do this??
         context.emit(
-          'update:selectedEntities',
+          'update:selection',
           newSelectedEntities.map(entity => toRaw(entity))
         )
       }
@@ -188,7 +167,7 @@ export default {
       if (event.checked) {
         // If not all entities fit into the first page
         // load all from backend
-        if (entities.value.length < totalEntitiesLength.value) {
+        if (entities.value.length < totalRecordsLength.value) {
           props.loadEntitiesUnpaginated().then(entities => {
             selectAll.value = true
             onUpdateSelection(entities)
@@ -211,20 +190,20 @@ export default {
       // since don't want to hide pagination if first
       // visiable even if increasing page size to fit all
       // entities
-      return totalEntitiesLength.value > props.pageSize
+      return totalRecordsLength.value > props.pageSize
     })
 
     const selectedHeaderText = computed(() => {
-      return `${props.selectedEntities.length}`
+      return `${props.selection.length}`
     })
 
     return {
       entities,
-      totalEntitiesLength,
+      totalRecordsLength,
       expandedRows,
       filters,
-      defaultSortField,
-      defaultSortOrder,
+      sortField,
+      sortOrder,
       onFilter,
       onSort,
       onPage,
@@ -255,20 +234,20 @@ export default {
     :rows="pageSize"
     ref="dt"
     dataKey="id"
-    :sortField="defaultSortField"
-    :sortOrder="defaultSortOrder"
+    :sortField="sortField"
+    :sortOrder="sortOrder"
     @page="onPage($event)"
     @sort="onSort($event)"
     @filter="onFilter($event)"
     :filterDisplay="filterDisplay"
     v-model:filters="filters"
-    :selection="selectedEntities"
+    :selection="selection"
     @update:selection="onUpdateSelection"
     v-model:expandedRows="expandedRows"
     :selectAll="selectAll"
     @select-all-change="onSelectAllChange"
     resonsiveLayout="scroll"
-    :totalRecords="totalEntitiesLength"
+    :totalRecords="totalRecordsLength"
     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :rowsPerPageOptions="[10,25,50]"
     currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entities"
@@ -276,7 +255,7 @@ export default {
     :rowClass="(data) => data.disabled ? 'text-500' : null"
   >
     <Column v-if="selectable" selectionMode="multiple" style="width: 3em">
-      <template v-if="selectedEntities.length" #header>
+      <template v-if="selection.length" #header>
         <Chip class="bg-primary" icon="pi pi-file" :label="selectedHeaderText"/>
       </template>
     </Column>

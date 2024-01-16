@@ -5,6 +5,9 @@ import DeploymentStatus from '@/components/DeploymentStatus.vue'
 import DeploymentStanzaRevisions from '@/components/DeploymentStanzaRevisions.vue'
 import Tooltip from '@/components/Tooltip.vue'
 import DialogButton from '@/components/DialogButton.vue'
+import StanzaRevisionPickList from '@/components/StanzaRevisionPickList.vue'
+import useEntityDataTable from '@/components/UseEntityDataTable.js'
+import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 import Toolbar from 'primevue/toolbar'
 import Panel from 'primevue/panel'
 import Dropdown from 'primevue/dropdown'
@@ -12,14 +15,9 @@ import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
+import Divider from 'primevue/divider'
 import { FilterMatchMode } from 'primevue/api'
-import useEntityDataTable from '@/components/UseEntityDataTable.js'
-//import StanzaRevisionSelect from '@/components/StanzaRevisionSelect.vue'
-import useOnSubmit from '@/components/UseOnEntityFormSubmit.js'
 import { useForm } from 'vee-validate'
-
-//import StanzaRevisionSelectDialogButton from '@/components/StanzaRevisionSelectDialogButton.vue'
-import StanzaRevisionPickList from '@/components/StanzaRevisionPickList.vue'
 
 import { Socket } from "phoenix"
 //import { useAuth } from '@websanova/vue-auth/src/v3.js'
@@ -32,7 +30,6 @@ export default {
   },
   setup() {
 
-    //const loading = ref(false)
     const deploying = ref(false) // Bit of a hack
     const dayjs = inject('dayjs')
     const api = inject('api')
@@ -53,13 +50,15 @@ export default {
     })
 
     const deployTarget = useFieldModel('deploy_target')
+
+    //const deployTargetT
     var channelRef = null
 
     onMounted(() => {
       console.log('on mounted')
       channelRef = deploymentChannel.on("deployment_status_change", payload => {
         console.log('status change', payload)
-        const deployment = deployments.value.find(deployment => deployment.id === payload.id)
+        const deployment = deployments.value.find(d => d.id === payload.id)
         if (deployment) {
           deployment.status = payload.status
           if (["completed", "failed"].includes(payload.status)) {
@@ -67,6 +66,22 @@ export default {
           }
           // Avoid race condition, ugly temporary? fix
           if (payload.status === "completed") {
+            // TODO: Super mega ugly hack
+            deployment.is_current_deployment = true;
+            const prevCurrentDeployment = deployments.value.find(
+              (d) => {
+                return d.is_current_deployment &&
+                  d.deploy_target.id === deployment.deploy_target.id
+              }
+            )
+            console.log('current old', prevCurrentDeployment)
+            if (prevCurrentDeployment) {
+              prevCurrentDeployment.is_current_deployment = false;
+              // isCurrentDeployment filter is set
+              if (isCurrentDeployment.value) {
+                deployments.value = deployments.value.filter(d => d.id !== prevCurrentDeployment.id)
+              }
+            }
             //TODO: Disable deploy target selection before completed
             fetchDeployTargets()
           }
@@ -125,6 +140,7 @@ export default {
 
       deploymentChannel.push("create_deployment", deployment)
         .receive("ok", payload => {
+          //TODO: Should propbably do this after submitting deploy instead
           addStanzaRevisions.value = []
           editStanzaRevisions.value = []
           deleteStanzaRevisions.value = []
@@ -282,6 +298,7 @@ export default {
     Tooltip,
     DialogButton,
     Panel,
+    Divider,
     //StanzaRevisionSelect,
     StanzaRevisionPickList
   }
@@ -304,16 +321,38 @@ export default {
         />
       </div>
       <template v-if="deployTarget">
-        <div class="field">
-          <label for="add-stanza-revisions" class="block text-900 font-medium mb-2">Add new stanzas to deployment</label>
-          <StanzaRevisionPickList addLabel="Add new" v-model="addStanzaRevisions" :params="addStanzaRevisionsParams"/>
-          <template v-if="deployTarget.current_deployment.id">
-            <label for="edit-stanza-revisions" class="block text-900 font-medium mb-2">Add modified stanzas to deployment</label>
-            <StanzaRevisionPickList addLabel="Add modified" v-model="editStanzaRevisions" :params="editStanzaRevisionsParams"/>
-            <label for="delete-stanza-revisions" class="block text-900 font-medium mb-2">Remove stanzas from deployment</label>
-            <StanzaRevisionPickList addLabel="Remove" v-model="deleteStanzaRevisions" :params="deleteStanzaRevisionsParams"/>
-          </template>
-        </div>
+        <Panel class="mb-4" :header="`Add new stanzas to ${deployTarget.name.toLowerCase()}`">
+          <StanzaRevisionPickList
+            openLabel="Add"
+            dialogHeader="Add new stanzas"
+            addLabel="Add"
+            removeLabel="Remove"
+            v-model="addStanzaRevisions"
+            :params="addStanzaRevisionsParams"
+          />
+        </Panel>
+        <template v-if="deployTarget.current_deployment.id">
+          <Panel class="mb-4" :header="`Add modified stanzas to ${deployTarget.name.toLowerCase()}`">
+            <StanzaRevisionPickList
+              openLabel="Add"
+              dialogHeader="Add modified stanzas"
+              addLabel="Add"
+              removeLabel="Remove"
+              v-model="editStanzaRevisions"
+              :params="editStanzaRevisionsParams"
+            />
+          </Panel>
+          <Panel class="mb-4" :header="`Remove stanzas from ${deployTarget.name.toLowerCase()}`">
+            <StanzaRevisionPickList
+              openLabel="Add"
+              dialogHeader="Add stanzas to be removed"
+              addLabel="Add"
+              removeLabel="Remove"
+              v-model="deleteStanzaRevisions"
+              :params="deleteStanzaRevisionsParams"
+            />
+          </Panel>
+        </template>
         <Button type="submit" :disabled="isSubmitting" label="Deploy"></Button>
       </template>
     </form>
