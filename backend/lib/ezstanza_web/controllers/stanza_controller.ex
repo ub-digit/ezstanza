@@ -23,6 +23,7 @@ defmodule EzstanzaWeb.StanzaController do
 
 
   # Perhaps should also validate first?
+  # TODO: This does not seam to be actually used??
   def normalize_index_params(params) do
     Enum.reduce(params, %{}, fn {key, value}, normalized_params ->
       case {key, value} do
@@ -42,8 +43,6 @@ defmodule EzstanzaWeb.StanzaController do
       end
     end)
   end
-
-
 
   def index(conn, %{"page" => _page, "size" => _size} = params) do
     result = params

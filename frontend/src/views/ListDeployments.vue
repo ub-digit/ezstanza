@@ -67,7 +67,6 @@ export default {
           // Avoid race condition, ugly temporary? fix
           if (payload.status === "completed") {
             // TODO: Super mega ugly hack
-            deployment.is_current_deployment = true;
             const prevCurrentDeployment = deployments.value.find(
               (d) => {
                 return d.is_current_deployment &&
@@ -82,6 +81,7 @@ export default {
                 deployments.value = deployments.value.filter(d => d.id !== prevCurrentDeployment.id)
               }
             }
+            deployment.is_current_deployment = true;
             //TODO: Disable deploy target selection before completed
             fetchDeployTargets()
           }
@@ -193,7 +193,6 @@ export default {
       user_id: {value: null, matchMode: FilterMatchMode.EQUALS}
     })
 
-
     // TODO: This is unused, review and perhaps remove?
     const filterMatchModeOptions = [
       { label: 'Contains', value: FilterMatchMode.CONTAINS },
@@ -229,7 +228,7 @@ export default {
     //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
       if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
-        addStanzaRevisionsParams.value.deployment_id_not_equals = newDeployTarget.current_deployment.id
+        addStanzaRevisionsParams.value.deployment_id_not_equal = newDeployTarget.current_deployment.id
         editStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
         deleteStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
       }

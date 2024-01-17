@@ -45,49 +45,28 @@ export default {
     const addedStanzaRevisions = ref([])
     const selectedPickedStanzaRevisions = ref([])
 
-
     // TODO: try without toRef>
     const params = toRef(props, 'params')
+    const modelValue = toRef(props, 'modelValue')
 
-    /*
-    watch(addedStanzaRevisions, (newAddedStanzaRevisions) => {
-      params.value['id_not_in'] = newAddedStanzaRevisions.map(
-        stanzaRevision => stanzaRevision.id
-      ).join(',')
-      selectedStanzaRevisions.value = []
-    })
-    */
-
-    const pickedStanzaRevisions = ref([])
     const onAddStanzaRevisions = (newAddedStanzaRevisions) => {
-      pickedStanzaRevisions.value = pickedStanzaRevisions.value.concat(newAddedStanzaRevisions)
-      /*
-      params.value['id_not_in'] = pickedStanzaRevisions.value.map(
-        stanzaRevision => stanzaRevision.id
-      ).join(',')
-      selectedStanzaRevisions.value = []
-      emit('update:modelValue', pickedStanzaRevisions.value)
-      */
+      emit('update:modelValue', modelValue.value.concat(newAddedStanzaRevisions))
     }
-    // TODO: Use composable for stanza revisions entity select properties??
 
+    // TODO: Use composable for stanza revisions entity select properties??
     const filters = ref({})
-    //TODO: watcer for pickedStanzaRevions sync id_not_in
     const removePickedStanzaRevisions = () => {
-      pickedStanzaRevisions.value = pickedStanzaRevisions.value.filter( (stanzaRevision) => {
+      let newModelValue = modelValue.value.filter( (stanzaRevision) => {
         return !selectedPickedStanzaRevisions.value.some(
           selectedStanzaRevision => selectedStanzaRevision.id === stanzaRevision.id
         )
       })
       selectedPickedStanzaRevisions.value = []
+      emit('update:modelValue', newModelValue)
     }
 
-    watch(pickedStanzaRevisions, (newPickedStanzaRevisions) => {
-      emit('update:modelValue', pickedStanzaRevisions.value)
-    })
-
     // TODO: This is fucked
-    watch(() => props.modelValue, (newValue) => {
+    watch(modelValue, (newValue) => {
       params.value['id_not_in'] = newValue.map(
         stanzaRevision => stanzaRevision.id
       ).join(',')
@@ -96,7 +75,7 @@ export default {
         delete params.value['id_not_in']
       }
       selectedStanzaRevisions.value = []
-    })
+    }, { immediate: true })
 
     return {
       dayjs,
@@ -106,7 +85,6 @@ export default {
       selectedStanzaRevisions,
       addedStanzaRevisions,
       onAddStanzaRevisions,
-      pickedStanzaRevisions,
       selectedPickedStanzaRevisions,
       filters,
       removePickedStanzaRevisions
@@ -134,9 +112,9 @@ export default {
     :params="params"
   />
 
-  <template v-if="pickedStanzaRevisions.length">
+  <template v-if="modelValue.length">
     <EntitySelect
-      :entities="pickedStanzaRevisions"
+      :entities="modelValue"
       v-model:selection="selectedPickedStanzaRevisions"
       :pageSize="pageSize"
       :sortField="sortField"
