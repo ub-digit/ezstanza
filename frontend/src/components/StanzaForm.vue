@@ -179,13 +179,14 @@ export default {
       // Better way of handling this, cast model module?
       // Are these bound?
       delete values.current_deployments
-      //delete values.publish_in_configs
-      //delete values.include_in_configs
-      //delete values.current_configs
       delete values.revision_user // Unset here or elsewhere?
       delete values.user // Unset here or elsewhere?
       const options = {
-        destination: values.deploy_to_deploy_targets.length ? '/deployments' : null
+        // Removed this, does not work because of timing issues and is also just unexpeced/annoying behavoir
+        // same issue when sent back to list of stanzas, deployment has not been completed and new deployment will
+        // not show up for current stanza, how to fix this?
+        // will somehow globally need to subscribe to deployment events?
+        //destination: values.deploy_to_deploy_targets.length ? '/deployments' : null
       }
       emit('submit', values, context, options)
     })
