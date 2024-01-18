@@ -225,6 +225,14 @@ export default {
     const deleteStanzaRevisions = ref([])
     const deleteStanzaRevisionsParams = ref({})
 
+
+    const deployStanzaRevisionsAdded = computed(() => {
+      console.log('computed run')
+      return addStanzaRevisions.value.length ||
+        editStanzaRevisions.value.length ||
+        deleteStanzaRevisions.value.length
+    })
+
     //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
       if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
@@ -268,6 +276,7 @@ export default {
       dayjs,
       onSubmit,
       isSubmitting,
+      deployStanzaRevisionsAdded,
       dialogBreakpoints,
       addStanzaRevisionsParams,
       addStanzaRevisions,
@@ -298,7 +307,6 @@ export default {
     DialogButton,
     Panel,
     Divider,
-    //StanzaRevisionSelect,
     StanzaRevisionPickList
   }
 }
@@ -352,7 +360,11 @@ export default {
             />
           </Panel>
         </template>
-        <Button type="submit" :disabled="isSubmitting" label="Deploy"></Button>
+        <Button
+          type="submit"
+          :disabled="isSubmitting || !deployStanzaRevisionsAdded"
+          label="Deploy"
+        />
       </template>
     </form>
   </Panel>
