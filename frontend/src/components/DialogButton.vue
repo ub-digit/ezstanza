@@ -7,6 +7,13 @@ export default {
   emits: ['close', 'open'],
   inheritAttrs: false,
   props: {
+    // TODO: Hack to fix overflow issue for datatables
+    // don't really know the root cause and have not found others
+    // who have the same issue!?
+    overflowFix: {
+      type: Boolean,
+      default: false
+    },
     breakpoints: {
       type: Object,
       default: {
@@ -44,6 +51,7 @@ export default {
     v-model:visible="visible"
     class="p-confirm-dialog"
     :breakpoints="breakpoints"
+    :contentStyle="overflowFix ? 'display: block;' : null"
     modal
     closeOnEscape
     maximizable

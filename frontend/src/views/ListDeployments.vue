@@ -453,6 +453,7 @@ export default {
             v-on="events"
             icon="pi pi-file"
             class="p-button-text"
+            :overflowFix="true"
             :breakpoints="dialogBreakpoints"
           >
             <template #header>

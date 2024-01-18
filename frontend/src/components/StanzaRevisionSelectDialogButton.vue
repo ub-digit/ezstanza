@@ -75,7 +75,16 @@ export default {
 </script>
 <template>
   <Button @click="openDialog" v-bind="$attrs" :label="label"/>
-  <Dialog modal closable closeOnEscape v-model:visible="dialogVisible" class="p-confirm-dialog" :breakpoints="breakpoints">
+  <Dialog
+    modal
+    closable
+    closeOnEscape
+    maximizable
+    contentStyle="display: block;"
+    v-model:visible="dialogVisible"
+    class="p-confirm-dialog"
+    :breakpoints="breakpoints"
+  >
     <template #header>
       {{ dialogHeader }}
     </template>
