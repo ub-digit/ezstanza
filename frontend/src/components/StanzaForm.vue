@@ -261,23 +261,11 @@ export default {
       }
     })
 
-    // TODO: break out to computed property includeInConfigsRemoved?
-    /*
-    const stanzaRemovedFromConfig = computed(() => {
-      return configOptions.value.some(configOption => {
-        return configOption.has_stanza_revision
-          && !includeInConfigs.value.some(config => config.id === configOption.id)
-      })
-    })
-    */
-
-    /*
-    watch(stanzaRemovedFromConfig, () => {
-      if(stanzaRemovedFromConfig.value) {
-
+    watch(disabled, (newValue) => {
+      if (newValue) {
+        deployToDeployTargets.value = [];
       }
-    })
-     */
+    }, { immediate: true } );
 
     return {
       //debouncedChange,
@@ -361,11 +349,16 @@ export default {
     <template v-if="deployTargetOptions.length">
       <h5 class="mb-2">Deploy to</h5>
       <div v-for="deployTarget in deployTargetOptions" :key="deployTarget.id" class="field-checkbox">
-        <Checkbox :inputId="`deploy-target-${deployTarget.id}`" name="deployTarget" :value="deployTarget" v-model="deployToDeployTargets"/>
+        <Checkbox
+          :inputId="`deploy-target-${deployTarget.id}`"
+          name="deployTarget"
+          :value="deployTarget"
+          v-model="deployToDeployTargets"
+          :disabled="disabled"
+        />
         <label :for="`deploy-target-${deployTarget.id}`">{{ deployTarget.name }}</label>
       </div>
     </template>
-
 
     <h5 class="mb-2">Disable</h5>
     <div class="field-checkbox">
@@ -375,14 +368,12 @@ export default {
         v-tooltip.right="'Stanza must first be removed from current deployments.'"
         :disabled="true"
         inputId="disabled"
-        name="disabled"
         binary
         v-model="disabled"
       />
       <Checkbox
         v-else
         inputId="disabled"
-        name="disabled"
         binary
         v-model="disabled"
       />
