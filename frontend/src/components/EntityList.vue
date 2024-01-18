@@ -91,7 +91,7 @@ export default {
       lazy: props.lazy,
       params: params,
       entityNamePluralized: props.entityNamePluralized,
-      entityNamePluralized: entityLabelPluralized.value, //TODO ??
+      entityLabelPluralized: entityLabelPluralized.value, //TODO ??
       defaultPageSize: 10, //@TODO: prop with default value?
       defaultSortField: props.defaultSortField,
       defaultSortOrder: -1 //@TODO: prop with default value?
