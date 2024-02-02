@@ -12,8 +12,8 @@ defmodule Ezstanza.Tags do
 
 
   def base_query() do
-    from s in Tag,
-      join: u in assoc(s, :user), as: :user,
+    from t in Tag,
+      join: u in assoc(t, :user), as: :user,
       preload: [user: u]
   end
 
@@ -23,14 +23,14 @@ defmodule Ezstanza.Tags do
     |> where(^dynamic_where(params))
   end
 
-  defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
-  defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
+  defp dynamic_order_by("name"), do: [asc: dynamic([t], t.name)]
+  defp dynamic_order_by("name_desc"), do: [desc: dynamic([t], t.name)]
   defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
   defp dynamic_order_by("user_name_desc"), do: [desc: dynamic([user: u], u.name)]
-  defp dynamic_order_by("inserted_at"), do: [asc: dynamic([s], s.inserted_at)]
-  defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
-  defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
-  defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s], s.updated_at)]
+  defp dynamic_order_by("inserted_at"), do: [asc: dynamic([t], t.inserted_at)]
+  defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([t], t.inserted_at)]
+  defp dynamic_order_by("updated_at"), do: [asc: dynamic([t], t.updated_at)]
+  defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([t], t.updated_at)]
 
   defp dynamic_order_by(_), do: []
 
@@ -38,9 +38,9 @@ defmodule Ezstanza.Tags do
     filter_like = &(String.replace(&1, ~r"[%_]", ""))
     Enum.reduce(params, dynamic(true), fn
       {"name", value}, dynamic ->
-        dynamic([s], ^dynamic and s.name == ^value)
+        dynamic([t], ^dynamic and t.name == ^value)
       {"name_like", value}, dynamic ->
-        dynamic([s], ^dynamic and ilike(s.name, ^"%#{filter_like.(value)}%"))
+        dynamic([t], ^dynamic and ilike(t.name, ^"%#{filter_like.(value)}%"))
       {"user_name", value}, dynamic ->
         dynamic([user: u], ^dynamic and u.name == ^value)
       {"user_name_like", value}, dynamic ->
@@ -75,7 +75,7 @@ defmodule Ezstanza.Tags do
   defp tags_order_by(query, order_by) do
     case order_by do
       "name" ->
-        order_by(query, [s], asc: s.name)
+        order_by(query, [t], asc: t.name)
       "user_name" ->
         order_by(query, [user: u], asc: u.name)
       _ ->
@@ -85,6 +85,7 @@ defmodule Ezstanza.Tags do
 
   # TODO: Generalize, macro?
   def paginate_tags(%{"page" => page, "size" => size} = params) do
+    IO.inspect(params, label: "params")
     list_query(params)
     |> paginate_entries(params)
   end
@@ -104,7 +105,7 @@ defmodule Ezstanza.Tags do
 
   """
   def get_tag(id) do
-    Repo.one(from s in base_query(), where: s.id == ^id)
+    Repo.one(from t in base_query(), where: t.id == ^id)
   end
 
   @doc """
