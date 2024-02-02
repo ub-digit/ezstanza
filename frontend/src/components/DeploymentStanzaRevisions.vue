@@ -1,5 +1,5 @@
 <script>
-import { ref, inject } from 'vue'
+import { ref, reactive, inject } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
@@ -17,7 +17,7 @@ export default {
   setup({ deployment }) {
     const api = inject('api')
     const dayjs = inject('dayjs')
-    const params = ref({
+    const params = reactive({
       deployment_id: deployment.id
     })
 

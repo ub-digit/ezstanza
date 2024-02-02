@@ -62,8 +62,7 @@ export default {
       default: "row"
     },
     params: {
-      type: Object,
-      default: {}
+      type: Object
     },
     lazy: {
       type: Boolean,
@@ -78,7 +77,6 @@ export default {
 
     const entityLabel = computed(() => props.entityName.replace('_', ' '))
     const entityLabelPluralized = computed(() => props.entityNamePluralized.replace('_', ' '))
-    const params = toRef(props, 'params') // TODO: WTF?
 
     const {
       entities,
@@ -89,7 +87,7 @@ export default {
       loadEntitiesUnpaginated,
     } = useEntityDataTable({
       lazy: props.lazy,
-      params: params,
+      params: props.params,
       entityNamePluralized: props.entityNamePluralized,
       entityLabelPluralized: entityLabelPluralized.value, //TODO ??
       defaultPageSize: 10, //@TODO: prop with default value?
