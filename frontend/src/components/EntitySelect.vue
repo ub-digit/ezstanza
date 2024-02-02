@@ -66,7 +66,6 @@ export default {
     const sortField = toRef(props, 'sortField')
     const sortOrder = toRef(props, 'sortOrder')
 
-    const dt = ref() //TODO: remove??
     const selectAll  = ref(false)
 
     const entities = toRef(props, 'entities')
@@ -196,7 +195,6 @@ export default {
     const selectedHeaderText = computed(() => {
       return `${props.selection.length}`
     })
-
     return {
       entities,
       totalRecordsLength,
@@ -211,7 +209,6 @@ export default {
       onUpdateSelection,
       selectAll,
       filterMatchModeOptions,
-      dt,
       expandableRows,
       showPaginator,
       selectedHeaderText
@@ -232,7 +229,6 @@ export default {
     :lazy="lazy"
     :paginator="showPaginator"
     :rows="pageSize"
-    ref="dt"
     dataKey="id"
     :sortField="sortField"
     :sortOrder="sortOrder"
@@ -266,7 +262,6 @@ export default {
         :filterField="column.filterFieldName"
         :sortField="column.filterFieldName"
         :header="column.header"
-        :ref="column.fieldName"
         :showFilterMenu="column.showFilterMenu"
         :filterMatchModeOptions="filterMatchModeOptions"
         :sortable="true"
