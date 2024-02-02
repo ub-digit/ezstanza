@@ -1,6 +1,7 @@
 <script>
 import { useRoute } from 'vue-router'
 import EntityList from '@/components/EntityList.vue'
+import { FilterMatchMode } from 'primevue/api'
 
 export default {
   setup() {
@@ -8,11 +9,8 @@ export default {
       {
         fieldName: 'name',
         filterFieldName: 'name',
-        header: 'Name'
-      }, {
-        fieldName: 'user.name',
-        filterFieldName: 'user_name',
-        header: 'Created by'
+        header: 'Name',
+        defaultFilterMatchMode: FilterMatchMode.CONTAINS
       }
     ]
     return {
