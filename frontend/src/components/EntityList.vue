@@ -97,8 +97,6 @@ export default {
       defaultSortOrder: -1 //@TODO: prop with default value?
     })
 
-    console.log('default sort field', props.defaultSortField)
-
     const filters = toRef(props, 'filters')
     const { userColumnAttributes, userMultiSelectAttributes } = props.userColumn ?
       UseUserColumn({ filters, revisioned: props.revisioned }) :

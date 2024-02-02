@@ -178,7 +178,6 @@ export default {
     //lazyParams.is_current_deployment = false;
     const isCurrentDeployment = ref(true)
     watch(isCurrentDeployment, (newValue) => {
-      console.log('current deployent set', newValue)
       if (newValue) {
         lazyParams.value.is_current_deployment = true
       }
