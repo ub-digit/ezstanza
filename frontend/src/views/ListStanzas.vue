@@ -1,20 +1,24 @@
 <script>
-import { ref, inject } from 'vue'
+import { ref, reactive, inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import EntityList from '@/components/EntityList.vue'
 import Column from 'primevue/column'
-import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
+import Fieldset from 'primevue/fieldset';
 import MultiSelect from 'primevue/multiselect'
+import Dropdown from 'primevue/dropdown'
 import AutoComplete from 'primevue/autocomplete'
-import CustomAutoComplete from '@/components/CustomAutoComplete.vue'
-import { FilterMatchMode } from 'primevue/api'
+import InputText from 'primevue/inputtext'
+import Checkbox from 'primevue/checkbox'
 import Tag from 'primevue/tag'
+import { FilterMatchMode } from 'primevue/api'
+import EntityList from '@/components/EntityList.vue'
+import CustomAutoComplete from '@/components/CustomAutoComplete.vue'
+import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 
 import Button from 'primevue/button'
 
 export default {
   setup() {
-
+    /*
     const filterColumns = ref([
       {
         fieldName: 'name',
@@ -24,16 +28,27 @@ export default {
         filterMatchModes: []
       }
     ])
+    */
+
+    const filterColumns = ref([])
 
     const filters = ref({
       deployment_ids: {
         matchMode: FilterMatchMode.EQUALS,
         value: null
       },
+      disabled: {
+        matchMode: FilterMatchMode.EQUALS,
+        value: null
+      },
       tag_ids: {
         matchMode: FilterMatchMode.EQUALS,
         value: []
-      }
+      },
+      name: {
+        matchMode: FilterMatchMode.CONTAINS,
+        value: null,
+      },
     })
 
     const deploymentsfilterMatchModeOptions = [
@@ -80,15 +95,43 @@ export default {
       )
     })
 
+    const params = reactive({
+      disabled: null,
+      search_query: null
+    })
+    const searchQuery = ref()
+
+    const setSearchQuery = () => {
+      params.search_query = searchQuery.value
+    }
+
+    const isDisabledOptions = ref([
+      {
+        label: 'Any',
+        value: null
+      },
+      {
+        label: 'Yes',
+        value: true
+      }, {
+        label: 'No',
+        value: false
+      }
+    ])
+
     return {
       filterColumns,
       filters,
+      params,
       tags,
       tagSuggestions,
       searchTags,
       FilterMatchMode,
       deploymentsfilterMatchModeOptions,
-      deployTargetOptions
+      deployTargetOptions,
+      isDisabledOptions,
+      searchQuery,
+      setSearchQuery
     }
   },
   components: {
@@ -97,8 +140,12 @@ export default {
     StanzaCurrentDeployment,
     CustomAutoComplete,
     MultiSelect,
+    Dropdown,
+    InputText,
     Button,
-    Tag
+    Checkbox,
+    Tag,
+    Fieldset
   }
 }
 </script>
@@ -112,8 +159,66 @@ export default {
     defaultSortField="updated_at"
     :filterColumns="filterColumns"
     :filters="filters"
+    :params="params"
     :revisioned="true"
   >
+    <template #header>
+      <Fieldset legend="Additional filters" :toggleable="true" :collapsed="true">
+        <div class="field">
+          <label for="disabled" class="block text-900 font-medium mb-2">Disabled</label>
+          <Dropdown
+            placeholder="Any"
+            id="disabled"
+            v-model="params.disabled"
+            :options="isDisabledOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+        <div class="field">
+          <div class="flex flex-column gap-2">
+            <label for="fulltext-search">Fulltext search</label>
+            <InputText
+              style="width: 500px;"
+              id="fulltext-search"
+              v-model="searchQuery"
+              @keydown.enter="setSearchQuery"
+              aria-describedby="fulltext-search-help"
+            />
+            <small id="fulltext-search-help">Search name and stanza content.</small>
+          </div>
+        </div>
+      </Fieldset>
+    </template>
+    <Column
+      field="name"
+      filterField="name"
+      sortField="name"
+      header="Name"
+      :showFilterMenu="false"
+      :sortable="true"
+    >
+      <template #filter="{ filterModel, filterCallback }">
+        <InputText
+          type="text"
+          v-model="filterModel.value"
+          @keydown.enter="filterCallback()"
+          placeholder="Search"
+          class="mb-2"
+        />
+        <!--
+        <Checkbox v-model="fulltextSearch" inputId="fulltext-search" :binary="true" />
+        <label for="fulltext-search" class="ml-2">Include stanza</label>
+        -->
+      </template>
+      <template #body="{ field, data }">
+        {{ data[field] }}
+        <span v-if="data.disabled">
+          (Disabled)
+        </span>
+      </template>
+    </Column>
+
     <Column
       field="revision_id"
       header="Revision id"

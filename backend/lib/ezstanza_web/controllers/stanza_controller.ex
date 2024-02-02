@@ -23,7 +23,6 @@ defmodule EzstanzaWeb.StanzaController do
 
 
   # Perhaps should also validate first?
-  # TODO: This does not seam to be actually used??
   def normalize_index_params(params) do
     Enum.reduce(params, %{}, fn {key, value}, normalized_params ->
       case {key, value} do
@@ -38,6 +37,12 @@ defmodule EzstanzaWeb.StanzaController do
             normalized_params,
             "deployment_ids_not_equal",
             [String.to_integer(id)])
+        {"disabled", "true"} ->
+          Map.put(normalized_params, "disabled", true)
+        {"disabled", "false"} ->
+          Map.put(normalized_params, "disabled", false)
+        {"disabled", _} ->
+          normalized_params
         _ ->
           Map.put(normalized_params, key, value)
       end

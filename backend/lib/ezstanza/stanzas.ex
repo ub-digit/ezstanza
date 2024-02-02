@@ -171,6 +171,8 @@ defmodule Ezstanza.Stanzas do
         dynamic([current_revision_user: u], ^dynamic and u.id in ^value)
       {"id_not_in", value}, dynamic ->
         dynamic([s], ^dynamic and s.id not in ^String.split(value, ",")) # TODO use id_not_in[] param instead
+      {"disabled", value}, dynamic ->
+        dynamic([s], ^dynamic and s.disabled == ^value)
       {_, _}, dynamic ->
         dynamic
     end)

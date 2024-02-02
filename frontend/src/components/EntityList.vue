@@ -184,6 +184,8 @@ export default {
     </template>
   </Toolbar>
 
+  <slot name="header"></slot>
+
   <!-- TODO: v-bind $attrs? -->
   <EntitySelect
     :entities="entities"
