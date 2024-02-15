@@ -20,7 +20,7 @@ defmodule Ezstanza.MixProject do
   def application do
     [
       mod: {Ezstanza.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
