@@ -136,4 +136,22 @@ defmodule Ezstanza.Accounts do
         Argon2.check_pass(user, password)
     end
   end
+
+  # Helper function
+  @doc false
+  def set_user_password(email_or_username, password) do
+    case get_user_by_email_or_username(email_or_username) do
+      nil -> {:error, :user_not_found}
+      user ->
+        case User.change_password_changeset(
+          user,
+          %{"password" => password, "password_confirmation" => password}
+        ) do
+          %Ecto.Changeset{valid?: false} ->
+            {:error, :invalid_password}
+          changeset ->
+            Repo.update(changeset)
+        end
+    end
+  end
 end
