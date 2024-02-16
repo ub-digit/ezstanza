@@ -1,10 +1,8 @@
 export default function useFormSchema(namespace, schema) {
 
-  const schemaEntries = Object.entries(schema)
-
   const initialValues = Object.fromEntries(
-    schemaEntries.map(([fieldName, opts]) => {
-      return [`${namespace}.${fieldName}`, opts.default_value]
+    schema.map((field) => {
+      return [`${namespace}.${field.name}`, field.default_value]
     })
   )
 
@@ -31,14 +29,14 @@ export default function useFormSchema(namespace, schema) {
     min_fraction_digits: "minFractionDigits"
   }
   //TODO: Error handling!?
-  const fieldsSchema = schemaEntries.map(([fieldName, opts]) => {
-    let field = {
-      ...opts,
-      name: `${namespace}.${fieldName}`,
+  const fieldsSchema = schema.map((field) => {
+    let fieldSchema = {
+      ...field,
+      name: `${namespace}.${field.name}`,
       component: {
-        is: componentsMap[opts.component.is],
+        is: componentsMap[field.component.is],
         options: Object.fromEntries(
-          Object.entries(opts.component.options).map(
+          Object.entries(field.component.options).map(
             ([ option, value ]) => {
               return [ componentOptionsMap[option], value ]
             }
@@ -46,10 +44,10 @@ export default function useFormSchema(namespace, schema) {
         )
       }
     }
-    if (opts.required) {
-      field.component.options['rules'] = { required: true } // validateRequired
+    if (field.required) {
+      fieldSchema.component.options['rules'] = { required: true } // validateRequired
     }
-    return field
+    return fieldSchema
   })
 
   const formSchema = {

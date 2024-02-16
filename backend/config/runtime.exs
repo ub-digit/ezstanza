@@ -24,8 +24,8 @@ if config_env() == :prod do
 
 config :ezstanza, Ezstanza.DeploymentProvider.SSH,
   ssh_user_dir: System.get_env("DEPLOYMENT_SSH_USER_DIR"),
-  ezproxy_stanzas_config_file: "/data/ezproxy/config-files/databases.txt", #path/file??
-  ezproxy_stanzas_configs_archive_dir: "/data/ezproxy/configs-archive", #path/file??
+  default_stanzas_file: "/data/ezproxy/ezstanza/stanzas.txt",
+  default_archive_dir: "/data/ezproxy/ezstanza/archive",
   ezproxy_restart_command: "/usr/local/bin/restart-ezproxy-test.sh"
 
 
