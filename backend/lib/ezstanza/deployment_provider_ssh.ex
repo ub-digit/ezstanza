@@ -21,10 +21,17 @@ defmodule Ezstanza.DeploymentProvider.SSH do
       help_text: "SSH user",
       component: :text,
       required: true
-    form_field :path, :string,
-      label: "Path",
-      help_text: "Remote deployment path",
+    form_field :stanzas_file, :string,
+      label: "Stanzas file",
+      help_text: "Remote stanzas file",
       component: :text,
+      default_value: {Ezstanza.DeploymentProvider.SSH, :config, [:default_stanzas_file]},
+      required: true
+    form_field :archive_dir, :string,
+      label: "Archive directory",
+      help_text: "Remote archive directory",
+      component: :text,
+      default_value: {Ezstanza.DeploymentProvider.SSH, :config, [:default_archive_dir]},
       required: true
   end
 
@@ -41,14 +48,33 @@ defmodule Ezstanza.DeploymentProvider.SSH do
     case File.write(tmp_local_config_file, stanzas_config) do
       :ok ->
         restart_command = config(:ezproxy_restart_command)
-        remote_config_file = config(:ezproxy_stanzas_config_file)
+        remote_stanzas_file = options.stanzas_file
+
+        # TODO: How the fuck could this be the
+        # only way of getting local time in elixr
+        # without timex of other external library?
+        local_datetime = Tuple.to_list(:calendar.local_time)
+                         |> Enum.map(fn p ->
+                           Tuple.to_list(p)
+                           |> Enum.map(fn e ->
+                             to_string(e) |> String.pad_leading(2, "0")
+                           end)
+                         end)
+                         |> List.flatten()
+                         |> Enum.join()
+
+        stanzas_filename = Path.basename(options.stanzas_file)
+        remote_archive_file = Path.join(
+          options.archive_dir,
+          "#{local_datetime}.#{stanzas_filename}"
+        )
 
         #TODO: Copy old config if archive dir set
-        archive_dir = config(:ezproxy_stanzas_configs_archive_dir)
         context = sshkit_context(options.user, options.hostname, options.port)
         cleanup = fn -> File.rm!(tmp_local_config_file) end
 
-        with [:ok] <- SSHKit.upload(context, tmp_local_config_file, as: remote_config_file),
+        with [{:ok, _, 0}] <- SSHKit.run(context, "cp #{remote_stanzas_file} #{remote_archive_file}"),
+             [:ok] <- SSHKit.upload(context, tmp_local_config_file, as: remote_stanzas_file),
              [{:ok, _, 0}] <- SSHKit.run(context, restart_command)
         do
           cleanup.()
@@ -66,12 +92,12 @@ defmodule Ezstanza.DeploymentProvider.SSH do
     end
   end
 
-  defp config(key) do
+  def config(key) do
     Application.get_env(@otp_app, __MODULE__)
     |> Keyword.get(key)
   end
 
-  defp config() do
+  def config() do
     Application.get_env(@otp_app, __MODULE__)
   end
 

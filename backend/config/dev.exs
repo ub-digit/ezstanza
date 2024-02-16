@@ -32,8 +32,8 @@ config :ezstanza, Ezstanza.DeploymentProvider.SSH,
   #key_file: "/home/david/.ssh/id_rsa.pem", #System.get_env("EZSTANZA_DEPLOY_SSH_KEY_FILE"),
   #known_hosts_file: "/home/david/.ssh/known_hosts", #System.get_env("EZSTANZA_DEPLOY_KNOWN_HOSTS_FILE"),
   ssh_user_dir: "/home/david/.ssh/ezstanza",
-  ezproxy_stanzas_config_file: "/data/ezproxy/config-files/databases.txt", #path/file??
-  ezproxy_stanzas_configs_archive_dir: "/data/ezproxy/configs-archive", #path/file??
+  default_stanzas_file: "/data/ezproxy/ezstanza/stanzas.txt",
+  default_archive_dir: "/data/ezproxy/ezstanza/archive",
   ezproxy_restart_command: "/usr/local/bin/restart-ezproxy-test.sh"
 
 # ## SSL Support
