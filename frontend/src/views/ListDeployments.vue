@@ -113,7 +113,7 @@ export default {
         stanza_revision_changes:  [],
         stanza_deletions:  [],
         deploy_target_id: values.deploy_target.id,
-        current_deployment_id: values.deploy_target.current_deployment.id
+        current_deployment_id: values.deploy_target.current_deployment ? values.deploy_target.current_deployment.id : null,
       }
 
       const revisionChange = (stanzaRevision) => {
@@ -234,7 +234,7 @@ export default {
 
     //TODO: Find out how to set/get object instead
     watch(deployTarget, (newDeployTarget) => {
-      if (newDeployTarget && newDeployTarget.current_deployment && newDeployTarget.current_deployment.id) {
+      if (newDeployTarget && newDeployTarget.current_deployment) {
         addStanzaRevisionsParams.value.deployment_id_not_equal = newDeployTarget.current_deployment.id
         editStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
         deleteStanzaRevisionsParams.value.deployment_id = newDeployTarget.current_deployment.id
@@ -337,7 +337,7 @@ export default {
             :params="addStanzaRevisionsParams"
           />
         </Panel>
-        <template v-if="deployTarget.current_deployment.id">
+        <template v-if="deployTarget.current_deployment">
           <Panel class="mb-4" :header="`Add modified stanzas to ${deployTarget.name.toLowerCase()}`">
             <StanzaRevisionPickList
               openLabel="Add"

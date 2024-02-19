@@ -38,7 +38,9 @@ export default {
     <Column field="name" header="Name" :sortable="true"/>
     <Column field="current_deployment.inserted_at" header="Last deployment" :sortable="false">
       <template #body="{ data }">
-        {{ dayjs(data.current_deployment.inserted_at).format('L LT') }}
+        <template v-if="data.current_deployment">
+          {{ dayjs(data.current_deployment.inserted_at).format('L LT') }}
+        </template>
       </template>
     </Column>
     <Column field="current_deployment.status" header="Status" :sortable="false"/>
