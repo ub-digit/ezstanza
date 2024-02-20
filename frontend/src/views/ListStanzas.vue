@@ -190,6 +190,7 @@ export default {
         </div>
       </Fieldset>
     </template>
+
     <Column
       field="name"
       filterField="name"
@@ -220,11 +221,19 @@ export default {
     </Column>
 
     <Column
+      field="weight"
+      header="Weight"
+      :sortable="true"
+    >
+    </Column>
+
+    <Column
       field="revision_id"
       header="Revision id"
       :sortable="false"
     >
     </Column>
+
     <Column
       header="Deployments"
       field="current_deployments"

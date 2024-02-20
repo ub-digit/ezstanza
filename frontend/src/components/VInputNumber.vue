@@ -1,6 +1,6 @@
 <script>
 import { useField } from 'vee-validate'
-import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
 export default {
   inheritAttrs: false,
   props: {
@@ -22,7 +22,7 @@ export default {
     }
   },
   components: {
-    InputText
+    InputNumber
   }
 }
 
@@ -31,7 +31,7 @@ export default {
 </script>
 <template>
   <div class="field mb-5" :class="containerClass">
-    <InputText v-model="value" v-bind="$attrs" @blur="handleBlur" :class="{ 'p-invalid': !!errorMessage }"/>
+    <InputNumber v-model="value" v-bind="$attrs" @blur="handleBlur" :class="{ 'p-invalid': !!errorMessage }"/>
     <small class="field-text" v-if="!!errorMessage" :class="{ 'p-error': !!errorMessage }">
       {{ errorMessage }}
     </small>

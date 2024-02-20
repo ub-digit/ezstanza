@@ -9,6 +9,7 @@ import {linter, lintGutter} from '@codemirror/lint'
 
 import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
+import VNumberField from '@/components/VNumberField.vue'
 import VTextareaField from '@/components/VTextareaField.vue'
 import VAutoCompleteField from '@/components/VAutoCompleteField.vue'
 import Checkbox from 'primevue/checkbox'
@@ -290,6 +291,7 @@ export default {
   components: {
     VCodemirrorField,
     VTextField,
+    VNumberField,
     VTextareaField,
     VAutoCompleteField,
     Checkbox,
@@ -326,6 +328,17 @@ export default {
     <label for="body" class="block text-900 font-medium mb-2">Stanza</label>
     <!-- <VCodemirrorField id="body" name="body" :extensions="invalidLineGutter" @change="debouncedChange"/> -->
     <VCodemirrorField containerClass="stanza-editor" id="body" name="body" :extensions="extensions"/>
+
+    <label for="weight" class="block text-900 font-medium mb-2">Weight</label>
+    <VNumberField
+      id="weight"
+      name="weight"
+      :min="-1000"
+      :max="1000"
+      inputStyle="width: 100px"
+      showButtons
+      helpText="Stanzas with a lower weight will appear before those with lower weights when compiled for deployment"
+    />
 
     <label for="log-message" class="block text-900 font-medium mb-2">Log</label>
     <VTextareaField

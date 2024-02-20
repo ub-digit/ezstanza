@@ -29,6 +29,7 @@ defmodule EzstanzaWeb.StanzaRevisionView do
       stanza_id: stanza_revision.stanza_id,
       name: stanza_revision.stanza.name,
       body: stanza_revision.body,
+      weight: stanza_revision.weight, # Need this?
       log_message: stanza_revision.log_message,
       inserted_at: stanza_revision.inserted_at,
       updated_at: stanza_revision.updated_at,

@@ -207,7 +207,7 @@ defmodule Ezstanza.Deployments do
           stanza_ids_delete =
             Map.get(attrs, "stanza_deletions", []) ++
               Enum.map(Map.get(attrs, "stanza_revision_changes", []), &(&1["stanza_id"]))
-        # TODO: Bail out with error if no changes?
+          # TODO: Bail out with error if no changes?
           stanza_revisions = stanza_revisions_remove_by_stanza_ids(
             current_deployment.stanza_revisions,
             stanza_ids_delete
@@ -233,14 +233,6 @@ defmodule Ezstanza.Deployments do
         |> repo.update()
       end
     )
-    #|> Multi.run(
-    #  :updated_deploy_target,
-    #  fn repo, %{deploy_target: deploy_target, persisted_deployment: %Deployment{id: deployment_id}} ->
-    #    IO.inspect("WTF IS THIS NOT RUNNING")
-    #    DeployTargets.change_deploy_target(deploy_target, %{"current_deployment_id" => deployment_id})
-    #    |> repo.update()
-    #  end
-    #)
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:create_deployment_failed)
   end
@@ -251,7 +243,6 @@ defmodule Ezstanza.Deployments do
   #def create_deployment(_attrs) do
   #  {:error, :bad_request_todo}
   #end
-
 
   def create_deployment(_attrs) do
     {:error, :todo_bad_request_osv}

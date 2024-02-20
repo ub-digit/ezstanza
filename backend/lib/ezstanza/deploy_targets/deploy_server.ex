@@ -52,7 +52,9 @@ defmodule Ezstanza.DeployTargets.DeployServer do
     } = deployment
   }, state) do
     provider = Application.fetch_env!(:ezstanza, :deployment_provider)
-    config = Stanzas.stanza_revisions_to_string(stanza_revisions)
+    config = stanza_revisions
+             |> Enum.sort_by(&(&1.weight), :asc)
+             |> Stanzas.stanza_revisions_to_string()
     broadcast_status_change(deployment_id, :deploying)
     case provider.deploy(
       deploy_target.name,

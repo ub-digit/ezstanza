@@ -43,6 +43,13 @@ defmodule EzstanzaWeb.StanzaController do
           Map.put(normalized_params, "disabled", false)
         {"disabled", _} ->
           normalized_params
+        {"weight", weight} ->
+          case Integer.parse(weight) do
+            {value, ""} ->
+              Map.put(normalized_params, "weight", value)
+            _ ->
+              normalized_params
+          end
         _ ->
           Map.put(normalized_params, key, value)
       end

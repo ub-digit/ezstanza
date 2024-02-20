@@ -129,7 +129,8 @@ defmodule Ezstanza.Stanzas do
     end)
   end
 
-  # TOOD: macro for this?
+  # TOOD: macro for this
+  # TODO: desc default instead?
   defp dynamic_order_by("name"), do: [asc: dynamic([s], s.name)]
   defp dynamic_order_by("name_desc"), do: [desc: dynamic([s], s.name)]
   defp dynamic_order_by("user_name"), do: [asc: dynamic([user: u], u.name)]
@@ -140,6 +141,8 @@ defmodule Ezstanza.Stanzas do
   defp dynamic_order_by("inserted_at_desc"), do: [desc: dynamic([s], s.inserted_at)]
   defp dynamic_order_by("updated_at"), do: [asc: dynamic([s], s.updated_at)]
   defp dynamic_order_by("updated_at_desc"), do: [desc: dynamic([s], s.updated_at)]
+  defp dynamic_order_by("weight"), do: [asc: dynamic([current_revision: c_r], c_r.weight)]
+  defp dynamic_order_by("weight_desc"), do: [desc: dynamic([current_revision: c_r], c_r.weight)]
 
   defp dynamic_order_by(_), do: []
 
@@ -321,11 +324,11 @@ defmodule Ezstanza.Stanzas do
             current_stanza_revision = Repo.get(StanzaRevision, revision_id)
             # Normalize stanza, or leave as is, option?
             attrs = Map.update(attrs, "body", "", &StanzaParser.normalize_string/1)
-            case StanzaRevision.changeset(current_stanza_revision, attrs) do
-              %Changeset{changes: %{body: _}} ->
-                # Stanza body has changed, create new revision
+            revision_changeset = StanzaRevision.changeset(current_stanza_revision, attrs)
+            if Changeset.changed?(revision_changeset, :body) or Changeset.changed?(revision_changeset, :weight) do
+                # Stanza revision has changed, create new revision
                 repo.insert(StanzaRevision.changeset(%StanzaRevision{}, attrs))
-              _ ->
+            else
                 # Else return current revision
                 {:ok, current_stanza_revision}
             end
@@ -356,6 +359,7 @@ defmodule Ezstanza.Stanzas do
             new_tag_ids = Enum.map(tags, &(&1.id)) |> Enum.sort()
             if current_tag_ids != new_tag_ids do
               # TODO: How get ecto type default value?
+              # TODO2: This will probably not set the correct time, check!
               Changeset.change(
                 changeset,
                 updated_at: %{NaiveDateTime.utc_now() | microsecond: {0, 0}}
