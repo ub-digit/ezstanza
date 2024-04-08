@@ -1,5 +1,5 @@
 <script>
-import { ref, reactive, inject, watch } from 'vue'
+import { ref, reactive, inject, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Column from 'primevue/column'
 import Fieldset from 'primevue/fieldset';
@@ -10,6 +10,8 @@ import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
 import Tag from 'primevue/tag'
 import { FilterMatchMode } from 'primevue/api'
+import { useToast } from 'primevue/usetoast'
+import { ToastSeverity } from 'primevue/api'
 import EntityList from '@/components/EntityList.vue'
 import CustomAutoComplete from '@/components/CustomAutoComplete.vue'
 import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
@@ -28,7 +30,10 @@ export default {
         filterMatchModes: []
       }
     ])
-    */
+     */
+
+    const toast = useToast()
+    const toastTimeout = 3000
 
     const filterColumns = ref([])
 
@@ -119,7 +124,38 @@ export default {
       }
     ])
 
+    const { deployment: deploymentChannel } = inject('channels')
+    let channelRef = null
+    onMounted(() => {
+      channelRef = deploymentChannel.on('deployment_status_change', payload => {
+        if (payload.status === 'completed') {
+          // TODO: Perhaps check user and only notify if deployed by
+          // current user?
+          entityList.value.reload()
+          toast.add({
+            severity: ToastSeverity.INFO,
+            summary: "Deployment successful",
+            detail: "Stanza was successfully deployed",
+            life: toastTimeout
+          })
+        }
+        else if(payload.status === 'failed') {
+          toast.add({
+            severity: ToastSeverity.ERROR,
+            summary: "Deployment failed",
+            detail: "Stanza deployment failed",
+            life: toastTimeout
+          })
+        }
+      })
+    })
+    onUnmounted(() => {
+      deploymentChannel.off('deployment_status_change', channelRef)
+    })
+    const entityList = ref()
+
     return {
+      entityList,
       filterColumns,
       filters,
       params,
@@ -151,6 +187,7 @@ export default {
 </script>
 <template>
   <EntityList
+    ref="entityList"
     createRouteName="CreateStanza"
     editRouteName="EditStanza"
     destinationPath="/stanzas"

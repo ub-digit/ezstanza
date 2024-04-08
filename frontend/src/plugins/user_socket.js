@@ -20,7 +20,6 @@ export default (app) => {
 
   const setupSocket = (token) => {
     if (!socket) {
-      console.log('setting up socket')
       socket = new Socket(APP_CONFIG['backend_socket_url'], {params: {token: token }})
       socket.connect()
       deploymentChannel = socket.channel('deployment', {})
@@ -40,32 +39,20 @@ export default (app) => {
     console.log('loaded', auth.token())
   })
 
-  console.log('authshit', auth)
-
-
   watch(auth.$vm.state, (state, oldState) => {
     //console.log('new state', JSON.stringify(state))
     //console.log('old state', JSON.stringify(oldState))
-
-    console.log('general watcher auth token', auth.token())
   })
 
   if (auth.token()) {
-
-    console.log('token exists', auth)
-    console.log('token exists', auth.token())
-    console.log('state', auth.$vm.state.data)
     setupSocket(auth.token())
   }
   else {
-    console.log('watching')
     watch(auth.$vm.state, (state) => {
-      console.log('settig up socket in watcher', state)
       if (state.authenticated) {
         setupSocket(auth.token())
       }
       else if(socket) {
-        console.log('disconnecting')
         socket.disconnect()
         socket = null
       }

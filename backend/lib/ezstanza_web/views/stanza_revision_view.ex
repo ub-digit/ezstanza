@@ -42,6 +42,7 @@ defmodule EzstanzaWeb.StanzaRevisionView do
   def render("stanza_revision_snippet.json", %{stanza_revision: stanza_revision}) do
     %{
       id: stanza_revision.id,
+      stanza_id: stanza_revision.stanza_id,
       name: stanza_revision.stanza.name,
       is_current_revision: stanza_revision.is_current_revision,
       log_message: stanza_revision.log_message,

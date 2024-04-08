@@ -1,16 +1,15 @@
 <script>
-import { ref, computed, inject } from 'vue'
-import Chip from 'primevue/chip'
+import { ref, inject, reactive, onMounted, onUnmounted } from 'vue'
 import ColorChip from '@/components/ColorChip.vue'
-import useTextClassForBackground from '@/components/UseTextClassForBackground.js'
-
-//import Button from 'primevue/button'
-//import InfoCircleIcon from 'primevue/icons/infocircle'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import OverlayPanel from 'primevue/overlaypanel'
-import SideBar from 'primevue/sidebar'
 import Tag from 'primevue/tag'
+import useTextClassForBackground from '@/components/UseTextClassForBackground.js'
+import { useToast } from 'primevue/usetoast'
+import { ToastSeverity } from 'primevue/api'
 
 export default {
+  emits: ['removed'],
   props: {
     stanzaRevision: {
       type: Object,
@@ -21,63 +20,116 @@ export default {
       required: true
     }
   },
-  setup({ deployment }) {
+  setup({ deployment, stanzaRevision }, { emit }) {
     const dayjs = inject('dayjs')
+
+    // TODO: How to set this globally?
+    const toastTimeout = 3000
+    const toast = useToast()
 
     const deploymentStanzaInfo = ref(null)
     const toggleDeploymentStanzaInfo = (event) => {
       deploymentStanzaInfo.value.toggle(event)
     }
-    /*
-    const deploymentConfigInfo = ref(null)
-    const toggleDeploymentConfigInfo = (event) => {
-      deploymentConfigInfo.value.toggle(event)
+
+    const showRemoveConfirmation = ref(false)
+    const visible = ref(true)
+    const removable = ref(true)
+    const removeAndDeployDialogVisible = ref(false)
+    const onRemoveAndDeploy = (event) => {
+      removeAndDeployDialogVisible.value = true
     }
 
-    const deploymentInfo = ref(null)
-    const toggleDeploymentInfo = (event) => {
-      deploymentInfo.value.toggle(event)
-    }
-    const deployedConfigTextColorClass = useTextClassForBackground(deployment.config_revision.color, 'text-black', 'text-white')
-    //TODO: TextClass prefix also when used in ColorChip
-    */
+    // Possible race condition, this is a terrible solution but should work 99.99% of the time
+    const { deployment: deploymentChannel } = inject('channels')
+    let currentDeploymentId = null
+    let channelRef = null
+    onMounted(() => {
+      channelRef = deploymentChannel.on('deployment_status_change', payload => {
+        if(payload.id == currentDeploymentId) {
+          if (payload.status === 'completed') {
+            visible.value = false
+            toast.add({
+              severity: ToastSeverity.INFO,
+              summary: "Deployment successful",
+              detail: `Stanza "${stanzaRevision.name}" was successfully removed from ${deployment.deploy_target.name}`,
+              life: toastTimeout
+            })
+            emit('removed', deployment)
+          }
+          else if(payload.status === 'failed') {
+            toast.add({
+              severity: ToastSeverity.ERROR,
+              summary: "Deployment failed",
+              detail: `Stanza "${stanzaRevision.name}" could not be removed from ${deployment.deploy_target.name} for an unkonwn reason`,
+              life: toastTimeout
+            })
+          }
+        }
+      })
+    })
+    onUnmounted(() => {
+      deploymentChannel.off('deployment_status_change', channelRef)
+    })
 
-    const isDeploymentInfoVisible = ref(false)
+    const onConfirmRemoveAndDeploy = (close) => {
+      const deletionDeployment = {
+        stanza_deletions: [stanzaRevision.stanza_id],
+        deploy_target_id: deployment.deploy_target.id
+      }
+      deploymentChannel.push('create_deployment', deletionDeployment)
+        .receive('ok', payload => {
+          currentDeploymentId = payload.id
+        })
+        .receive('error', err => {
+          if (err.data && err.data.errors) {
+            console.dir(err.data.errors)
+          }
+          else {
+            console.dir(err)
+          }
+        })
+        .receive('timeout', () => console.log('timeout pushing, toast?'))
+      removable.value = false
+      close()
+    }
 
     return {
       dayjs,
       deploymentStanzaInfo,
       toggleDeploymentStanzaInfo,
-      //deploymentConfigInfo,
-      //toggleDeploymentConfigInfo,
-      //deploymentInfo,
-      //toggleDeploymentInfo,
-      //deployedConfigTextColorClass,
-      isDeploymentInfoVisible
+      removable,
+      visible,
+      removeAndDeployDialogVisible,
+      onRemoveAndDeploy,
+      onConfirmRemoveAndDeploy
     }
   },
   components: {
     ColorChip,
     Tag,
     OverlayPanel,
-    SideBar
+    ConfirmDialog
   }
 }
 </script>
 <template>
-  <ColorChip :color="deployment.deploy_target.color">
-    <i
+  <ConfirmDialog v-model:visible="removeAndDeployDialogVisible" @accept="onConfirmRemoveAndDeploy">
+    <template #header>
+      Remove and deploy
+    </template>
+    <span class="p-confirm-dialog-message">
+      Are you sure you want to remove this stanza and perform a new deployment?
+    </span>
+  </ConfirmDialog>
+  <ColorChip :color="deployment.deploy_target.color" :removable="removable" @remove="onRemoveAndDeploy" :visible="visible">
+    <i v-if="removable"
       :class="['p-chip-icon', 'pi', stanzaRevision.is_current_revision ? 'pi-check' : 'pi-info-circle', 'stanza-current-deployment-icon']"
-      @click="isDeploymentInfoVisible = true"
       @mouseover="toggleDeploymentStanzaInfo"
       @mouseleave="toggleDeploymentStanzaInfo">
     </i>
-    <SideBar
-      v-model:visible="isDeploymentInfoVisible"
-      position="right"
-    >
-      ...
-    </SideBar>
+    <i v-else class="p-chip-icon pi pi-spin pi-spinner">
+    </i>
     <span class="p-chip-text">{{ deployment.deploy_target.name }}</span>
   </ColorChip>
   <OverlayPanel ref="deploymentStanzaInfo">
@@ -99,31 +151,6 @@ export default {
           {{ dayjs(stanzaRevision.updated_at).format('L LT') }}
         </span>
       </template>
-      <!--
-      <span class="text-xs">
-        <Tag
-          v-if="deployment.config_revision.is_current_revision"
-          icon="pi pi-check-circle"
-          :class="deployedConfigTextColorClass"
-          :style="{ 'background-color': '#' + deployment.config_revision.color }"
-        >
-          {{ deployment.config_revision.name }} current revision
-        </Tag>
-        <Tag
-          v-else
-          icon="pi pi-book"
-          :class="deployedConfigTextColorClass"
-          :style="{ 'background-color': '#' + deployment.config_revision.color }"
-
-        >
-          {{ deployment.config_revision.name }} revision id: {{ deployment.config_revision.id }}
-        </Tag>
-      </span>
-      <span class="text-xs">
-        Deployed by: {{ deployment.user.name }}<br/>
-        {{ dayjs(deployment.inserted_at).format('L LT') }}
-      </span>
-      -->
     </div>
   </OverlayPanel>
 </template>

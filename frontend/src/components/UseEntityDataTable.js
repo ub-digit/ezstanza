@@ -152,6 +152,10 @@ export default function useEntityDataTable({
     return totalRecords.value && totalRecords.value > defaultPageSize
   })
 
+  const reload = () => {
+    loadEntities(lazyParams)
+  }
+
   //TODO: works with reactive, but not plain object, the same does not apply for events, weird
   const dataTableProperties = reactive({
     sortField,
@@ -172,7 +176,8 @@ export default function useEntityDataTable({
     lazyParams,
     pageSize, //TODO: Or rows??
     dataTableEvents,
-    dataTableProperties
+    dataTableProperties,
+    reload
   }
 }
 

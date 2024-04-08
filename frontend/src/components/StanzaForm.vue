@@ -1,9 +1,8 @@
 <script>
 import {useForm} from 'vee-validate'
-import {ref, toRef, unref, toRaw, inject, computed, watch} from 'vue'
+import {ref, toRef, unref, toRaw, inject, computed, watch, onUnmounted, onMounted } from 'vue'
 import {EditorView, gutter, GutterMarker} from "@codemirror/view"
 import {StateField, StateEffect, RangeSet} from "@codemirror/state"
-
 import {syntaxTree, Language, LanguageSupport} from '@codemirror/language'
 import {linter, lintGutter} from '@codemirror/lint'
 
@@ -11,12 +10,11 @@ import VCodemirrorField from '@/components/VCodemirrorField.vue'
 import VTextField from '@/components/VTextField.vue'
 import VNumberField from '@/components/VNumberField.vue'
 import VTextareaField from '@/components/VTextareaField.vue'
+import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 import VAutoCompleteField from '@/components/VAutoCompleteField.vue'
 import Checkbox from 'primevue/checkbox'
 import Fieldset from 'primevue/fieldset'
-//import StanzaCurrentConfigChip from '@/components/StanzaCurrentConfigChip.vue' //@FIXME: Rename, without Chip?
 
-import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 
 /*
 import {parser} from '../lezer/dist/index.es.js'
@@ -34,7 +32,7 @@ export default {
       required: true
     },
   },
-  setup( { stanza }, { emit }) {
+  setup({ stanza }, { emit }) {
 
     //const stanza = toRef(props, 'stanza')
 
@@ -164,16 +162,6 @@ export default {
     })
 
     const onSubmit = handleSubmit((values, context) => {
-      /*
-      values.configs = values.include_in_configs.map(includeInConfig => {
-        return {
-          id: includeInConfig.id,
-          publish: values.publish_in_configs.some(publishInConfig => {
-            return publishInConfig.id === includeInConfig.id
-          })
-          }
-        })
-       */
       values.deploy_to_deploy_targets = values.deploy_to_deploy_targets.map((deploy_target) => {
         return deploy_target.id
       })
@@ -198,6 +186,7 @@ export default {
     const body = useFieldModel('body')
     const logMessage = useFieldModel('log_message')
     const disabled = useFieldModel('disabled')
+    const currentDeployments = useFieldModel('current_deployments')
 
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, (changed) => {
@@ -244,9 +233,10 @@ export default {
     const deployToDeployTargets = useFieldModel('deploy_to_deploy_targets')
     const deployTargetOptions = computed(() => {
       return deployTargets.value.filter((deployTarget) => {
-        return stanzaRevisionChanged.value || !stanza.current_deployments
-          .filter(deployment => deployment.stanza_revision.is_current_revision)
-          .map((deployment) => {
+        return stanzaRevisionChanged.value ||
+          !currentDeployments.value.filter(
+            deployment => deployment.stanza_revision.is_current_revision
+          ).map((deployment) => {
             return deployment.deployment.deploy_target.id
           }).includes(deployTarget.id)
       })
@@ -268,13 +258,16 @@ export default {
       }
     }, { immediate: true } );
 
+    const onRemovedFromDeployment = (deployment) => {
+      setFieldValue(
+        'current_deployments',
+        currentDeployments.value.filter((currentDeployment) => {
+          return currentDeployment.deployment.id !== deployment.id
+        })
+      )
+    }
+
     return {
-      //debouncedChange,
-      //invalidLineGutter,
-      //publishInConfigs,
-      //includeInConfigs,
-      //publishInConfigOptions,
-      //configOptions,
       deployTargetOptions,
       deployToDeployTargets,
       tags,
@@ -285,7 +278,8 @@ export default {
       isSubmitting,
       stanzaRevisionChanged,
       disabled,
-      stanza
+      onRemovedFromDeployment,
+      currentDeployments
     }
   },
   components: {
@@ -297,7 +291,6 @@ export default {
     Checkbox,
     Fieldset,
     StanzaCurrentDeployment
-    //StanzaCurrentConfigChip
   }
 }
 </script>
@@ -335,7 +328,7 @@ export default {
       name="weight"
       :min="-1000"
       :max="1000"
-      inputStyle="width: 100px"
+      :inputStyle="{ width: '100px' }"
       showButtons
       helpText="Stanzas with a lower weight will appear before those with lower weights when compiled for deployment"
     />
@@ -350,14 +343,17 @@ export default {
       :disabled="!stanzaRevisionChanged"
     />
 
-    <h5 class="mb-2">Deployments</h5>
-    <div class="mb-2 flex flex-column align-items-start gap-2">
-      <StanzaCurrentDeployment
-        v-for="deployment in stanza.current_deployments"
-        :deployment="deployment.deployment"
-        :stanzaRevision="deployment.stanza_revision"
-      />
-    </div>
+    <template v-if="currentDeployments.length">
+      <h5 class="mb-2">Deployments</h5>
+      <div class="mb-2 flex flex-column align-items-start gap-2">
+        <StanzaCurrentDeployment
+          v-for="deployment in currentDeployments"
+          :deployment="deployment.deployment"
+          :stanzaRevision="deployment.stanza_revision"
+          @removed="onRemovedFromDeployment"
+        />
+      </div>
+    </template>
 
     <template v-if="deployTargetOptions.length">
       <h5 class="mb-2">Deploy to</h5>
@@ -377,7 +373,7 @@ export default {
     <div class="field-checkbox">
       <!-- TODO: is inputId required? -->
       <Checkbox
-        v-if="stanza.current_deployments.length"
+        v-if="currentDeployments.length"
         v-tooltip.right="'Stanza must first be removed from current deployments.'"
         :disabled="true"
         inputId="disabled"

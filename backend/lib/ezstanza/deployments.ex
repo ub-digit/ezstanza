@@ -211,7 +211,7 @@ defmodule Ezstanza.Deployments do
           stanza_revisions = stanza_revisions_remove_by_stanza_ids(
             current_deployment.stanza_revisions,
             stanza_ids_delete
-          ) ++ get_stanza_revisions_from_changes(repo, attrs["stanza_revision_changes"])
+          ) ++ get_stanza_revisions_from_changes(repo, Map.get(attrs, "stanza_revision_changes", []))
           {:ok, stanza_revisions}
         else
           case attrs do

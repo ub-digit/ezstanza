@@ -46,13 +46,6 @@ export default {
             default: true
         }
     },
-    /*
-    data() {
-        return {
-            visible: true
-        };
-    },
-    */
     methods: {
         onKeydown(event) {
             if (event.key === 'Enter' || event.key === 'Backspace') {
@@ -61,7 +54,6 @@ export default {
         },
         onClick() {
             this.$emit('remove', event);
-
         }
     },
     computed: {

@@ -1,6 +1,6 @@
 <script>
 // TODO: Could possibly be refactored using dialogButton
-import Dialog from 'primevue/dialog'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Button from 'primevue/button'
 import { ref } from 'vue'
 
@@ -18,7 +18,6 @@ export default {
   },
   setup(_props, { emit }) {
     const visible = ref(false)
-    const loading = ref(false)
 
     const onOpen = () => {
       visible.value = true
@@ -26,11 +25,9 @@ export default {
     }
     const close = () => {
       visible.value = false
-      loading.value = false
       emit('close')
     }
     const onAccept = () => {
-      loading.value = true
       emit('accept', close)
     }
     const onDecline = () => {
@@ -39,7 +36,6 @@ export default {
 
     return {
       visible,
-      loading,
       onOpen,
       onAccept,
       onDecline
@@ -47,25 +43,19 @@ export default {
   },
   components: {
     Button,
-    Dialog
+    ConfirmDialog
   }
 }
 
 </script>
 <template>
   <Button v-bind="$attrs" @click="onOpen"/>
-  <Dialog v-model:visible="visible" :modal="true" class="p-confirm-dialog" :closeOnEscape="true" :breakpoints="breakpoints">
-    <template #header>
-      <slot name="header"></slot>
+  <ConfirmDialog v-model:visible="visible" @open="onOpen" @accept="onAccept" @decline="onDecline">
+    <template v-for="(_, name) in $slots" v-slot:[name]="slotProps">
+      <slot v-if="slotProps" :name="name" v-bind="slotProps" />
+      <slot v-else :name="name" />
     </template>
-    <template #default>
-      <slot></slot>
-    </template>
-    <template #footer>
-      <Button label="No" @click="onDecline" class="p-button-text" :disabled="loading"/>
-      <Button label="Yes" @click="onAccept"  :autofocus="true" :disabled="loading"/>
-    </template>
-  </Dialog>
+  </ConfirmDialog>
 </template>
 
 <style>

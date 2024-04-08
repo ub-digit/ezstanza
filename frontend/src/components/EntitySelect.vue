@@ -195,6 +195,7 @@ export default {
     const selectedHeaderText = computed(() => {
       return `${props.selection.length}`
     })
+
     return {
       entities,
       totalRecordsLength,

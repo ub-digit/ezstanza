@@ -51,13 +51,9 @@ export default {
 
     const deployTarget = useFieldModel('deploy_target')
 
-    //const deployTargetT
     var channelRef = null
-
     onMounted(() => {
-      console.log('on mounted')
       channelRef = deploymentChannel.on("deployment_status_change", payload => {
-        console.log('status change', payload)
         const deployment = deployments.value.find(d => d.id === payload.id)
         if (deployment) {
           deployment.status = payload.status
@@ -73,7 +69,6 @@ export default {
                   d.deploy_target.id === deployment.deploy_target.id
               }
             )
-            console.log('current old', prevCurrentDeployment)
             if (prevCurrentDeployment) {
               prevCurrentDeployment.is_current_deployment = false;
               // isCurrentDeployment filter is set
@@ -95,7 +90,6 @@ export default {
       */
     })
     onUnmounted(() => {
-      console.log('on unmounted')
       deploymentChannel.off("deployment_status_change", channelRef)
       /*
       channel.leave()
@@ -110,10 +104,7 @@ export default {
       /* create:deployment? */
 
       const deployment = {
-        stanza_revision_changes:  [],
-        stanza_deletions:  [],
-        deploy_target_id: values.deploy_target.id,
-        current_deployment_id: values.deploy_target.current_deployment ? values.deploy_target.current_deployment.id : null,
+        deploy_target_id: values.deploy_target.id
       }
 
       const revisionChange = (stanzaRevision) => {
@@ -135,8 +126,6 @@ export default {
           stanzaRevision => stanzaRevision.stanza_id
         )
       }
-
-      console.log('channel request', deployment)
 
       deploymentChannel.push("create_deployment", deployment)
         .receive("ok", payload => {

@@ -69,7 +69,7 @@ export default {
       default: true
     }
   },
-  setup(props, context) {
+  setup(props, { expose }) {
 
     const dayjs = inject('dayjs')
     const api = inject('api')
@@ -85,6 +85,7 @@ export default {
       pageSize,
       totalRecords,
       loadEntitiesUnpaginated,
+      reload
     } = useEntityDataTable({
       lazy: props.lazy,
       params: props.params,
@@ -94,6 +95,9 @@ export default {
       defaultSortField: props.defaultSortField,
       defaultSortOrder: -1 //@TODO: prop with default value?
     })
+
+    // Allows parent compoent to reload entities
+    expose({ reload })
 
     const filters = toRef(props, 'filters')
     const { userColumnAttributes, userMultiSelectAttributes } = props.userColumn ?

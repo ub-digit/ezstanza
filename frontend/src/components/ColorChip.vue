@@ -2,7 +2,6 @@
 import Chip from '@/components/Chip.vue'
 import useTextClassForBackground from '@/components/UseTextClassForBackground.js' //BackgroundColor?
 export default {
-  //inheritAttrs: false, // ??
   props: {
     color: {
       type: String,
