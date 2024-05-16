@@ -26,7 +26,7 @@ config :ezstanza, Ezstanza.DeploymentProvider.SSH,
   ssh_user_dir: System.get_env("DEPLOYMENT_SSH_USER_DIR"),
   default_stanzas_file: "/data/ezproxy/ezstanza/stanzas.txt",
   default_archive_dir: "/data/ezproxy/ezstanza/archive",
-  ezproxy_restart_command: "/usr/local/bin/restart-ezproxy-test.sh"
+  ezproxy_restart_command: "/usr/local/bin/restart-ezproxy.sh"
 
 
   config :ezstanza, origins: [System.get_env("CORS_ORIGIN") || ~r{^http://localhost:\d+$}]
