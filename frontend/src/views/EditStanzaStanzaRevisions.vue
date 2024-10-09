@@ -4,78 +4,21 @@ import { useRoute } from 'vue-router'
 import DataView from 'primevue/dataview'
 import DataViewLayoutOptions from 'primevue/dataviewlayoutoptions'
 import StanzaRevision from '@/components/StanzaRevision.vue'
-
 import { useStanzaRevisionsStore } from '@/stores/stanzaRevisions.js'
 import { storeToRefs } from 'pinia'
 
 export default {
   setup() {
-
     const api = inject('api')
-
     const store = useStanzaRevisionsStore()
-
-    const { currentStanzaRevision } = storeToRefs(store)
-
-    const stanzaRevisionsWithPrevious = computed(() => {
-      const result = []
-
-      if (store.stanzaRevisions.length) {
-        const lastIndex = store.stanzaRevisions.length - 1
-
-        if (lastIndex > 0) {
-          for(let i = 0; i < lastIndex; ++i) {
-            result.push({
-              revision: store.stanzaRevisions[i],
-              previousRevision: store.stanzaRevisions[i + 1]
-            })
-          }
-        }
-        result.push({
-          revision: store.stanzaRevisions[lastIndex]
-        })
-      }
-      return result
-    })
-
+    const { currentStanzaRevision, stanzaRevisionsWithPrevious } = storeToRefs(store)
     const route = useRoute()
-    //const currentStanzaRevision = ref()
-    //const stanzaRevisions = ref([])
     watch(
       () => route.params.id,
       async newId => {
         // Triggered when leaving route, WTF!?!?
         if (typeof newId !== 'undefined') {
-          store.stanzaId = newId
-          await store.fetchStanzaRevisions() //await?
-          /*
-          //TODO: error handling
-          stanzaRevisions.value = []
-          // TODO: Ensure ordered by id?
-          const currentRevisionResult = await api.stanza_revisions.list(
-            {
-              stanza_id: newId,
-              is_current_revision: true
-            }
-          )
-          currentStanzaRevision.value = currentRevisionResult.data[0]
-
-          const result = await api.stanza_revisions.list({ stanza_id: newId, order_by: "id_desc" })
-
-          const lastIndex = result.data.length - 1;
-
-          if (lastIndex > 0) {
-            for(let i = 0; i < lastIndex; ++i) {
-              stanzaRevisions.value.push({
-                revision: result.data[i],
-                previousRevision: result.data[i + 1]
-              })
-            }
-          }
-          stanzaRevisions.value.push({
-            revision: result.data[lastIndex]
-          })
-          */
+          await store.fetchStanzaRevisions(newId) //await?
         }
       },
       { immediate: true }
