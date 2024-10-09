@@ -1,7 +1,6 @@
 <script>
 import Tag from 'primevue/tag'
 import { ref, computed } from 'vue'
-import Inplace from 'primevue/inplace'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import SelectButton from 'primevue/selectbutton'
@@ -66,7 +65,6 @@ export default {
       diffTarget,
       diffDialogVisible,
       stanzaDialogVisible,
-      Inplace
     }
   },
   components: {
@@ -75,7 +73,6 @@ export default {
     SplitButton,
     SelectButton,
     ConfirmDialogButton,
-    Inplace,
     Tag
   }
 }
@@ -85,20 +82,12 @@ export default {
   <div class="flex flex-row" :class="{ 'is-current-revision': stanzaRevision.is_current_revision}">
     <div class="flex flex-auto flex-column p-4 gap-2">
       <span>
-        <Tag>Revision: {{ stanzaRevision.id }}</Tag>
+        <Button size="small" icon="pi pi-file" severity="primary" @click="stanzaDialogVisible = true" :label="'Revision: ' + stanzaRevision.id"/>
       </span>
       <span>{{ stanzaRevision.log_message }}</span>
       <span><span class="revision-user">{{ stanzaRevision.user.name }}</span><span class="revision-updated-at"> updated on {{ stanzaRevision.updated_at }}</span></span>
     </div>
     <div class="flex flex-column justify-content-center p-4 gap-2">
-      <!--
-      <Button
-        size="small"
-        label="View stanza"
-        icon="pi pi-file"
-        severity="secondary"
-        @click="stanzaDialogVisible = true"
-      />
       <Dialog
         v-model:visible="stanzaDialogVisible"
         modal
@@ -107,7 +96,6 @@ export default {
       >
         <pre>{{ stanzaRevision.body }}</pre>
       </Dialog>
-      -->
 
       <Button
         size="small"
@@ -115,7 +103,7 @@ export default {
         label="View changes"
         icon="pi pi-copy"
         severity="secondary"
-        @click="diffDialogVisible = true"
+        @click="diffAgainstPrevious"
       />
       <SplitButton
         v-else
@@ -181,7 +169,6 @@ export default {
 <style>
 .revision-user {
   font-weight: bold;
-
 }
 .revision-updated-at {
   color: rgb(101, 109, 118);
