@@ -14,7 +14,8 @@ import StanzaCurrentDeployment from '@/components/StanzaCurrentDeployment.vue'
 import VAutoCompleteField from '@/components/VAutoCompleteField.vue'
 import Checkbox from 'primevue/checkbox'
 import Fieldset from 'primevue/fieldset'
-
+import { useToast } from 'primevue/usetoast'
+import { ToastSeverity } from 'primevue/api'
 
 /*
 import {parser} from '../lezer/dist/index.es.js'
@@ -161,7 +162,18 @@ export default {
       }
     })
 
+    const toast = useToast();
+    const toastTimeout = 5000
+
     const onSubmit = handleSubmit((values, context) => {
+      values.deploy_to_deploy_targets.forEach((deploy_target) => {
+        toast.add({
+          everity: ToastSeverity.INFO,
+          summary: 'Deployment started',
+          detail: `Deployment of ${values.name} to ${deploy_target.name} started`,
+          life: toastTimeout
+        })
+      })
       values.deploy_to_deploy_targets = values.deploy_to_deploy_targets.map((deploy_target) => {
         return deploy_target.id
       })

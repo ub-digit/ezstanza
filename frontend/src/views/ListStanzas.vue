@@ -33,7 +33,7 @@ export default {
      */
 
     const toast = useToast()
-    const toastTimeout = 3000
+    const toastTimeout = 5000
 
     const filterColumns = ref([])
 

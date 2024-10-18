@@ -24,7 +24,7 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
     create: 'creation',
     update: 'update'
   }[op]
-  const toastTimeout = 3000
+  const toastTimeout = 5000
 
   return function(entity, { setErrors, resetForm }, options = {}) {
     let args = op === 'update' ? [entity.id] : []
@@ -53,7 +53,6 @@ export default function useOnEntityFormSubmit(entityName, entityNamePluralized, 
               deploy_to_deploy_targets: []
             }
           }
-          console.log('form state', formState)
           resetForm(formState)
         }
         else {
