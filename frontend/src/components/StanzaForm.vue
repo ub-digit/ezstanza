@@ -271,12 +271,9 @@ export default {
     }, { immediate: true } );
 
     const onRemovedFromDeployment = (deployment) => {
-      setFieldValue(
-        'current_deployments',
-        currentDeployments.value.filter((currentDeployment) => {
-          return currentDeployment.deployment.id !== deployment.id
-        })
-      )
+      currentDeployments.value = currentDeployments.value.filter((currentDeployment) => {
+        return currentDeployment.deployment.id !== deployment.id
+      })
     }
 
     return {
@@ -360,6 +357,7 @@ export default {
       <div class="mb-2 flex flex-column align-items-start gap-2">
         <StanzaCurrentDeployment
           v-for="deployment in currentDeployments"
+          :key="deployment.deployment.id"
           :deployment="deployment.deployment"
           :stanzaRevision="deployment.stanza_revision"
           @removed="onRemovedFromDeployment"

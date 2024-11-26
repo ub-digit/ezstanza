@@ -39,13 +39,11 @@ export default {
     }
     //const onRemoved??
     const onConfirmRemove = () => {
-      console.log('confirm remove')
       chipIsVisible.value = false
       modalIsVisible.value = false
       emit('removeConfig', currentConfig)
     }
     const onConfirmRemoveAndDeploy = () => {
-      console.log('confirm remove deploy')
       chipIsVisible.value = false
       deploymentFormIsVisible.value = true
     }

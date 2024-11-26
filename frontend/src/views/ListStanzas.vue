@@ -294,6 +294,7 @@ export default {
         <div class="flex flex-column align-items-start gap-2">
           <StanzaCurrentDeployment
             v-for="deployment in data.current_deployments"
+            :key="deployment.deployment.id"
             :deployment="deployment.deployment"
             :stanzaRevision="deployment.stanza_revision"
           />
