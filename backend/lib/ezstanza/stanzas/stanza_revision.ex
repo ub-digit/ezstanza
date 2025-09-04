@@ -46,10 +46,22 @@ defmodule Ezstanza.Stanzas.StanzaRevision do
   end
 
   @doc false
-  def changeset(stanza_revision, attrs) do
+  def changeset(stanza_revision, attrs = %{"skip_validation" => false}) do
     stanza_revision
     |> cast(attrs, [:body, :weight, :log_message, :stanza_id, :user_id])
     |> validate_required([:body, :stanza_id, :user_id]) # :log_message?
     |> validate_stanza(:body)
   end
+
+  @doc false
+  def changeset(stanza_revision, attrs = %{"skip_validation" => true}) do
+    stanza_revision
+    |> cast(attrs, [:body, :weight, :log_message, :stanza_id, :user_id])
+    |> validate_required([:body, :stanza_id, :user_id]) # :log_message?
+  end
+
+  def changeset(stanza_revision, attrs) do
+    changeset(stanza_revision, Map.put(attrs, "skip_validation", false))
+  end
+
 end

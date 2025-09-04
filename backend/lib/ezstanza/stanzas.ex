@@ -241,15 +241,6 @@ defmodule Ezstanza.Stanzas do
     Multi.new()
     |> Multi.insert(:persisted_stanza, Stanza.changeset(%Stanza{}, attrs))
     |> Multi.append(update_persisted_stanza_multi(attrs))
-    #|> Multi.run(:add_to_config_revisions, fn repo, _ ->
-    #  #TODO: Validation! (Also in update_stanza)
-    #  Map.get(attrs, "configs", [])
-    #  |> Enum.filter(&Map.get(&1, "publish"))
-    #  |> Enum.map(&Map.get(&1, "id"))
-    #  |> get_current_config_revisions_with_stanza_revisions(repo)
-    #end)
-    # |> Multi.append(maybe_add_stanza_revision_to_configs_multi(attrs))
-    #|> Multi.append(maybe_deploy_stanza_revision__multi(attrs))#??
     |> Repo.transaction()
     |> handle_entity_multi_transaction_result(:create_stanza_failed)
   end
@@ -323,7 +314,11 @@ defmodule Ezstanza.Stanzas do
           %Stanza{current_stanza_revision_id: revision_id} ->
             current_stanza_revision = Repo.get(StanzaRevision, revision_id)
             # Normalize stanza, or leave as is, option?
-            attrs = Map.update(attrs, "body", "", &StanzaParser.normalize_string/1)
+            attrs = case attrs do
+              %{"skip_validation" => false} ->
+                Map.update(attrs, "body", "", &StanzaParser.normalize_string/1)
+              _ -> attrs
+            end
             revision_changeset = StanzaRevision.changeset(current_stanza_revision, attrs)
             if Changeset.changed?(revision_changeset, :body) or Changeset.changed?(revision_changeset, :weight) do
                 # Stanza revision has changed, create new revision

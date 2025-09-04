@@ -199,6 +199,7 @@ export default {
     const logMessage = useFieldModel('log_message')
     const disabled = useFieldModel('disabled')
     const currentDeployments = useFieldModel('current_deployments')
+    const skip_validation = useFieldModel('skip_validation')
 
     const stanzaRevisionChanged = computed(() => stanza.body !== body.value)
     watch(stanzaRevisionChanged, (changed) => {
@@ -290,6 +291,7 @@ export default {
       isSubmitting,
       stanzaRevisionChanged,
       disabled,
+      skip_validation,
       onRemovedFromDeployment,
       currentDeployments
     }
@@ -399,6 +401,18 @@ export default {
         v-model="disabled"
       />
       <label :for="disabled">Disabled</label>
+    </div>
+
+    <h5 class="mb-2">Skip validation</h5>
+    <div class="field-checkbox">
+      <Checkbox
+        binary
+        inputId="skip-validation"
+	v-model="skip_validation"
+        name="skip_validation"
+
+      />
+      <label :for="disabled">Skip validation when saving</label>
     </div>
 
     <!--
