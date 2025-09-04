@@ -30,7 +30,8 @@ defmodule Ezstanza.StanzaParser do
     "NoHttpsHyphens",
     "NoRedirectPatch",
     "NoX-Forwarded-For",
-    "X-Forwarded-For"
+    "X-Forwarded-For",
+    "NoMetaEZproxyRewriting"
   ]
 
   @option_directive_options_lowercase_map Enum.map(
