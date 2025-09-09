@@ -16,22 +16,51 @@ defmodule Ezstanza.StanzaParser do
 
   @option_directive_options [
     "AcceptX-Forwarded-For",
-    "AllowSendGZip",
+    "AllowSendGZip", # Exists? Not in official docs but found in some stanzas
     "AllowWebSubdirectories",
+    "AnyDNSHostname",
     "BlockCountryChange",
     "Cookie",
     "DomainCookieOnly",
     "NoCookie",
     "CookiePassThrough",
     "CSRFToken",
+    "DisableSSL40bit",
+    "DisableSSL56bit",
+    "DisableSSLv2",
+    "ExcludeIPMenu",
+    "ForceWildcardCertificate",
+    "ForceHTTPSAdmin",
     "HideEZproxy",
-    "NoHideEZproxy",
+    "NoHideEZproxy", # Exist?
     "HttpsHyphens",
-    "NoHttpsHyphens",
-    "NoRedirectPatch",
-    "NoX-Forwarded-For",
-    "X-Forwarded-For",
+    "IgnoreWildcardCertificate",
+    "IPv6",
+    "LoginReplaceGroups",
+    "LogReferer",
+    "LogSAML",
+    "LogSession",
+    "LogSPUEdit",
+    "LogUser",
+    "MetaEZproxyRewriting",
     "NoMetaEZproxyRewriting"
+    "NoHttpsHyphens",
+    "NoProxyFTP",
+    "NoUTF16",
+    "NoRedirectPatch", # Exists?
+    "NoX-Forwarded-For",
+    "ProxyByHostname",
+    "ProxyFTP",
+    "RecordPeaks",
+    "ReferInHostname",
+    "RelaxedRADIUS",
+    "RequireAuthenticate",
+    "SafariCookiePatch",
+    "StatusUser",
+    "TicketIgnoreExcludeIP",
+    "UsernameCaretN",
+    "UTF16",
+    "X-Forwarded-For"
   ]
 
   @option_directive_options_lowercase_map Enum.map(
